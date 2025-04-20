@@ -11,6 +11,13 @@ class Starfield {
         this.stars = [];
         this.starCount = 2000;
         this.starField = null;
+        
+        // Add warp effect properties
+        this.warpFactor = 0;
+        this.targetWarpFactor = 0;
+        this.warpSpeed = 0.1; // Speed of warp transition
+        this.maxWarpFactor = 0.5; // Maximum warp effect intensity
+        
         this.init();
         this.animate();
     }
@@ -98,28 +105,53 @@ class Starfield {
         return texture;
     }
 
+    setWarp(enabled) {
+        this.targetWarpFactor = enabled ? this.maxWarpFactor : 0;
+    }
+
+    updateWarpEffect() {
+        // Smoothly interpolate current warp factor to target
+        this.warpFactor += (this.targetWarpFactor - this.warpFactor) * this.warpSpeed;
+        
+        if (this.starField) {
+            const positions = this.starField.geometry.attributes.position;
+            const speeds = this.starField.geometry.attributes.speed;
+            const baseSize = 0.15;
+            
+            // Update star material size based on warp factor
+            this.starField.material.size = baseSize * (1 + this.warpFactor * 2);
+            
+            // Update star movement speeds
+            for (let i = 0; i < positions.count; i++) {
+                const zPos = positions.array[i * 3 + 2];
+                const baseSpeed = speeds.array[i];
+                
+                // Increase speed based on warp factor and z position
+                const speedMultiplier = 1 + (this.warpFactor * 3 * (1 - zPos / -50));
+                positions.array[i * 3 + 2] += baseSpeed * speedMultiplier;
+
+                // Reset star position if too close
+                if (positions.array[i * 3 + 2] > 10) {
+                    positions.array[i * 3 + 2] = -50;
+                }
+            }
+            
+            // Add blur effect based on warp factor
+            this.starField.material.blending = THREE.AdditiveBlending;
+            
+            positions.needsUpdate = true;
+        }
+    }
+
     animate() {
         requestAnimationFrame(() => this.animate());
-
-        const positions = this.starField.geometry.attributes.position;
-        const speeds = this.starField.geometry.attributes.speed;
-
-        for (let i = 0; i < positions.count; i++) {
-            // Move each star toward the camera (positive z)
-            positions.array[i * 3 + 2] += speeds.array[i];
-
-            // If star is too close to camera, reset it to far distance
-            if (positions.array[i * 3 + 2] > 10) {
-                positions.array[i * 3 + 2] = -50;
-            }
-        }
-
-        positions.needsUpdate = true;
+        
+        this.updateWarpEffect();
         this.renderer.render(this.scene, this.camera);
     }
 }
 
 // Initialize starfield when the page loads
 window.addEventListener('load', () => {
-    new Starfield();
+    window.starfield = new Starfield(); // Make it globally accessible
 }); 

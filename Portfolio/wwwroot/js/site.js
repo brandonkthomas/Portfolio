@@ -32,6 +32,11 @@
             cardInner.style.transition = '';
             isFirstMove = true;
             applyTransform(e.clientX, e.clientY);
+            
+            // Enable warp effect
+            if (window.starfield) {
+                window.starfield.setWarp(true);
+            }
         });
 
         // On movement, disable transition after the first smooth update for instant tracking
@@ -50,6 +55,11 @@
                 // Restore CSS transition for smooth exit
                 cardInner.style.transition = '';
                 cardInner.style.transform = '';
+                
+                // Disable warp effect
+                if (window.starfield) {
+                    window.starfield.setWarp(false);
+                }
             }
         });
     }
