@@ -22,7 +22,7 @@ class Card {
         
         // Position limits and drag resistance
         this.positionLimits = { x: 1.5, y: 1.5 }; // Maximum distance from center
-        this.dragResistance = 0.5; // Higher = more resistance with distance
+        this.dragResistance = 0; // resistance with distance from center
         
         // Click handling
         this.dragStartTime = 0;
@@ -52,7 +52,7 @@ class Card {
         // Create card geometry and materials
         // Make card fill most of the view while maintaining aspect ratio
         const viewHeight = Math.tan(Math.PI * 45 / 360) * 2;
-        const cardWidth = viewHeight * aspect * 1.25;
+        const cardWidth = viewHeight * aspect * 1; // dont scale (1)
         const cardHeight = cardWidth * (700 / 1200); // Maintain 12:7 aspect ratio
         const cardDepth = 0.01;
         

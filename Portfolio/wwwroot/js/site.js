@@ -58,11 +58,33 @@
     const updateUrlPath = () => {
         const pathElement = document.querySelector('.url-path');
         if (pathElement) {
-            pathElement.textContent = window.location.pathname;
+            const path = window.location.pathname;
+            pathElement.textContent = path === '/' ? '/' : path;
         }
     };
+
+    // Handle path option clicks with separate handlers for internal and external links
+    const urlPaths = document.querySelector('.url-paths');
+    if (urlPaths) {
+        const internalLinks = document.querySelectorAll('.url-path-option:not(.url-external)');
+        
+        // Handle internal navigation
+        internalLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const href = link.getAttribute('href');
+                history.pushState({}, '', href);
+                updateUrlPath();
+            });
+        });
+        
+        // External links use default browser behavior with target="_blank"
+        // No JavaScript intervention needed for external links
+    }
 
     // Update initially and when the path changes
     updateUrlPath();
     window.addEventListener('popstate', updateUrlPath);
 });
+ 
