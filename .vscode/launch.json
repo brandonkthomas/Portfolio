@@ -23,7 +23,7 @@
             "type": "chrome",
             "request": "launch",
             "name": "Launch Chrome against localhost",
-            "url": "http://localhost:5002",
+            "url": "http://localhost:8081",
             "webRoot": "${workspaceFolder}",
             "preLaunchTask": "run"
         }

@@ -1,10 +1,20 @@
+using Microsoft.AspNetCore.HttpOverrides;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-// Configure the application to use port 5002
-builder.WebHost.UseUrls("http://localhost:5002");
+// Configure forwarded headers for working behind a proxy like Cloudflare
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
+// Configure the application to use port 8081
+builder.WebHost.UseUrls("http://*:8081");
 
 var app = builder.Build();
 
@@ -15,6 +25,9 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
+// Use forwarded headers - place this early in the pipeline
+app.UseForwardedHeaders();
 
 // app.UseHttpsRedirection();
 app.UseStaticFiles();

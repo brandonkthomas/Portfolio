@@ -1,4 +1,5 @@
+*.DS_Store
+build-and-push.sh
 Portfolio/bin
 Portfolio/obj
 Portfolio/publish
-*.DS_Store
