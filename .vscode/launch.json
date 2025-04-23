@@ -22,16 +22,25 @@
         {
             "type": "chrome",
             "request": "launch",
+            "runtimeArgs": [
+                "--auto-open-devtools-for-tabs"
+            ],
             "name": "Launch Chrome against localhost",
             "url": "http://localhost:8081",
-            "webRoot": "${workspaceFolder}",
+            "webRoot": "${workspaceFolder}/Portfolio/wwwroot",
+            "sourceMaps": true,
+            "sourceMapPathOverrides": {
+                "webpack:///./~/*": "${webRoot}/node_modules/*",
+                "webpack:///./*": "${webRoot}/*",
+                "webpack:///*": "*"
+            },
             "preLaunchTask": "run"
         }
     ],
     "compounds": [
         {
             "name": "Launch .NET and Chrome",
-            "configurations": [".NET Core Launch"]
+            "configurations": [".NET Core Launch", "Launch Chrome against localhost"]
         }
     ]
 }

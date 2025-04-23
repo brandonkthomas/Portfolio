@@ -29,9 +29,17 @@
           },
           "background": {
             "activeOnStart": true,
-            "beginsPattern": ".",
-            "endsPattern": "Now listening on:"
+            "beginsPattern": "^.*Starting watch mode.*$",
+            "endsPattern": "^.*Now listening on:.*$"
           }
+        },
+        "presentation": {
+          "reveal": "always",
+          "panel": "dedicated"
+        },
+        "group": {
+          "kind": "build",
+          "isDefault": true
         }
       }
     ]
