@@ -1,4 +1,8 @@
-﻿document.addEventListener('DOMContentLoaded', () => {
+﻿//
+// site.js
+//
+document.addEventListener('DOMContentLoaded', () => {
+
     // Card interaction code
     const card = document.querySelector('.card');
     if (card) {
@@ -79,7 +83,7 @@
             });
         });
         
-        // External links use default browser behavior with target="_blank"
+        // External links use default browser behavior with target="_blank"...
         // No JavaScript intervention needed for external links
     }
 

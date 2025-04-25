@@ -1,3 +1,6 @@
+//
+// card.js
+//
 class Card {
     constructor() {
         this.container = document.querySelector('.card-container');
@@ -28,7 +31,20 @@ class Card {
         this.dragStartTime = 0;
         this.dragDistance = 0;
         
+        // Mobile detection
+        this.isMobile = this.detectMobile();
+        
         this.init();
+    }
+
+    detectMobile() {
+        // Check if device has touch capability
+        const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        
+        // Check screen width (768px as common breakpoint)
+        const isSmallScreen = window.innerWidth <= 768;
+        
+        return hasTouch && isSmallScreen;
     }
 
     init() {
@@ -49,11 +65,26 @@ class Card {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.container.appendChild(this.renderer.domElement);
 
-        // Create card geometry and materials
-        // Make card fill most of the view while maintaining aspect ratio
-        const viewHeight = Math.tan(Math.PI * 45 / 360) * 2;
-        const cardWidth = viewHeight * aspect * 1; // dont scale (1)
-        const cardHeight = cardWidth * (700 / 1200); // Maintain 12:7 aspect ratio
+        // Create card geometry and materials using mobile-aware dimensions
+        let cardWidth, cardHeight;
+        if (this.isMobile) {
+            // On mobile, directly use 90% of viewport width
+            const fov = 45; // matches camera FOV
+            const distance = 2; // matches camera.position.z
+            const vFOV = (fov * Math.PI) / 180;
+            const viewportHeightAtDistance = 2 * distance * Math.tan(vFOV / 2);
+            const viewportWidthAtDistance = viewportHeightAtDistance * aspect;
+            
+            // Calculate card width as 90% of viewport width
+            cardWidth = viewportWidthAtDistance * 0.9;
+            // Maintain aspect ratio
+            cardHeight = cardWidth * (700 / 1200);
+        } else {
+            // Desktop calculation
+            const viewHeight = Math.tan(Math.PI * 45 / 360) * 2;
+            cardWidth = viewHeight * aspect * 1;
+            cardHeight = cardWidth * (700 / 1200);
+        }
         const cardDepth = 0.01;
         
         const geometry = new THREE.BoxGeometry(cardWidth, cardHeight, cardDepth);
@@ -303,12 +334,52 @@ class Card {
     }
 
     onWindowResize() {
+        // Update mobile detection
+        this.isMobile = this.detectMobile();
+        
         // Update camera aspect ratio
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
         
         // Update renderer size
         this.renderer.setSize(window.innerWidth, window.innerHeight);
+        
+        // Update card dimensions
+        this.updateCardDimensions();
+    }
+
+    updateCardDimensions() {
+        const aspect = window.innerWidth / window.innerHeight;
+        let cardWidth, cardHeight;
+
+        if (this.isMobile) {
+            // On mobile, directly use 90% of viewport width
+            // Convert viewport width to world space coordinates
+            const fov = 45; // matches camera FOV
+            const distance = 2; // matches camera.position.z
+            const vFOV = (fov * Math.PI) / 180;
+            const viewportHeightAtDistance = 2 * distance * Math.tan(vFOV / 2);
+            const viewportWidthAtDistance = viewportHeightAtDistance * aspect;
+            
+            // Calculate card width as 90% of viewport width
+            cardWidth = viewportWidthAtDistance * 0.9;
+            // Maintain aspect ratio
+            cardHeight = cardWidth * (700 / 1200);
+        } else {
+            // Desktop calculation remains the same
+            const viewHeight = Math.tan(Math.PI * 45 / 360) * 2;
+            cardWidth = viewHeight * aspect * 1;
+            cardHeight = cardWidth * (700 / 1200);
+        }
+
+        const cardDepth = 0.01;
+        
+        // Create new geometry with updated dimensions
+        const newGeometry = new THREE.BoxGeometry(cardWidth, cardHeight, cardDepth);
+        
+        // Update the card's geometry
+        this.card.geometry.dispose(); // Clean up old geometry
+        this.card.geometry = newGeometry;
     }
 }
 

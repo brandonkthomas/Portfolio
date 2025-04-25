@@ -1,3 +1,6 @@
+//
+// starfield.js
+//
 class Starfield {
     constructor() {
         this.scene = new THREE.Scene();
