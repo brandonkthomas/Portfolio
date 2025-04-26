@@ -33,7 +33,7 @@ class Starfield {
         this.starField = null;
         this.warpIntensity = 0;
         this.cardContainer = document.querySelector('.card-container');
-        this.starSize = this.detectMobile() ? 0.225 : 0.15;
+        this.starSize = this.detectMobile() ? 0.2 : 0.15;
 
         this.init();
         this.animate();

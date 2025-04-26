@@ -29,6 +29,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Handle mobile tap/click for URL display
+    const urlDisplay = document.querySelector('.url-display');
+    if (urlDisplay) {
+        urlDisplay.addEventListener('click', (e) => {
+            // Only toggle if we're on a mobile device (no hover capability)
+            if (window.matchMedia('(hover: none)').matches) {
+                urlDisplay.classList.toggle('active');
+            }
+        });
+
+        // Close the menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!urlDisplay.contains(e.target)) {
+                urlDisplay.classList.remove('active');
+            }
+        });
+    }
+
     // Update initially and when the path changes
     updateUrlPath();
     window.addEventListener('popstate', updateUrlPath);

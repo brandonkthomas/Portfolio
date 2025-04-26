@@ -4,6 +4,8 @@
 
 html {
     font-size: 14px;
+    position: relative;
+    min-height: 100%;
 }
 
 @media (min-width: 768px) {
@@ -20,14 +22,19 @@ html {
     box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
-html {
-    position: relative;
-    min-height: 100%;
-}
-
 body {
     margin-bottom: 60px;
     color: #1A1A1A;
+}
+
+* {
+    /* Disable text selection on mobile */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 :root {
@@ -103,6 +110,7 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 0.5rem;
+    text-shadow: 0px 1px 15px #121212;
 }
 
 .url-base {
@@ -114,6 +122,10 @@ body {
 }
 
 .url-paths {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -121,18 +133,34 @@ body {
     padding-top: 0.5rem;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    text-shadow: 0px 1px 15px #121212;
 }
 
-.url-display:hover .url-paths {
-    opacity: 1;
-    visibility: visible;
+/* Show paths on hover for desktop */
+@media (hover: hover) {
+    .url-display:hover .url-paths {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
+}
+
+/* Show paths on tap/click for mobile */
+@media (hover: none) {
+    .url-display.active .url-paths {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
 }
 
 .url-path-option {
     color: rgba(255, 255, 255, 0.6);
     text-decoration: none;
     transition: color 0.2s ease;
+    white-space: nowrap;
 }
 
 .url-path-option:hover {
