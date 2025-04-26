@@ -10,13 +10,13 @@ class Starfield {
             canvas: document.getElementById('starfield'),
             antialias: true
         });
-        
+
         this.stars = [];
         this.starCount = 2000;
         this.starField = null;
         this.warpIntensity = 0;
         this.cardContainer = document.querySelector('.card-container');
-        
+
         this.init();
         this.animate();
     }
@@ -37,9 +37,9 @@ class Starfield {
             const hue = Math.random() * 360; // Any hue
             const saturation = Math.random() * 0.1; // Very low saturation (0-10%)
             const lightness = 0.95 + Math.random() * 0.05; // Very high lightness (95-100%)
-            
+
             const color = new THREE.Color();
-            color.setHSL(hue/360, saturation, lightness);
+            color.setHSL(hue / 360, saturation, lightness);
             return color;
         };
 
@@ -49,16 +49,16 @@ class Starfield {
             const radius = 8 + Math.random() * 20; // Increased range for more spread
             const theta = Math.random() * Math.PI * 2;
             const z = Math.random() * 150 - 75; // Increased depth range for more spacing
-            
+
             // Convert to Cartesian coordinates
             const x = radius * Math.cos(theta);
             const y = radius * Math.sin(theta);
-            
+
             positions.push(x, y, z);
-            
+
             const color = generateOffWhiteColor();
             colors.push(color.r, color.g, color.b);
-            
+
             // Random speed between 0.02 and 0.06 (20% of original 0.1-0.3)
             const speed = 0.005 + Math.random() * 0.01;
             speeds.push(speed);
@@ -109,7 +109,7 @@ class Starfield {
     }
 
     setupClickDetection() {
-        // Instead of listening for clicks directly, expose a method for the card to call
+        // Allow card to trigger warp pulse
         window.triggerStarfieldWarp = () => {
             this.triggerWarpPulse();
         };
@@ -118,23 +118,23 @@ class Starfield {
     triggerWarpPulse() {
         // Set warp intensity to 1 immediately
         this.warpIntensity = 1;
-        
-        // Create a smooth fade out over 0.35 seconds
+
+        // smooth fade out over 0.5 seconds
         const startTime = Date.now();
-        const duration = 500; // 0.35 seconds in milliseconds
-        
+        const duration = 500;
+
         const fadeOut = () => {
             const elapsed = Date.now() - startTime;
             const progress = Math.min(elapsed / duration, 1);
-            
-            // Use easeOutQuart for smoother deceleration at the end
+
+            // easeOutQuart for smoother deceleration at the end
             this.warpIntensity = Math.pow(1 - progress, 4);
-            
+
             if (progress < 1) {
                 requestAnimationFrame(fadeOut);
             }
         };
-        
+
         requestAnimationFrame(fadeOut);
     }
 
@@ -142,16 +142,16 @@ class Starfield {
         const canvas = document.createElement('canvas');
         canvas.width = 32;
         canvas.height = 32;
-        
+
         const context = canvas.getContext('2d');
         const gradient = context.createRadialGradient(16, 16, 0, 16, 16, 16);
         gradient.addColorStop(0, 'rgba(255,255,255,1)');
         gradient.addColorStop(0.5, 'rgba(255,255,255,0.5)');
         gradient.addColorStop(1, 'rgba(255,255,255,0)');
-        
+
         context.fillStyle = gradient;
         context.fillRect(0, 0, 32, 32);
-        
+
         const texture = new THREE.Texture(canvas);
         texture.needsUpdate = true;
         return texture;

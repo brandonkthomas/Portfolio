@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlPaths = document.querySelector('.url-paths');
     if (urlPaths) {
         const internalLinks = document.querySelectorAll('.url-path-option:not(.url-external)');
-        
+
         // Handle internal navigation
         internalLinks.forEach(link => {
             link.addEventListener('click', (e) => {
@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateUrlPath();
             });
         });
-        
+
         // External links use default browser behavior with target="_blank"...
         // No JavaScript intervention needed for external links
     }
@@ -91,4 +91,3 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUrlPath();
     window.addEventListener('popstate', updateUrlPath);
 });
- 

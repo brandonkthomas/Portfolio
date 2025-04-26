@@ -4,62 +4,91 @@
 class Card {
     constructor() {
         this.container = document.querySelector('.card-container');
+
         this.isFlipped = false;
         this.isDragging = false;
-        this.previousMousePosition = { x: 0, y: 0 };
-        this.rotation = { x: 0, y: 0 };
-        this.targetRotation = { x: 0, y: 0 };
-        this.flipProgress = 0;
-        this.flipTarget = 0;
-        this.flipDuration = 0.26; // seconds
-        
+
+        this.previousMousePosition = {
+            x: 0,
+            y: 0
+        };
+        this.rotation = {
+            x: 0,
+            y: 0
+        };
+        this.targetRotation = {
+            x: 0,
+            y: 0
+        };
+
         // Add position tracking for dragging
-        this.position = { x: 0, y: 0 };
-        this.targetPosition = { x: 0, y: 0 };
-        this.dragOffset = { x: 0, y: 0 };
-        
-        // Spring configuration for return animation
+        this.position = {
+            x: 0,
+            y: 0
+        };
+        this.targetPosition = {
+            x: 0,
+            y: 0
+        };
+        this.dragOffset = {
+            x: 0,
+            y: 0
+        };
+
+        // Spring configuration for drag return animation
         this.springStrength = 0.05; // Adjust for faster/slower return
-        this.springDamping = 0.75;  // Adjust for more/less bounce
-        this.velocity = { x: 0, y: 0 };
-        
+        this.springDamping = 0.75; // Adjust for more/less bounce
+        this.velocity = {
+            x: 0,
+            y: 0
+        };
+
         // Position limits and drag resistance
-        this.positionLimits = { x: 1.5, y: 1.5 }; // Maximum distance from center
+        this.positionLimits = {
+            x: 1.5,
+            y: 1.5
+        }; // Maximum distance from center
         this.dragResistance = 0; // resistance with distance from center
-        
+
         // Click handling
         this.dragStartTime = 0;
         this.dragDistance = 0;
-        
+
+        // Flip animation
+        this.flipDuration = 0.26; // seconds
+        this.flipProgress = 0;
+        this.flipTarget = 0;
+        this.flipStartTime = null; // only start timing on user click
+
         // Mobile detection
         this.isMobile = this.detectMobile();
-        
+
         this.init();
     }
 
     detectMobile() {
         // Check if device has touch capability
         const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-        
+
         // Check screen width (768px as common breakpoint)
         const isSmallScreen = window.innerWidth <= 768;
-        
+
         return hasTouch && isSmallScreen;
     }
 
     init() {
         // Scene setup
         this.scene = new THREE.Scene();
-        
+
         // Use window dimensions for proper viewport
         const aspect = window.innerWidth / window.innerHeight;
         this.camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 1000);
-        this.renderer = new THREE.WebGLRenderer({ 
-            antialias: true, 
+        this.renderer = new THREE.WebGLRenderer({
+            antialias: true,
             alpha: true,
             powerPreference: "high-performance"
         });
-        
+
         // Set renderer size to window dimensions
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.setPixelRatio(window.devicePixelRatio);
@@ -74,7 +103,7 @@ class Card {
             const vFOV = (fov * Math.PI) / 180;
             const viewportHeightAtDistance = 2 * distance * Math.tan(vFOV / 2);
             const viewportWidthAtDistance = viewportHeightAtDistance * aspect;
-            
+
             // Calculate card width as 90% of viewport width
             cardWidth = viewportWidthAtDistance * 0.9;
             // Maintain aspect ratio
@@ -86,9 +115,9 @@ class Card {
             cardHeight = cardWidth * (700 / 1200);
         }
         const cardDepth = 0.01;
-        
+
         const geometry = new THREE.BoxGeometry(cardWidth, cardHeight, cardDepth);
-        
+
         // Create materials for front and back with proper texture settings
         const textureLoader = new THREE.TextureLoader();
         const loadTexture = (url) => {
@@ -101,21 +130,29 @@ class Card {
 
         const frontTexture = loadTexture('/images/card-front.png');
         const backTexture = loadTexture('/images/card-back.png');
-        
+
         // Create materials with proper settings
         const materials = [
-            new THREE.MeshBasicMaterial({ color: 0x111111 }), // Right side
-            new THREE.MeshBasicMaterial({ color: 0x111111 }), // Left side
-            new THREE.MeshBasicMaterial({ color: 0x111111 }), // Top side
-            new THREE.MeshBasicMaterial({ color: 0x111111 }), // Bottom side
-            new THREE.MeshBasicMaterial({ 
+            new THREE.MeshBasicMaterial({
+                color: 0x111111
+            }), // Right side
+            new THREE.MeshBasicMaterial({
+                color: 0x111111
+            }), // Left side
+            new THREE.MeshBasicMaterial({
+                color: 0x111111
+            }), // Top side
+            new THREE.MeshBasicMaterial({
+                color: 0x111111
+            }), // Bottom side
+            new THREE.MeshBasicMaterial({ // Front side
                 map: frontTexture,
                 transparent: true
-            }), // Front side
-            new THREE.MeshBasicMaterial({ 
+            }),
+            new THREE.MeshBasicMaterial({ // Back side
                 map: backTexture,
                 transparent: true
-            })  // Back side
+            })
         ];
 
         // Create card mesh
@@ -133,7 +170,7 @@ class Card {
         this.setupEventListeners();
 
         // Start animation loop
-        this.animate();
+        requestAnimationFrame(this.animate.bind(this));
     }
 
     setupEventListeners() {
@@ -141,7 +178,7 @@ class Card {
         this.container.addEventListener('click', (e) => {
             const dragDuration = Date.now() - this.dragStartTime;
             const isDragGesture = this.dragDistance > 5 || dragDuration > 200;
-            
+
             if (!isDragGesture && this.isMouseOverCard(e)) {
                 this.flipCard();
                 // Only trigger warp effect if we actually clicked the card
@@ -149,7 +186,7 @@ class Card {
                     window.triggerStarfieldWarp();
                 }
             }
-            
+
             // Reset drag tracking
             this.dragDistance = 0;
         });
@@ -170,31 +207,31 @@ class Card {
                 // Calculate drag movement in screen coordinates
                 const movementX = e.clientX - this.previousMousePosition.x;
                 const movementY = e.clientY - this.previousMousePosition.y;
-                
+
                 // Track total drag distance for click detection
                 this.dragDistance += Math.sqrt(movementX * movementX + movementY * movementY);
-                
+
                 // Convert screen movement to world space movement
                 const worldMovementX = (movementX / window.innerWidth) * 1.5;
                 const worldMovementY = -(movementY / window.innerHeight) * 1.5;
-                
+
                 // Calculate distance from center for resistance
                 const currentDistance = Math.sqrt(
-                    this.position.x * this.position.x + 
+                    this.position.x * this.position.x +
                     this.position.y * this.position.y
                 );
-                
+
                 // Apply distance-based resistance
                 const resistance = 1 / (1 + (currentDistance * this.dragResistance));
-                
+
                 // Update position with limits and resistance
                 const newX = this.position.x + (worldMovementX * resistance);
                 const newY = this.position.y + (worldMovementY * resistance);
-                
+
                 // Apply position limits
                 this.position.x = Math.max(-this.positionLimits.x, Math.min(this.positionLimits.x, newX));
                 this.position.y = Math.max(-this.positionLimits.y, Math.min(this.positionLimits.y, newY));
-                
+
                 // Update previous position for next frame
                 this.previousMousePosition = {
                     x: e.clientX,
@@ -212,7 +249,7 @@ class Card {
             const rect = this.container.getBoundingClientRect();
             const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
             const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-            
+
             // Calculate target rotation with tilt limits
             this.targetRotation.x = -y * 0.3;
             this.targetRotation.y = x * 0.3;
@@ -244,7 +281,7 @@ class Card {
                     x: ((e.clientX - rect.left) / rect.width) * 2 - 1,
                     y: -(((e.clientY - rect.top) / rect.height) * 2 - 1)
                 };
-                
+
                 // Capture the pointer to track it even outside the window
                 this.container.setPointerCapture(e.pointerId);
             }
@@ -278,13 +315,14 @@ class Card {
 
         this.raycaster.setFromCamera(this.mouse, this.camera);
         const intersects = this.raycaster.intersectObject(this.card);
-        
+
         return intersects.length > 0;
     }
 
     flipCard() {
         this.isFlipped = !this.isFlipped;
         this.flipTarget = this.isFlipped ? 1 : 0;
+        this.flipStartTime = performance.now(); // start timing flip now
     }
 
     updateSpringAnimation() {
@@ -292,58 +330,77 @@ class Card {
             // Calculate spring force
             const springForceX = -this.position.x * this.springStrength;
             const springForceY = -this.position.y * this.springStrength;
-            
+
             // Apply spring physics
             this.velocity.x += springForceX;
             this.velocity.y += springForceY;
-            
+
             // Apply damping
             this.velocity.x *= this.springDamping;
             this.velocity.y *= this.springDamping;
-            
+
             // Update position
             this.position.x += this.velocity.x;
             this.position.y += this.velocity.y;
         }
     }
 
-    animate() {
-        requestAnimationFrame(this.animate.bind(this));
+    animate(timestamp) {
+        // first frame: seed lastTimestamp so it's never undefined
+        if (this.lastTimestamp === undefined) {
+            this.lastTimestamp = timestamp;
+        }
 
-        // Update spring animation
+        // spring return animation
         this.updateSpringAnimation();
 
-        // Smooth rotation interpolation
+        // smooth hover tilt
         this.rotation.x += (this.targetRotation.x - this.rotation.x) * 0.1;
         this.rotation.y += (this.targetRotation.y - this.rotation.y) * 0.1;
 
-        // Smooth flip animation
-        const flipDelta = (this.flipTarget - this.flipProgress) * (1 / (60 * this.flipDuration));
-        this.flipProgress += flipDelta;
+        // only run your ease-out flip when flipStartTime is set (i.e. after click)
+        if (this.flipStartTime != null) {
+            const elapsed = (timestamp - this.flipStartTime) / 1000; // seconds since flip began
+            const t = Math.min(elapsed / this.flipDuration, 1); // clamp 0→1
+            let eased = Math.sqrt(1 - Math.pow(t - 1, 2)); // easeOutCirc
 
-        // Calculate final rotation including both hover effect and flip state
+            // if we're flipping *back* (flipTarget===0), reverse the eased value
+            if (this.flipTarget === 0) eased = 1 - eased;
+
+            this.flipProgress = eased;
+
+            // once we're at t===1, snap to final state and clear flipStartTime
+            if (t >= 1) {
+                this.flipStartTime = null;
+                this.flipProgress = this.flipTarget;
+            }
+        }
+
+        // apply rotation + flip
         const flipRotation = Math.PI * this.flipProgress;
-        
-        // Apply all transformations
         this.card.rotation.x = this.rotation.x;
         this.card.rotation.y = this.rotation.y + flipRotation;
+
+        // apply drag/spring position
         this.card.position.x = this.position.x;
         this.card.position.y = this.position.y;
 
+        // render & queue next frame
         this.renderer.render(this.scene, this.camera);
+        requestAnimationFrame(this.animate.bind(this));
     }
 
     onWindowResize() {
         // Update mobile detection
         this.isMobile = this.detectMobile();
-        
+
         // Update camera aspect ratio
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
-        
+
         // Update renderer size
         this.renderer.setSize(window.innerWidth, window.innerHeight);
-        
+
         // Update card dimensions
         this.updateCardDimensions();
     }
@@ -360,7 +417,7 @@ class Card {
             const vFOV = (fov * Math.PI) / 180;
             const viewportHeightAtDistance = 2 * distance * Math.tan(vFOV / 2);
             const viewportWidthAtDistance = viewportHeightAtDistance * aspect;
-            
+
             // Calculate card width as 90% of viewport width
             cardWidth = viewportWidthAtDistance * 0.9;
             // Maintain aspect ratio
@@ -373,10 +430,10 @@ class Card {
         }
 
         const cardDepth = 0.01;
-        
+
         // Create new geometry with updated dimensions
         const newGeometry = new THREE.BoxGeometry(cardWidth, cardHeight, cardDepth);
-        
+
         // Update the card's geometry
         this.card.geometry.dispose(); // Clean up old geometry
         this.card.geometry = newGeometry;
