@@ -326,7 +326,7 @@ class Starfield {
 
         // Subtle glow effect: scale star size and trail opacity during warp
         this.starField.material.size = this.starSize + this.warpIntensity * 0.05;
-        this.trailMaterial.opacity = (this.detectMobile() ? 0.225 : 0.1) + this.warpIntensity * 0.05;
+        this.trailMaterial.opacity = (detectMobile() ? 0.225 : 0.1) + this.warpIntensity * 0.05;
 
         this.camera.position.z = 5;
         this.renderer.render(this.scene, this.camera);
