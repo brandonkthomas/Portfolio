@@ -60,6 +60,7 @@ class Starfield {
     init() {
         // Renderer setup
         this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setPixelRatio(window.devicePixelRatio); // mobile-specific pixel ratio for better visibility
         this.camera.position.z = 5;
 
         // Create stars with varying colors and speeds
