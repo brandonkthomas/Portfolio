@@ -2,16 +2,52 @@
 // card.js
 //
 class Card {
+
+    //==============================================================================================
+    /**
+     * Creates new card instance -- call init() to start the card animation
+     * @constructor
+     * @description Initializes a 3D card with flip and drag interactions
+     * @property {HTMLElement} container - The card container element
+     * @property {boolean} isFlipped - Whether the card is currently flipped
+     * @property {boolean} isDragging - Whether the card is being dragged
+     * @property {Object} previousMousePosition - Last known mouse position
+     * @property {Object} rotation - Current card rotation
+     * @property {Object} targetRotation - Target rotation for smooth animation
+     * @property {Object} position - Current card position
+     * @property {Object} targetPosition - Target position for smooth animation
+     * @property {number} springStrength - Spring force for position return
+     * @property {number} springDamping - Damping factor for spring animation
+     * @property {Object} velocity - Current velocity for spring animation
+     * @property {Object} positionLimits - Maximum allowed position values
+     * @property {number} dragResistance - Resistance factor for dragging
+     * @property {number} flipDuration - Duration of flip animation in seconds
+     * @property {number} flipProgress - Current progress of flip animation
+     * @property {number} flipTarget - Target flip state
+     * @property {number} flipStartTime - When the current flip started
+     * @property {boolean} isMobile - Whether the device is mobile
+     */
     constructor() {
+        // DOM elements
         this.container = document.querySelector('.card-container');
 
+        // State flags
         this.isFlipped = false;
         this.isDragging = false;
 
+        // Mouse/touch tracking
         this.previousMousePosition = {
             x: 0,
             y: 0
         };
+        this.dragStartTime = 0;
+        this.dragDistance = 0;
+        this.dragOffset = {
+            x: 0,
+            y: 0
+        };
+
+        // Rotation state
         this.rotation = {
             x: 0,
             y: 0
@@ -21,16 +57,12 @@ class Card {
             y: 0
         };
 
-        // Add position tracking for dragging
+        // Position state
         this.position = {
             x: 0,
             y: 0
         };
         this.targetPosition = {
-            x: 0,
-            y: 0
-        };
-        this.dragOffset = {
             x: 0,
             y: 0
         };
@@ -50,10 +82,6 @@ class Card {
         }; // Maximum distance from center
         this.dragResistance = 0; // resistance with distance from center
 
-        // Click handling
-        this.dragStartTime = 0;
-        this.dragDistance = 0;
-
         // Flip animation
         this.flipDuration = 0.26; // seconds
         this.flipProgress = 0;
@@ -66,6 +94,12 @@ class Card {
         this.init();
     }
 
+    //==============================================================================================
+    /**
+     * Detect if this is a mobile browser
+     * @description Checks for touch capability and screen size
+     * @returns {boolean} True if device is mobile
+     */
     detectMobile() {
         // Check if device has touch capability
         const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -76,6 +110,11 @@ class Card {
         return hasTouch && isSmallScreen;
     }
 
+    //==============================================================================================
+    /**
+     * Initialize the card
+     * @description Sets up Three.js scene, creates card, and starts animation
+     */
     init() {
         // Scene setup
         this.scene = new THREE.Scene();
@@ -94,28 +133,29 @@ class Card {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.container.appendChild(this.renderer.domElement);
 
-        // Create card geometry and materials using mobile-aware dimensions
-        let cardWidth, cardHeight;
-        if (this.isMobile) {
-            // On mobile, directly use 90% of viewport width
-            const fov = 45; // matches camera FOV
-            const distance = 2; // matches camera.position.z
-            const vFOV = (fov * Math.PI) / 180;
-            const viewportHeightAtDistance = 2 * distance * Math.tan(vFOV / 2);
-            const viewportWidthAtDistance = viewportHeightAtDistance * aspect;
+        // Create card
+        this.createCard();
 
-            // Calculate card width as 90% of viewport width
-            cardWidth = viewportWidthAtDistance * 0.9;
-            // Maintain aspect ratio
-            cardHeight = cardWidth * (700 / 1200);
-        } else {
-            // Desktop calculation
-            const viewHeight = Math.tan(Math.PI * 45 / 360) * 2;
-            cardWidth = viewHeight * aspect * 1;
-            cardHeight = cardWidth * (700 / 1200);
-        }
+        // Setup interaction
+        this.raycaster = new THREE.Raycaster();
+        this.mouse = new THREE.Vector2();
+        this.setupEventListeners();
+
+        // Start animation
+        requestAnimationFrame(this.animate.bind(this));
+    }
+
+    //==============================================================================================
+    /**
+     * Create the 3D card
+     * @description Creates card geometry, materials, and textures
+     */
+    createCard() {
+        const {
+            cardWidth,
+            cardHeight
+        } = this.calculateCardDimensions();
         const cardDepth = 0.01;
-
         const geometry = new THREE.BoxGeometry(cardWidth, cardHeight, cardDepth);
 
         // Create materials for front and back with proper texture settings
@@ -155,24 +195,51 @@ class Card {
             })
         ];
 
-        // Create card mesh
         this.card = new THREE.Mesh(geometry, materials);
         this.scene.add(this.card);
-
-        // Position camera
         this.camera.position.z = 2;
-
-        // Create raycaster for mouse interaction
-        this.raycaster = new THREE.Raycaster();
-        this.mouse = new THREE.Vector2();
-
-        // Add event listeners
-        this.setupEventListeners();
-
-        // Start animation loop
-        requestAnimationFrame(this.animate.bind(this));
     }
 
+    //==============================================================================================
+    /**
+     * Calculate card dimensions based on viewport
+     * @description Determines card size based on device type and viewport
+     * @returns {Object} Object containing cardWidth and cardHeight
+     */
+    calculateCardDimensions() {
+        const aspect = window.innerWidth / window.innerHeight;
+        let cardWidth, cardHeight;
+
+        if (this.isMobile) {
+            // On mobile, directly use 90% of viewport width
+            const fov = 45; // matches camera FOV
+            const distance = 2; // matches camera.position.z
+            const vFOV = (fov * Math.PI) / 180;
+            const viewportHeightAtDistance = 2 * distance * Math.tan(vFOV / 2);
+            const viewportWidthAtDistance = viewportHeightAtDistance * aspect;
+
+            // Calculate card width as 90% of viewport width
+            cardWidth = viewportWidthAtDistance * 0.9;
+            // Maintain aspect ratio
+            cardHeight = cardWidth * (700 / 1200);
+        } else {
+            // Desktop calculation
+            const viewHeight = Math.tan(Math.PI * 45 / 360) * 2;
+            cardWidth = viewHeight * aspect * 1;
+            cardHeight = cardWidth * (700 / 1200);
+        }
+
+        return {
+            cardWidth,
+            cardHeight
+        };
+    }
+
+    //==============================================================================================
+    /**
+     * Set up event listeners for card interaction
+     * @description Handles click, drag, and hover events
+     */
     setupEventListeners() {
         // Click to flip - now with drag detection
         this.container.addEventListener('click', (e) => {
@@ -204,55 +271,13 @@ class Card {
             }
 
             if (this.isDragging) {
-                // Calculate drag movement in screen coordinates
-                const movementX = e.clientX - this.previousMousePosition.x;
-                const movementY = e.clientY - this.previousMousePosition.y;
-
-                // Track total drag distance for click detection
-                this.dragDistance += Math.sqrt(movementX * movementX + movementY * movementY);
-
-                // Convert screen movement to world space movement
-                const worldMovementX = (movementX / window.innerWidth) * 1.5;
-                const worldMovementY = -(movementY / window.innerHeight) * 1.5;
-
-                // Calculate distance from center for resistance
-                const currentDistance = Math.sqrt(
-                    this.position.x * this.position.x +
-                    this.position.y * this.position.y
-                );
-
-                // Apply distance-based resistance
-                const resistance = 1 / (1 + (currentDistance * this.dragResistance));
-
-                // Update position with limits and resistance
-                const newX = this.position.x + (worldMovementX * resistance);
-                const newY = this.position.y + (worldMovementY * resistance);
-
-                // Apply position limits
-                this.position.x = Math.max(-this.positionLimits.x, Math.min(this.positionLimits.x, newX));
-                this.position.y = Math.max(-this.positionLimits.y, Math.min(this.positionLimits.y, newY));
-
-                // Update previous position for next frame
-                this.previousMousePosition = {
-                    x: e.clientX,
-                    y: e.clientY
-                };
-                return;
-            }
-
-            if (!this.isMouseOverCard(e)) {
+                this.handleDrag(e);
+            } else if (this.isMouseOverCard(e)) {
+                this.handleHover(e);
+            } else {
                 this.targetRotation.x = 0;
                 this.targetRotation.y = 0;
-                return;
             }
-
-            const rect = this.container.getBoundingClientRect();
-            const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-            const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
-            // Calculate target rotation with tilt limits
-            this.targetRotation.x = -y * 0.3;
-            this.targetRotation.y = x * 0.3;
         };
 
         this.container.addEventListener('pointermove', handlePointerMove);
@@ -276,11 +301,7 @@ class Card {
                     y: e.clientY
                 };
                 // Store the initial drag offset
-                const rect = this.container.getBoundingClientRect();
-                this.dragOffset = {
-                    x: ((e.clientX - rect.left) / rect.width) * 2 - 1,
-                    y: -(((e.clientY - rect.top) / rect.height) * 2 - 1)
-                };
+                this.dragOffset = this.calculateDragOffset(e);
 
                 // Capture the pointer to track it even outside the window
                 this.container.setPointerCapture(e.pointerId);
@@ -308,6 +329,86 @@ class Card {
         });
     }
 
+    //==============================================================================================
+    /**
+     * Handle drag interaction
+     * @description Updates card position based on drag movement
+     * @param {PointerEvent} e - pointer event
+     */
+    handleDrag(e) {
+        // Calculate drag movement in screen coordinates
+        const movementX = e.clientX - this.previousMousePosition.x;
+        const movementY = e.clientY - this.previousMousePosition.y;
+
+        // Track total drag distance for click detection
+        this.dragDistance += Math.sqrt(movementX * movementX + movementY * movementY);
+
+        // Convert screen movement to world space movement
+        const worldMovementX = (movementX / window.innerWidth) * 1.5;
+        const worldMovementY = -(movementY / window.innerHeight) * 1.5;
+
+        // Calculate distance from center for resistance
+        const currentDistance = Math.sqrt(
+            this.position.x * this.position.x +
+            this.position.y * this.position.y
+        );
+
+        // Apply distance-based resistance
+        const resistance = 1 / (1 + (currentDistance * this.dragResistance));
+
+        // Update position with limits and resistance
+        const newX = this.position.x + (worldMovementX * resistance);
+        const newY = this.position.y + (worldMovementY * resistance);
+
+        // Apply position limits
+        this.position.x = Math.max(-this.positionLimits.x, Math.min(this.positionLimits.x, newX));
+        this.position.y = Math.max(-this.positionLimits.y, Math.min(this.positionLimits.y, newY));
+
+        // Update previous position for next frame
+        this.previousMousePosition = {
+            x: e.clientX,
+            y: e.clientY
+        };
+    }
+
+    //==============================================================================================
+    /**
+     * Handle hover interaction
+     * @description Updates card rotation based on mouse position
+     * @param {PointerEvent} e - The pointer event
+     */
+    handleHover(e) {
+        const rect = this.container.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+        // Calculate target rotation with tilt limits
+        this.targetRotation.x = -y * 0.3;
+        this.targetRotation.y = x * 0.3;
+    }
+
+    //==============================================================================================
+    /**
+     * Calculate drag offset from mouse position
+     * @description Converts screen coordinates to normalized device coordinates
+     * @param {PointerEvent} e - The pointer event
+     * @returns {Object} Object containing x and y offsets
+     */
+    calculateDragOffset(e) {
+        const rect = this.container.getBoundingClientRect();
+        return {
+            x: ((e.clientX - rect.left) / rect.width) * 2 - 1,
+            y: -(((e.clientY - rect.top) / rect.height) * 2 - 1)
+        };
+    }
+
+    //==============================================================================================
+    /**
+     * Check if mouse is over the card
+     * @description Uses raycasting to detect if mouse is over card
+     * @param {PointerEvent} event - pointer event
+     * @returns {boolean} True if mouse is over card
+     */
     isMouseOverCard(event) {
         const rect = this.container.getBoundingClientRect();
         this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -319,12 +420,22 @@ class Card {
         return intersects.length > 0;
     }
 
+    //==============================================================================================
+    /**
+     * Flip the card
+     * @description Toggles card flip state and starts flip animation
+     */
     flipCard() {
         this.isFlipped = !this.isFlipped;
         this.flipTarget = this.isFlipped ? 1 : 0;
         this.flipStartTime = performance.now(); // start timing flip now
     }
 
+    //==============================================================================================
+    /**
+     * Update spring animation
+     * @description Applies spring physics to return card to center when the drag ends
+     */
     updateSpringAnimation() {
         if (!this.isDragging) {
             // Calculate spring force
@@ -345,6 +456,12 @@ class Card {
         }
     }
 
+    //==============================================================================================
+    /**
+     * Main animation loop
+     * @description Updates card position, rotation, and flip state
+     * @param {number} timestamp - Current animation timestamp
+     */
     animate(timestamp) {
         // first frame: seed lastTimestamp so it's never undefined
         if (this.lastTimestamp === undefined) {
@@ -390,6 +507,11 @@ class Card {
         requestAnimationFrame(this.animate.bind(this));
     }
 
+    //==============================================================================================
+    /**
+     * Handle window resize
+     * @description Updates mobile status, card dimensions, renderer size, and camera settings on window resize
+     */
     onWindowResize() {
         // Update mobile detection
         this.isMobile = this.detectMobile();
@@ -405,30 +527,16 @@ class Card {
         this.updateCardDimensions();
     }
 
+    //==============================================================================================
+    /**
+     * Update card dimensions
+     * @description Recreates card geometry with new dimensions
+     */
     updateCardDimensions() {
-        const aspect = window.innerWidth / window.innerHeight;
-        let cardWidth, cardHeight;
-
-        if (this.isMobile) {
-            // On mobile, directly use 90% of viewport width
-            // Convert viewport width to world space coordinates
-            const fov = 45; // matches camera FOV
-            const distance = 2; // matches camera.position.z
-            const vFOV = (fov * Math.PI) / 180;
-            const viewportHeightAtDistance = 2 * distance * Math.tan(vFOV / 2);
-            const viewportWidthAtDistance = viewportHeightAtDistance * aspect;
-
-            // Calculate card width as 90% of viewport width
-            cardWidth = viewportWidthAtDistance * 0.9;
-            // Maintain aspect ratio
-            cardHeight = cardWidth * (700 / 1200);
-        } else {
-            // Desktop calculation remains the same
-            const viewHeight = Math.tan(Math.PI * 45 / 360) * 2;
-            cardWidth = viewHeight * aspect * 1;
-            cardHeight = cardWidth * (700 / 1200);
-        }
-
+        const {
+            cardWidth,
+            cardHeight
+        } = this.calculateCardDimensions();
         const cardDepth = 0.01;
 
         // Create new geometry with updated dimensions

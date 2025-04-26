@@ -2,7 +2,23 @@
 // starfield.js
 //
 class Starfield {
+
+    //==============================================================================================
+    /**
+     * Creates new starfield instance -- call init() to start the starfield effect
+     * @constructor
+     * @description Initializes a Three.js scene with a starfield background effect with triggerable warp effect
+     * @property {THREE.Scene} scene - The Three.js scene containing the starfield
+     * @property {THREE.PerspectiveCamera} camera - The camera used to view the scene
+     * @property {THREE.WebGLRenderer} renderer - The renderer used to display the scene
+     * @property {Array} stars - Array to store star objects
+     * @property {number} starCount - Number of stars in the field
+     * @property {THREE.Points} starField - The points object containing all stars
+     * @property {number} warpIntensity - Current intensity of the warp effect (0-1)
+     * @property {HTMLElement} cardContainer - Reference to the card container element
+     */
     constructor() {
+        // Three.js setup
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color('#1A1A1A');
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -11,6 +27,7 @@ class Starfield {
             antialias: true
         });
 
+        // Star configuration
         this.stars = [];
         this.starCount = 2000;
         this.starField = null;
@@ -21,7 +38,13 @@ class Starfield {
         this.animate();
     }
 
+    //==============================================================================================
+    /**
+     * Initialize the starfield effect
+     * @description Sets up the renderer, creates the star field and trails, and sets up event listeners
+     */
     init() {
+        // Renderer setup
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.camera.position.z = 5;
 
@@ -108,6 +131,11 @@ class Starfield {
         });
     }
 
+    //==============================================================================================
+    /**
+     * Set up click detection for warp effect
+     * @description Exposes a global function to trigger the warp effect
+     */
     setupClickDetection() {
         // Allow card to trigger warp pulse
         window.triggerStarfieldWarp = () => {
@@ -115,6 +143,11 @@ class Starfield {
         };
     }
 
+    //==============================================================================================
+    /**
+     * Trigger warp effect
+     * @description Initiates a warp pulse that fades out over 0.5 seconds
+     */
     triggerWarpPulse() {
         // Set warp intensity to 1 immediately
         this.warpIntensity = 1;
@@ -138,6 +171,12 @@ class Starfield {
         requestAnimationFrame(fadeOut);
     }
 
+    //==============================================================================================
+    /**
+     * Create a circular texture for stars
+     * @description Creates a canvas with a radial gradient for star appearance
+     * @returns {THREE.Texture} The created texture
+     */
     createCircleTexture() {
         const canvas = document.createElement('canvas');
         canvas.width = 32;
@@ -157,6 +196,11 @@ class Starfield {
         return texture;
     }
 
+    //==============================================================================================
+    /**
+     * Main animation loop
+     * @description Updates star positions, trails, and visual effects
+     */
     animate() {
         requestAnimationFrame(() => this.animate());
 
