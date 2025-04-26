@@ -23,9 +23,9 @@ class Card {
      * @property {Object} targetRotation - Target rotation for smooth animation
      * @property {Object} position - Current card position
      * @property {Object} targetPosition - Target position for smooth animation
-     * @property {number} springStrength - Spring force for position return
-     * @property {number} springDamping - Damping factor for spring animation
-     * @property {Object} velocity - Current velocity for spring animation
+     * @property {number} springStrength - Spring force for position return (after drag)
+     * @property {number} springDamping - Damping factor for spring animation (after drag)
+     * @property {Object} velocity - Current velocity for spring animation (after drag)
      * @property {Object} positionLimits - Maximum allowed position values
      * @property {number} dragResistance - Resistance factor for dragging
      * @property {number} flipDuration - Duration of flip animation in seconds
@@ -36,6 +36,7 @@ class Card {
     constructor() {
         // DOM elements
         this.container = document.querySelector('.card-container');
+        this.tapIndicator = document.querySelector('.tap-indicator');
 
         // State flags
         this.isFlipped = false;
@@ -105,6 +106,14 @@ class Card {
     init() {
         // Scene setup
         this.scene = new THREE.Scene();
+
+        // Show card tap CTA indicator after 2.25s; hide after 14.2s
+        this._showTapTimeout = setTimeout(() => {
+            this.tapIndicator.classList.add('visible');
+            this._hideTapTimeout = setTimeout(() => {
+                this.tapIndicator.classList.remove('visible');
+            }, 14200);
+        }, 2250);
 
         // Use window dimensions for proper viewport
         const aspect = window.innerWidth / window.innerHeight;
@@ -235,6 +244,13 @@ class Card {
 
             if (!isDragGesture && this.isMouseOverCard(e)) {
                 this.flipCard();
+                // Remove the tap indicator immediately
+                if (this.tapIndicator) {
+                    this.tapIndicator.classList.remove('visible');
+                    // Clear any pending show/hide timeouts
+                    clearTimeout(this._showTapTimeout);
+                    clearTimeout(this._hideTapTimeout);
+                }
                 // Only trigger warp effect if we actually clicked the card
                 if (window.triggerStarfieldWarp) {
                     window.triggerStarfieldWarp();
@@ -489,6 +505,9 @@ class Card {
         this.card.position.x = this.position.x;
         this.card.position.y = this.position.y;
 
+        // Update tap indicator position
+        this.updateTapIndicatorPosition();
+
         // render & queue next frame
         this.renderer.render(this.scene, this.camera);
         requestAnimationFrame(this.animate.bind(this));
@@ -529,6 +548,39 @@ class Card {
         // Update the card's geometry
         this.card.geometry.dispose(); // Clean up old geometry
         this.card.geometry = newGeometry;
+    }
+
+    //==============================================================================================
+    /**
+     * Update tap indicator position
+     * @description Updates the position of the tap indicator based on the three.js card's position and rotation
+     */
+    updateTapIndicatorPosition() {
+        if (!this.card) return;
+
+        // Get the card's bottom right corner in world space
+        const cardSize = this.card.geometry.parameters;
+        const bottomRight = new THREE.Vector3(
+            cardSize.width / 2,
+            -cardSize.height / 2,
+            0
+        );
+
+        // Apply the card's current position and rotation
+        bottomRight.applyMatrix4(this.card.matrixWorld);
+
+        // Convert to screen coordinates
+        const screenPosition = bottomRight.project(this.camera);
+
+        // Convert to CSS coordinates
+        const x = (screenPosition.x * 0.5 + 0.5) * window.innerWidth;
+        const y = (-screenPosition.y * 0.5 + 0.5) * window.innerHeight;
+
+        // Position the indicator
+        this.tapIndicator.style.left = `${x}px`;
+        this.tapIndicator.style.top = `${y}px`;
+        this.tapIndicator.style.right = 'auto';
+        this.tapIndicator.style.bottom = 'auto';
     }
 }
 

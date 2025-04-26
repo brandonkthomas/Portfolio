@@ -1,0 +1,112 @@
+/* Tap animation indicator */
+.tap-indicator {
+    position: absolute;
+    width: 48px;
+    height: 48px;
+    z-index: 3;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+    margin-left: -24px;
+    margin-top: -24px;
+}
+
+.tap-indicator.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.tap-indicator svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* Hide dots initially */
+#tap-cursor-clickrays circle {
+    opacity: 0;
+    transform-origin: center;
+}
+
+/* Ray animations */
+@keyframes dot-burst {
+
+    0%,
+    6% {
+        opacity: 0;
+        transform: translate(0, 0);
+    }
+
+    8% {
+        opacity: 1;
+        transform: translate(0, 0);
+    }
+
+    25% {
+        opacity: 0;
+        transform: translate(var(--dot-x), var(--dot-y));
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(var(--dot-x), var(--dot-y));
+    }
+}
+
+/* Individual dot movement directions */
+#rr1 {
+    --dot-x: -200px;
+    --dot-y: 80px;
+}
+
+#rr2 {
+    --dot-x: -120px;
+    --dot-y: -120px;
+}
+
+#rr3 {
+    --dot-x: 80px;
+    --dot-y: -200px;
+}
+
+/* Main cursor animation */
+#tap-cursor-main {
+    transform-origin: center;
+    animation: tap-cursor-click 1.5s infinite;
+}
+
+@keyframes tap-cursor-click {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    10% {
+        transform: scale(0.85);
+        opacity: 0.7;
+    }
+
+    20% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+
+    30% {
+        transform: scale(1);
+    }
+}
+
+/* Trigger dot animations when cursor clicks */
+#tap-cursor-main:not(:hover)~#tap-cursor-clickrays circle {
+    animation: dot-burst 1.5s infinite;
+}
+
+/* Animation delay to sync with cursor click */
+#rr1,
+#rr2,
+#rr3 {
+    animation-delay: 1.6s !important;
+}
