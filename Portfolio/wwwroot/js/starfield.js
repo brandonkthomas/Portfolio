@@ -29,13 +29,29 @@ class Starfield {
 
         // Star configuration
         this.stars = [];
-        this.starCount = 2000;
+        this.starCount = this.detectMobile() ? 1500 : 2000;
         this.starField = null;
         this.warpIntensity = 0;
         this.cardContainer = document.querySelector('.card-container');
 
         this.init();
         this.animate();
+    }
+
+    //==============================================================================================
+    /**
+     * Detect if this is a mobile browser
+     * @description Checks for touch capability and screen size
+     * @returns {boolean} True if device is mobile
+     */
+    detectMobile() {
+        // Check if device has touch capability
+        const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+        // Check screen width (768px as common breakpoint)
+        const isSmallScreen = window.innerWidth <= 768;
+
+        return hasTouch && isSmallScreen;
     }
 
     //==============================================================================================
@@ -99,7 +115,7 @@ class Starfield {
         geometry.setAttribute('opacity', new THREE.Float32BufferAttribute(opacities, 1));
 
         const material = new THREE.PointsMaterial({
-            size: 0.15,
+            size: this.detectMobile() ? 0.225 : 0.15, // mobile-specific size for better visibility
             vertexColors: true,
             transparent: true,
             map: this.createCircleTexture(),
@@ -135,6 +151,7 @@ class Starfield {
             this.camera.aspect = window.innerWidth / window.innerHeight;
             this.camera.updateProjectionMatrix();
             this.renderer.setSize(window.innerWidth, window.innerHeight);
+            this.renderer.setPixelRatio(window.devicePixelRatio); // mobile-specific pixel ratio for better visibility
         });
     }
 
