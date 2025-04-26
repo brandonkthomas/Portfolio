@@ -175,8 +175,8 @@ class Card {
             return texture;
         };
 
-        const frontTexture = loadTexture('/images/card-front.png');
-        const backTexture = loadTexture(isMobile() ? '/images/card-back-mobile.png' : '/images/card-back-desktop.png');
+        const frontTexture = loadTexture('/assets/images/card/card-front.png');
+        const backTexture = loadTexture(isMobile() ? '/assets/images/card/card-back-mobile.png' : '/assets/images/card/card-back-desktop.png');
 
         // Create materials with proper settings
         const materials = [
