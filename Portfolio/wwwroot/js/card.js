@@ -8,6 +8,8 @@ import {
     isMobile
 } from './common.js';
 
+// import Stats from 'https://cdnjs.cloudflare.com/ajax/libs/stats.js/r17/Stats.min.js';
+
 class Card {
 
     //==============================================================================================
@@ -37,6 +39,15 @@ class Card {
         // DOM elements
         this.container = document.querySelector('.card-container');
         this.tapIndicator = document.querySelector('.tap-indicator');
+
+        // // Performance monitoring
+        // this.stats = new Stats();
+        // this.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+        // document.body.appendChild(this.stats.dom);
+        // this.stats.dom.style.position = 'fixed';
+        // this.stats.dom.style.right = '0px';
+        // this.stats.dom.style.left = 'auto';
+        // this.stats.dom.style.top = '0px';
 
         // State flags
         this.isFlipped = false;
@@ -466,6 +477,9 @@ class Card {
      * @param {number} timestamp - Current animation timestamp
      */
     animate(timestamp) {
+        // Begin stats monitoring for this frame
+        this.stats.begin();
+
         // first frame: seed lastTimestamp so it's never undefined
         if (this.lastTimestamp === undefined) {
             this.lastTimestamp = timestamp;
@@ -510,6 +524,10 @@ class Card {
 
         // render & queue next frame
         this.renderer.render(this.scene, this.camera);
+
+        // End stats monitoring for this frame
+        this.stats.end();
+
         requestAnimationFrame(this.animate.bind(this));
     }
 
