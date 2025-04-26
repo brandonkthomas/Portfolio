@@ -1,7 +1,6 @@
 {
     "version": "0.2.0",
-    "configurations": [
-        {
+    "configurations": [{
             "name": ".NET Core Launch",
             "type": "coreclr",
             "request": "launch",
@@ -37,10 +36,8 @@
             "preLaunchTask": "run"
         }
     ],
-    "compounds": [
-        {
-            "name": "Launch .NET and Chrome",
-            "configurations": [".NET Core Launch", "Launch Chrome against localhost"]
-        }
-    ]
+    "compounds": [{
+        "name": "Launch .NET and Chrome",
+        "configurations": [".NET Core Launch", "Launch Chrome against localhost"]
+    }]
 }
