@@ -478,7 +478,7 @@ class Card {
      */
     animate(timestamp) {
         // Begin stats monitoring for this frame
-        this.stats.begin();
+        // this.stats.begin();
 
         // first frame: seed lastTimestamp so it's never undefined
         if (this.lastTimestamp === undefined) {
@@ -526,7 +526,7 @@ class Card {
         this.renderer.render(this.scene, this.camera);
 
         // End stats monitoring for this frame
-        this.stats.end();
+        // this.stats.end();
 
         requestAnimationFrame(this.animate.bind(this));
     }
