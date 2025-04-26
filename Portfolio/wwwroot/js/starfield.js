@@ -5,7 +5,7 @@
  */
 
 import {
-    detectMobile
+    isMobile
 } from './common.js';
 
 class Starfield {
@@ -36,11 +36,11 @@ class Starfield {
 
         // Star configuration
         this.stars = [];
-        this.starCount = detectMobile() ? 1500 : 2000;
+        this.starCount = isMobile() ? 1500 : 2000;
         this.starField = null;
         this.warpIntensity = 0;
         this.cardContainer = document.querySelector('.card-container');
-        this.starSize = detectMobile() ? 0.2 : 0.15;
+        this.starSize = isMobile() ? 0.2 : 0.15;
 
         // Konami code setup
         this.konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
@@ -326,7 +326,7 @@ class Starfield {
 
         // Subtle glow effect: scale star size and trail opacity during warp
         this.starField.material.size = this.starSize + this.warpIntensity * 0.05;
-        this.trailMaterial.opacity = (detectMobile() ? 0.225 : 0.1) + this.warpIntensity * 0.05;
+        this.trailMaterial.opacity = (isMobile() ? 0.225 : 0.1) + this.warpIntensity * 0.05;
 
         this.camera.position.z = 5;
         this.renderer.render(this.scene, this.camera);

@@ -5,7 +5,7 @@
  */
 
 import {
-    detectMobile
+    isMobile
 } from './common.js';
 
 class Card {
@@ -156,7 +156,7 @@ class Card {
         };
 
         const frontTexture = loadTexture('/images/card-front.png');
-        const backTexture = loadTexture(detectMobile() ? '/images/card-back-mobile.png' : '/images/card-back-desktop.png');
+        const backTexture = loadTexture(isMobile() ? '/images/card-back-mobile.png' : '/images/card-back-desktop.png');
 
         // Create materials with proper settings
         const materials = [
@@ -197,7 +197,7 @@ class Card {
         const aspect = window.innerWidth / window.innerHeight;
         let cardWidth, cardHeight;
 
-        if (detectMobile()) {
+        if (isMobile()) {
             // On mobile, directly use 90% of viewport width
             const fov = 45; // matches camera FOV
             const distance = 2; // matches camera.position.z

@@ -7,11 +7,11 @@
 //==============================================================================================
 /**
  * Detects if the current device is a mobile device
- * @function detectMobile
- * @returns {boolean} True if the device is a mobile device, false otherwise
+ * @function isMobile
+ * @returns {boolean} true if mobile; else false
  * @description Checks for touch capability and screen width to determine if device is mobile
  */
-export function detectMobile() {
+export function isMobile() {
     // Check if device has touch capability
     const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
