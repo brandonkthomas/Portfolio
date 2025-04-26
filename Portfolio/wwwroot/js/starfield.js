@@ -33,6 +33,7 @@ class Starfield {
         this.starField = null;
         this.warpIntensity = 0;
         this.cardContainer = document.querySelector('.card-container');
+        this.starSize = this.detectMobile() ? 0.225 : 0.15;
 
         this.init();
         this.animate();
@@ -101,8 +102,8 @@ class Starfield {
             const color = generateOffWhiteColor();
             colors.push(color.r, color.g, color.b, 1.0); // Add alpha channel
 
-            // Random speed between 0.01 and 0.02
-            const speed = 0.01 + Math.random() * 0.01;
+            // Random speed between 0.01 and 0.05
+            const speed = 0.01 + Math.random() * 0.05;
             speeds.push(speed);
             originalSpeeds.push(speed);
             opacities.push(1.0); // Start fully opaque
@@ -115,7 +116,7 @@ class Starfield {
         geometry.setAttribute('opacity', new THREE.Float32BufferAttribute(opacities, 1));
 
         const material = new THREE.PointsMaterial({
-            size: this.detectMobile() ? 0.225 : 0.15, // mobile-specific size for better visibility
+            size: this.starSize, // mobile-specific size for better visibility
             vertexColors: true,
             transparent: true,
             map: this.createCircleTexture(),
@@ -228,6 +229,11 @@ class Starfield {
     animate() {
         requestAnimationFrame(() => this.animate());
 
+        // Calculate frame delta time in seconds
+        const now = performance.now();
+        const deltaTime = (now - (this.lastFrameTime || now)) / 1000;
+        this.lastFrameTime = now;
+
         const positions = this.starField.geometry.attributes.position;
         const speeds = this.starField.geometry.attributes.speed;
         const originalSpeeds = this.starField.geometry.attributes.originalSpeed;
@@ -238,14 +244,14 @@ class Starfield {
             const warpSpeed = originalSpeeds.array[i] * (1 + this.warpIntensity * 299);
             speeds.array[i] = warpSpeed;
 
-            // Move star
-            positions.array[i * 3 + 2] += speeds.array[i];
+            // Move star using delta time
+            positions.array[i * 3 + 2] += speeds.array[i] * deltaTime * 60; // Scale by 60 to maintain original speed
 
             // Apply stretch effect when warping - only stretch along Z axis
             if (this.warpIntensity > 0) {
                 const stretchFactor = 1 + this.warpIntensity * 1;
                 // Apply stretch by moving the star an additional distance
-                positions.array[i * 3 + 2] += speeds.array[i] * (stretchFactor - 1);
+                positions.array[i * 3 + 2] += speeds.array[i] * (stretchFactor - 1) * deltaTime * 60;
             }
 
             // Reset star if it's too close
@@ -267,9 +273,9 @@ class Starfield {
                 }
             }
 
-            // Handle fade in only when not warping
+            // Handle fade in only when not warping, using delta time
             if (this.warpIntensity === 0 && colors.array[i * 4 + 3] < 1) {
-                colors.array[i * 4 + 3] = Math.min(1, colors.array[i * 4 + 3] + 0.00667); // 150ms fade in (0.00667 per frame at 60fps)
+                colors.array[i * 4 + 3] = Math.min(1, colors.array[i * 4 + 3] + 0.4 * deltaTime); // 0.4 units per second
             }
         }
 
@@ -299,8 +305,8 @@ class Starfield {
         this.trailGeometry.attributes.position.needsUpdate = true;
 
         // Subtle glow effect: scale star size and trail opacity during warp
-        this.starField.material.size = 0.15 + this.warpIntensity * 0.05;
-        this.trailMaterial.opacity = 0.1 + this.warpIntensity * 0.05;
+        this.starField.material.size = this.starSize + this.warpIntensity * 0.05;
+        this.trailMaterial.opacity = (this.detectMobile() ? 0.225 : 0.1) + this.warpIntensity * 0.05;
 
         this.camera.position.z = 5;
         this.renderer.render(this.scene, this.camera);
