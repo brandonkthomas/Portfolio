@@ -47,6 +47,7 @@ body {
     color: #1A1A1A;
 }
 
+/* Starfield container */
 .starfield-container {
     position: fixed;
     width: 100%;
@@ -65,6 +66,7 @@ body {
     z-index: 1;
 }
 
+/* Card container */
 .card-container {
     position: fixed;
     width: 100%;
@@ -73,16 +75,6 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-}
-
-.card,
-.card-inner,
-.card-front,
-.card-back,
-.card.flipped,
-.card-container:hover .card-inner,
-.card.flipped .card-inner {
-    all: unset;
 }
 
 /* Ensure the Three.js canvas takes full container space */
@@ -95,6 +87,7 @@ body {
     left: 0;
 }
 
+/* URL display */
 .url-display {
     position: fixed;
     top: 1rem;
