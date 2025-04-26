@@ -1,6 +1,26 @@
-﻿//
-// site.js
-//
+﻿/**
+ * common.js
+ * @fileoverview Main site JavaScript functionality
+ * @description Handles mobile detection, URL path display, navigation
+ */
+
+//==============================================================================================
+/**
+ * Detects if the current device is a mobile device
+ * @function detectMobile
+ * @returns {boolean} True if the device is a mobile device, false otherwise
+ * @description Checks for touch capability and screen width to determine if device is mobile
+ */
+export function detectMobile() {
+    // Check if device has touch capability
+    const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+    // Check screen width (768px as common breakpoint)
+    const isSmallScreen = window.innerWidth <= 768;
+
+    return hasTouch && isSmallScreen;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // Update URL path display

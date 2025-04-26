@@ -1,6 +1,13 @@
-//
-// card.js
-//
+/**
+ * card.js
+ * @fileoverview 3D interactive card component
+ * @description Handles 3D card rendering, flip animations, and drag interactions
+ */
+
+import {
+    detectMobile
+} from './common.js';
+
 class Card {
 
     //==============================================================================================
@@ -25,7 +32,6 @@ class Card {
      * @property {number} flipProgress - Current progress of flip animation
      * @property {number} flipTarget - Target flip state
      * @property {number} flipStartTime - When the current flip started
-     * @property {boolean} isMobile - Whether the device is mobile
      */
     constructor() {
         // DOM elements
@@ -88,26 +94,7 @@ class Card {
         this.flipTarget = 0;
         this.flipStartTime = null; // only start timing on user click
 
-        // Mobile detection
-        this.isMobile = this.detectMobile();
-
         this.init();
-    }
-
-    //==============================================================================================
-    /**
-     * Detect if this is a mobile browser
-     * @description Checks for touch capability and screen size
-     * @returns {boolean} True if device is mobile
-     */
-    detectMobile() {
-        // Check if device has touch capability
-        const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-
-        // Check screen width (768px as common breakpoint)
-        const isSmallScreen = window.innerWidth <= 768;
-
-        return hasTouch && isSmallScreen;
     }
 
     //==============================================================================================
@@ -210,7 +197,7 @@ class Card {
         const aspect = window.innerWidth / window.innerHeight;
         let cardWidth, cardHeight;
 
-        if (this.isMobile) {
+        if (detectMobile()) {
             // On mobile, directly use 90% of viewport width
             const fov = 45; // matches camera FOV
             const distance = 2; // matches camera.position.z
@@ -513,9 +500,6 @@ class Card {
      * @description Updates mobile status, card dimensions, renderer size, and camera settings on window resize
      */
     onWindowResize() {
-        // Update mobile detection
-        this.isMobile = this.detectMobile();
-
         // Update camera aspect ratio
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
