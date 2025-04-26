@@ -1,9 +1,24 @@
 using Microsoft.AspNetCore.HttpOverrides;
+using WebOptimizer;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+// Add WebOptimizer services
+builder.Services.AddWebOptimizer(pipeline =>
+{
+    // Only minify in production
+    if (!builder.Environment.IsDevelopment())
+    {
+        // Minify all CSS files
+        pipeline.MinifyCssFiles();
+        
+        // Minify all JavaScript files
+        pipeline.MinifyJsFiles();
+    }
+});
 
 // Configure forwarded headers for working behind a proxy like Cloudflare
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
@@ -28,6 +43,9 @@ if (!app.Environment.IsDevelopment())
 
 // Use forwarded headers - place this early in the pipeline
 app.UseForwardedHeaders();
+
+// Add WebOptimizer middleware
+app.UseWebOptimizer();
 
 // app.UseHttpsRedirection();
 app.UseStaticFiles();
