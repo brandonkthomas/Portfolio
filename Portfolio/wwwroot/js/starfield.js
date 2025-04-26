@@ -54,6 +54,7 @@ class Starfield {
         const colors = [];
         const speeds = [];
         const originalSpeeds = []; // Store original speeds for warp effect
+        const opacities = []; // Store opacity values for fade effect
 
         const generateOffWhiteColor = () => {
             // Generate subtle variations of white
@@ -68,10 +69,12 @@ class Starfield {
 
         // Create a cylindrical distribution of stars
         for (let i = 0; i < this.starCount; i++) {
+            // Create an even distribution along Z-axis first
+            const z = -50 + (i / this.starCount) * 60; // Distribute evenly from -50 to +10 (matches reset point in animation code)
+
             // Cylindrical coordinates with wider distribution
             const radius = 8 + Math.random() * 20; // Increased range for more spread
             const theta = Math.random() * Math.PI * 2;
-            const z = Math.random() * 150 - 75; // Increased depth range for more spacing
 
             // Convert to Cartesian coordinates
             const x = radius * Math.cos(theta);
@@ -80,26 +83,30 @@ class Starfield {
             positions.push(x, y, z);
 
             const color = generateOffWhiteColor();
-            colors.push(color.r, color.g, color.b);
+            colors.push(color.r, color.g, color.b, 1.0); // Add alpha channel
 
-            // Random speed between 0.02 and 0.06 (20% of original 0.1-0.3)
-            const speed = 0.005 + Math.random() * 0.01;
+            // Random speed between 0.01 and 0.02
+            const speed = 0.01 + Math.random() * 0.01;
             speeds.push(speed);
             originalSpeeds.push(speed);
+            opacities.push(1.0); // Start fully opaque
         }
 
         geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-        geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+        geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 4)); // 4 components for RGBA
         geometry.setAttribute('speed', new THREE.Float32BufferAttribute(speeds, 1));
         geometry.setAttribute('originalSpeed', new THREE.Float32BufferAttribute(originalSpeeds, 1));
+        geometry.setAttribute('opacity', new THREE.Float32BufferAttribute(opacities, 1));
 
         const material = new THREE.PointsMaterial({
-            size: 0.15, // Slightly larger stars to compensate for fewer of them
+            size: 0.15,
             vertexColors: true,
             transparent: true,
             map: this.createCircleTexture(),
             alphaTest: 0.1,
-            sizeAttenuation: true
+            sizeAttenuation: true,
+            blending: THREE.AdditiveBlending, // used for fade-in when resetting stars to back of scene
+            depthWrite: false
         });
 
         this.starField = new THREE.Points(geometry, material);
@@ -207,6 +214,7 @@ class Starfield {
         const positions = this.starField.geometry.attributes.position;
         const speeds = this.starField.geometry.attributes.speed;
         const originalSpeeds = this.starField.geometry.attributes.originalSpeed;
+        const colors = this.starField.geometry.attributes.color;
 
         for (let i = 0; i < positions.count; i++) {
             // Calculate warp speed (up to 50x faster when warping)
@@ -226,16 +234,31 @@ class Starfield {
             // Reset star if it's too close
             if (positions.array[i * 3 + 2] > 10) {
                 positions.array[i * 3 + 2] = -50;
+
                 // Reset position maintaining original X and Y
                 const radius = 8 + Math.random() * 20;
                 const theta = Math.random() * Math.PI * 2;
                 positions.array[i * 3 + 0] = radius * Math.cos(theta);
                 positions.array[i * 3 + 1] = radius * Math.sin(theta);
+
+                // Only start fade in if we're not warping 
+                // (0.05 for a little bit of buffer toward the end when the warp is slowing down)
+                if (this.warpIntensity < 0.05) {
+                    colors.array[i * 4 + 3] = 0; // Set alpha to 0
+                } else {
+                    colors.array[i * 4 + 3] = 1; // Keep fully opaque during warp
+                }
+            }
+
+            // Handle fade in only when not warping
+            if (this.warpIntensity === 0 && colors.array[i * 4 + 3] < 1) {
+                colors.array[i * 4 + 3] = Math.min(1, colors.array[i * 4 + 3] + 0.00667); // 150ms fade in (0.00667 per frame at 60fps)
             }
         }
 
         positions.needsUpdate = true;
         speeds.needsUpdate = true;
+        colors.needsUpdate = true;
 
         // Update subtle trails during warp pulse
         const trailPositions = this.trailGeometry.attributes.position.array;
