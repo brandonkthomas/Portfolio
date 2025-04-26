@@ -56,18 +56,18 @@
 
 /* Individual dot movement directions */
 #rr1 {
-    --dot-x: -200px;
-    --dot-y: 80px;
+    --dot-x: -750px;
+    --dot-y: 200px;
 }
 
 #rr2 {
-    --dot-x: -120px;
-    --dot-y: -120px;
+    --dot-x: -450px;
+    --dot-y: -450px;
 }
 
 #rr3 {
-    --dot-x: 80px;
-    --dot-y: -200px;
+    --dot-x: 300px;
+    --dot-y: -750px;
 }
 
 /* Main cursor animation */
