@@ -35,6 +35,90 @@ class Starfield {
         this.cardContainer = document.querySelector('.card-container');
         this.starSize = this.detectMobile() ? 0.2 : 0.15;
 
+        // Konami code setup
+        this.konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+        this.konamiIndex = 0;
+        this.isKonamiWarpActive = false;
+        this.originalBackgroundColor = this.scene.background.clone();
+
+        // Create gradient texture for background
+        this.gradientRenderTarget = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight);
+        this.gradientScene = new THREE.Scene();
+        this.gradientCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+        // Create gradient mesh
+        const gradientGeometry = new THREE.PlaneGeometry(2, 2);
+        const gradientMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                time: {
+                    value: 0
+                },
+                resolution: {
+                    value: new THREE.Vector2(window.innerWidth, window.innerHeight)
+                }
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform float time;
+                uniform vec2 resolution;
+                varying vec2 vUv;
+                
+                // Define more distinct colors
+                vec3 color1 = vec3(1.0, 0.0, 0.8);   // Hot Pink
+                vec3 color2 = vec3(0.0, 1.0, 1.0);   // Cyan
+                vec3 color3 = vec3(0.8, 0.0, 1.0);   // Purple
+                vec3 color4 = vec3(1.0, 0.8, 0.0);   // Gold
+                vec3 color5 = vec3(0.0, 0.8, 0.4);   // Emerald
+                
+                vec2 rotate2D(vec2 p, float angle) {
+                    float s = sin(angle);
+                    float c = cos(angle);
+                    return vec2(p.x * c - p.y * s, p.x * s + p.y * c);
+                }
+                
+                void main() {
+                    vec2 uv = (gl_FragCoord.xy * 2.0 - resolution.xy) / min(resolution.x, resolution.y);
+                    
+                    // Create rotating coordinate systems
+                    vec2 uv1 = rotate2D(uv, time * 0.2);
+                    vec2 uv2 = rotate2D(uv, -time * 0.3);
+                    vec2 uv3 = rotate2D(uv, time * 0.4);
+                    
+                    // Create distinct gradient regions
+                    float d1 = length(uv1) * 2.0;
+                    float d2 = length(uv2) * 1.5;
+                    float d3 = length(uv3) * 1.8;
+                    
+                    // Create animated waves
+                    float wave1 = sin(d1 * 4.0 - time) * 0.5 + 0.5;
+                    float wave2 = sin(d2 * 5.0 + time * 1.2) * 0.5 + 0.5;
+                    float wave3 = sin(d3 * 3.0 - time * 0.8) * 0.5 + 0.5;
+                    
+                    // Mix colors with sharp transitions
+                    vec3 finalColor = color1;
+                    finalColor = mix(finalColor, color2, smoothstep(0.3, 0.7, wave1));
+                    finalColor = mix(finalColor, color3, smoothstep(0.3, 0.7, wave2));
+                    finalColor = mix(finalColor, color4, smoothstep(0.3, 0.7, wave3));
+                    finalColor = mix(finalColor, color5, smoothstep(0.8, 1.0, (wave1 + wave2 + wave3) / 3.0));
+                    
+                    // Add brightness and contrast
+                    finalColor = pow(finalColor, vec3(0.8)); // Increase contrast
+                    finalColor *= 1.2; // Increase brightness
+                    
+                    gl_FragColor = vec4(finalColor, 1.0);
+                }
+            `
+        });
+
+        this.gradientMesh = new THREE.Mesh(gradientGeometry, gradientMaterial);
+        this.gradientScene.add(this.gradientMesh);
+
         this.init();
         this.animate();
     }
@@ -166,6 +250,28 @@ class Starfield {
         window.triggerStarfieldWarp = () => {
             this.triggerWarpPulse();
         };
+
+        // Add Konami code detection
+        document.addEventListener('keydown', (event) => {
+            if (this.isKonamiWarpActive) return; // Ignore inputs during Konami warp
+
+            // Check if the pressed key matches the next key in the sequence
+            if (event.key === this.konamiCode[this.konamiIndex]) {
+                this.konamiIndex++;
+
+                // If the full sequence is entered
+                if (this.konamiIndex === this.konamiCode.length) {
+                    this.triggerKonamiWarp();
+                    this.konamiIndex = 0; // Reset the sequence
+                }
+            } else {
+                this.konamiIndex = 0; // Reset on wrong input
+                // If the new key is the start of the sequence
+                if (event.key === this.konamiCode[0]) {
+                    this.konamiIndex = 1;
+                }
+            }
+        });
     }
 
     //==============================================================================================
@@ -308,8 +414,149 @@ class Starfield {
         this.starField.material.size = this.starSize + this.warpIntensity * 0.05;
         this.trailMaterial.opacity = (this.detectMobile() ? 0.225 : 0.1) + this.warpIntensity * 0.05;
 
+        // Enhanced trail effects during Konami warp
+        if (this.isKonamiWarpActive) {
+            for (let i = 0; i < positions.count; i++) {
+                const base3 = i * 3;
+                const base6 = i * 6;
+                const x = positions.array[base3];
+                const y = positions.array[base3 + 1];
+                const z = positions.array[base3 + 2];
+
+                // Create spiral effect during Konami warp
+                const time = Date.now() * 0.001;
+                const spiral = Math.sin(time + i * 0.1) * 0.5;
+                trailPositions[base6] = x + spiral;
+                trailPositions[base6 + 1] = y + spiral;
+                trailPositions[base6 + 2] = z;
+                trailPositions[base6 + 3] = x - spiral;
+                trailPositions[base6 + 4] = y - spiral;
+                trailPositions[base6 + 5] = z - (this.warpIntensity * speeds.array[i] * 10);
+            }
+            this.trailGeometry.attributes.position.needsUpdate = true;
+        }
+
+        // Update gradient background during Konami warp
+        if (this.isKonamiWarpActive) {
+            // Update gradient shader time
+            this.gradientMesh.material.uniforms.time.value = Date.now() * 0.0005; // Slowed down for more visible transitions
+
+            // Render gradient to texture
+            this.renderer.setRenderTarget(this.gradientRenderTarget);
+            this.renderer.render(this.gradientScene, this.gradientCamera);
+            this.renderer.setRenderTarget(null);
+
+            // Use gradient as background
+            this.scene.background = this.gradientRenderTarget.texture;
+
+            // Update star colors to match gradient regions
+            const colors = this.starField.geometry.attributes.color;
+            const positions = this.starField.geometry.attributes.position;
+            const time = Date.now() * 0.001;
+
+            for (let i = 0; i < colors.count; i++) {
+                const x = positions.array[i * 3];
+                const y = positions.array[i * 3 + 1];
+                const z = positions.array[i * 3 + 2];
+
+                // Create more dramatic color variations
+                const angle = Math.atan2(y, x);
+                const dist = Math.sqrt(x * x + y * y);
+
+                const hue = (angle / (Math.PI * 2) + time * 0.1) % 1;
+                const saturation = Math.min(1, dist * 0.5 + 0.5);
+                const lightness = 0.7 + Math.sin(z * 0.1 + time) * 0.3;
+
+                const color = new THREE.Color();
+                color.setHSL(hue, saturation, lightness);
+
+                colors.array[i * 4] = color.r;
+                colors.array[i * 4 + 1] = color.g;
+                colors.array[i * 4 + 2] = color.b;
+            }
+            colors.needsUpdate = true;
+        }
+
         this.camera.position.z = 5;
         this.renderer.render(this.scene, this.camera);
+    }
+
+    //==============================================================================================
+    /**
+     * Trigger Konami warp effect
+     * @description Initiates a Konami warp that fades out over 5 seconds
+     */
+    triggerKonamiWarp() {
+        if (this.isKonamiWarpActive) return;
+
+        console.log('triggerKonamiWarp');
+
+        this.isKonamiWarpActive = true;
+        this.warpIntensity = 3; // Reduced from 5 to slow down the streaks
+
+        // Store original star properties
+        const originalStarSize = this.starSize;
+        const originalTrailOpacity = this.trailMaterial.opacity;
+
+        // Update star material for blur effect
+        this.starField.material.map = this.createBlurredStarTexture();
+        this.starField.material.size = this.starSize * 4;
+
+        // Update trail material for blur effect
+        this.trailMaterial.opacity = 0.3;
+
+        // Return to normal after 5 seconds
+        setTimeout(() => {
+            this.isKonamiWarpActive = false;
+            this.warpIntensity = 0;
+            this.scene.background = this.originalBackgroundColor;
+            this.starField.material.size = originalStarSize;
+            this.trailMaterial.opacity = originalTrailOpacity;
+            this.starField.material.map = this.createCircleTexture(); // Reset to original texture
+
+            // Reset star colors to white
+            const colors = this.starField.geometry.attributes.color;
+            for (let i = 0; i < colors.count; i++) {
+                colors.array[i * 4] = 1;
+                colors.array[i * 4 + 1] = 1;
+                colors.array[i * 4 + 2] = 1;
+                colors.array[i * 4 + 3] = 1;
+            }
+            colors.needsUpdate = true;
+        }, 5000);
+    }
+
+    //==============================================================================================
+    /**
+     * Create a blurred star texture for Konami warp effect
+     * @description Creates a canvas with a radial gradient for star appearance
+     * @returns {THREE.Texture} The created texture
+     */
+    createBlurredStarTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 64; // Larger canvas for better blur effect
+        canvas.height = 64;
+
+        const context = canvas.getContext('2d');
+
+        // Create main glow
+        const gradient = context.createRadialGradient(32, 32, 0, 32, 32, 32);
+        gradient.addColorStop(0, 'rgba(255,255,255,1)');
+        gradient.addColorStop(0.3, 'rgba(255,255,255,0.8)');
+        gradient.addColorStop(0.5, 'rgba(255,255,255,0.4)');
+        gradient.addColorStop(0.7, 'rgba(255,255,255,0.2)');
+        gradient.addColorStop(1, 'rgba(255,255,255,0)');
+
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, 64, 64);
+
+        // Apply blur effect
+        context.filter = 'blur(4px)';
+        context.drawImage(canvas, 0, 0);
+
+        const texture = new THREE.Texture(canvas);
+        texture.needsUpdate = true;
+        return texture;
     }
 }
 
