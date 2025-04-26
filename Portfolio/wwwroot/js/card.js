@@ -156,7 +156,7 @@ class Card {
         };
 
         const frontTexture = loadTexture('/images/card-front.png');
-        const backTexture = loadTexture('/images/card-back.png');
+        const backTexture = loadTexture(detectMobile() ? '/images/card-back-mobile.png' : '/images/card-back-desktop.png');
 
         // Create materials with proper settings
         const materials = [
