@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.HttpOverrides;
 using WebOptimizer;
+using NUglify;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,8 +16,13 @@ builder.Services.AddWebOptimizer(pipeline =>
         // Minify all CSS files
         pipeline.MinifyCssFiles();
         
-        // Minify all JavaScript files
-        pipeline.MinifyJsFiles();
+        // Minify all JavaScript files with name mangling enabled
+        pipeline.MinifyJsFiles(new NUglify.JavaScript.CodeSettings 
+        {
+            MinifyCode = true,
+            LocalRenaming = NUglify.JavaScript.LocalRenaming.CrunchAll, // Enable variable/function name mangling
+            PreserveFunctionNames = false // Allow function names to be mangled
+        });
     }
 });
 
