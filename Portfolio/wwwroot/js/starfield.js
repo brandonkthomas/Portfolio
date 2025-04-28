@@ -71,11 +71,10 @@ class Starfield {
         const originalSpeeds = []; // Store original speeds for warp effect
         const opacities = []; // Store opacity values for fade effect
 
-        const generateOffWhiteColor = () => {
-            // Generate subtle variations of white
-            const hue = Math.random() * 360; // Any hue
-            const saturation = Math.random() * 0.1; // Very low saturation (0-10%)
-            const lightness = 0.95 + Math.random() * 0.05; // Very high lightness (95-100%)
+        const generateStarColor = () => {
+            const hue = Math.random() * 360; // Full hue range for rainbow
+            const saturation = 0.08 + Math.random() * 0.05; // Low saturation (8-15%)
+            const lightness = 0.5 + Math.random() * 0.2; // Medium-high lightness (50-70%)
 
             const color = new THREE.Color();
             color.setHSL(hue / 360, saturation, lightness);
@@ -97,7 +96,7 @@ class Starfield {
 
             positions.push(x, y, z);
 
-            const color = generateOffWhiteColor();
+            const color = generateStarColor();
             colors.push(color.r, color.g, color.b, 1.0); // Add alpha channel
 
             // Random speed between 0.01 and 0.05
