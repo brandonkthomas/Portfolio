@@ -28,6 +28,7 @@ class Starfield {
      * @property {number} warpIntensity - Current intensity of the warp effect (0-1)
      * @property {HTMLElement} cardContainer - Reference to the card container element
      * @property {number} minFrameInterval - Minimum frame interval to maintain 120fps
+     * @property {number} maxFrameInterval - Maximum frame interval to prevent large gaps
      */
     constructor() {
         // Three.js setup
@@ -59,7 +60,8 @@ class Starfield {
         this.init();
 
         // Cap FPS to 120 without affecting motion timing
-        this.minFrameInterval = 1000 / 120; // 1000ms / 120fps = 8.33ms per frame max
+        this.minFrameInterval = 1000 / 120; // 1000ms / 120fps = ~8.33ms per frame max
+        this.maxFrameInterval = 100;    // clamp large resume gaps to 100ms to prevent resets
         this.animate();
     }
 
@@ -187,18 +189,20 @@ class Starfield {
      */
     animate() {
         requestAnimationFrame(() => this.animate());
-
-        // Throttle to 120fps
         const now = performance.now();
-        if (this.lastFrameTime !== undefined) {
-            const elapsed = now - this.lastFrameTime;
-            if (elapsed < this.minFrameInterval) {
-                return;
-            }
+        // On first frame or after long background, initialize lastFrameTime
+        if (this.lastFrameTime === undefined) {
+            this.lastFrameTime = now;
+            return;
         }
-
-        // Calculate frame delta time in seconds
-        const deltaTime = (now - (this.lastFrameTime || now)) / 1000;
+        const elapsed = now - this.lastFrameTime;
+        // Skip frames too soon (capped at 120fps)
+        if (elapsed < this.minFrameInterval) {
+            return;
+        }
+        // Clamp huge elapsed times to avoid pushing all stars to the back
+        const deltaMs = Math.min(elapsed, this.maxFrameInterval);
+        const deltaTime = deltaMs / 1000;
         this.lastFrameTime = now;
 
         const positions = this.starField.geometry.attributes.position;
