@@ -1,11 +1,12 @@
 {
     "version": "0.2.0",
-    "configurations": [{
+    "configurations": [
+        {
             "name": ".NET Core Launch",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/Portfolio/bin/Debug/net6.0/Portfolio.dll",
+            "program": "${workspaceFolder}/Portfolio/bin/Debug/net8.0/Portfolio.dll",
             "args": [],
             "cwd": "${workspaceFolder}/Portfolio",
             "stopAtEntry": false,

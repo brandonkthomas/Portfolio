@@ -38,7 +38,8 @@ class Card {
     constructor() {
         // DOM elements
         this.container = document.querySelector('.card-container');
-        this.tapIndicator = document.querySelector('.tap-indicator');
+        this.tapIndicator = document.querySelector('.tap-indicator.desktop');
+        this.tapIndicatorMobile = document.querySelector('.tap-indicator.mobile');
 
         // // Performance monitoring
         // this.stats = new Stats();
@@ -120,9 +121,17 @@ class Card {
 
         // Show card tap CTA indicator after 2.25s; hide after 14.2s
         this._showTapTimeout = setTimeout(() => {
-            this.tapIndicator.classList.add('visible');
+            if (isMobile()) {
+                this.tapIndicatorMobile.classList.add('visible');
+            } else {
+                this.tapIndicator.classList.add('visible');
+            }
             this._hideTapTimeout = setTimeout(() => {
-                this.tapIndicator.classList.remove('visible');
+                if (isMobile()) {
+                    this.tapIndicatorMobile.classList.remove('visible');
+                } else {
+                    this.tapIndicator.classList.remove('visible');
+                }
             }, 14200);
         }, 2250);
 
@@ -258,6 +267,12 @@ class Card {
                 // Remove the tap indicator immediately
                 if (this.tapIndicator) {
                     this.tapIndicator.classList.remove('visible');
+                    // Clear any pending show/hide timeouts
+                    clearTimeout(this._showTapTimeout);
+                    clearTimeout(this._hideTapTimeout);
+                }
+                if (this.tapIndicatorMobile) {
+                    this.tapIndicatorMobile.classList.remove('visible');
                     // Clear any pending show/hide timeouts
                     clearTimeout(this._showTapTimeout);
                     clearTimeout(this._hideTapTimeout);
@@ -599,6 +614,11 @@ class Card {
         this.tapIndicator.style.top = `${y}px`;
         this.tapIndicator.style.right = 'auto';
         this.tapIndicator.style.bottom = 'auto';
+
+        this.tapIndicatorMobile.style.left = `${x}px`;
+        this.tapIndicatorMobile.style.top = `${y}px`;
+        this.tapIndicatorMobile.style.right = 'auto';
+        this.tapIndicatorMobile.style.bottom = 'auto';
     }
 }
 
