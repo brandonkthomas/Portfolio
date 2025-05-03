@@ -27,6 +27,7 @@ class Starfield {
      * @property {THREE.Points} starField - The points object containing all stars
      * @property {number} warpIntensity - Current intensity of the warp effect (0-1)
      * @property {HTMLElement} cardContainer - Reference to the card container element
+     * @property {number} minFrameInterval - Minimum frame interval to maintain 120fps
      */
     constructor() {
         // Three.js setup
