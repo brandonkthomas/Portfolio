@@ -56,6 +56,9 @@ class Starfield {
         this.originalBackgroundColor = this.scene.background.clone();
 
         this.init();
+
+        // Cap FPS to 120 without affecting motion timing
+        this.minFrameInterval = 1000 / 120; // 1000ms / 120fps = 8.33ms per frame max
         this.animate();
     }
 
@@ -184,8 +187,16 @@ class Starfield {
     animate() {
         requestAnimationFrame(() => this.animate());
 
-        // Calculate frame delta time in seconds
+        // Throttle to 120fps
         const now = performance.now();
+        if (this.lastFrameTime !== undefined) {
+            const elapsed = now - this.lastFrameTime;
+            if (elapsed < this.minFrameInterval) {
+                return;
+            }
+        }
+
+        // Calculate frame delta time in seconds
         const deltaTime = (now - (this.lastFrameTime || now)) / 1000;
         this.lastFrameTime = now;
 
