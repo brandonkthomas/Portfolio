@@ -296,6 +296,7 @@ class Card {
                     this.isDragging = false;
                     this.container.releasePointerCapture(e.pointerId);
                 }
+                this.container.style.cursor = 'default';
                 return;
             }
 
@@ -306,12 +307,13 @@ class Card {
             } else {
                 this.targetRotation.x = 0;
                 this.targetRotation.y = 0;
+                this.container.style.cursor = 'default';
             }
         };
 
         this.container.addEventListener('pointermove', handlePointerMove);
 
-        // Mouse leave to reset rotation
+        // Mouse leave to reset rotation and cursor
         this.container.addEventListener('mouseleave', () => {
             if (!this.isDragging) {
                 this.targetRotation.x = 0;
@@ -414,6 +416,9 @@ class Card {
         // Calculate target rotation with tilt limits
         this.targetRotation.x = -y * 0.3;
         this.targetRotation.y = x * 0.3;
+
+        // Set cursor to pointer when hovering over card
+        this.container.style.cursor = 'pointer';
     }
 
     //==============================================================================================
