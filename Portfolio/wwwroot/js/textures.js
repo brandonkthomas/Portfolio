@@ -3,6 +3,8 @@
  * @fileoverview Contains texture generation functions for the starfield
  */
 
+import { isMobile } from './common.js';
+
 //==============================================================================================
 /**
  * Creates a circular texture for stars
@@ -14,7 +16,7 @@ export function createCircleTexture() {
     canvas.width = 32;
     canvas.height = 32;
 
-    const context = canvas.getContext('2d');
+    const context = canvas.getContext('2d', { willReadFrequently: true });
     const gradient = context.createRadialGradient(16, 16, 0, 16, 16, 16);
     gradient.addColorStop(0, 'rgba(255,255,255,1)');
     gradient.addColorStop(0.5, 'rgba(255,255,255,0.5)');
@@ -40,7 +42,7 @@ export function createNebulaTexture(isBackground = false, shapeType = 0) {
     const canvas = document.createElement('canvas');
     canvas.width = 256;
     canvas.height = 256;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     
     // Fill with transparent background
     ctx.clearRect(0, 0, 256, 256);
@@ -57,17 +59,66 @@ export function createNebulaTexture(isBackground = false, shapeType = 0) {
     
     ctx.putImageData(imageData, 0, 0);
     
+    const supportsFilter = 'filter' in ctx;
+    
     // Apply multiple blur passes for smoother / watercolor-like effect
     const blurPasses = isBackground ? 5 : 3;
-    const blurAmount = isBackground ? '12px' : '8px';
+    const blurAmount = isBackground 
+        ? (supportsFilter ? '12px' : '240px')
+        : (supportsFilter ? '8px' : '160px');
     
-    for (let i = 0; i < blurPasses; i++) {
-        ctx.filter = `blur(${blurAmount})`;
-        ctx.drawImage(canvas, 0, 0);
+    if (supportsFilter) {
+        for (let i = 0; i < blurPasses; i++) {
+            ctx.filter = `blur(${blurAmount})`;
+            ctx.drawImage(canvas, 0, 0);
+        }
+    } else {
+        // Safari fallback: approximate blur via downscale/upscale passes
+        const tmpCanvas = document.createElement('canvas');
+
+        tmpCanvas.width = canvas.width;
+        tmpCanvas.height = canvas.height;
+
+        const tmpCtx = tmpCanvas.getContext('2d', { willReadFrequently: true });
+        const scaleFactor = isBackground ? 0.5 : 0.75;
+        for (let pass = 0; pass < blurPasses; pass++) {
+            // draw downscaled copy
+            tmpCtx.clearRect(0, 0, canvas.width, canvas.height);
+            tmpCtx.drawImage(
+                canvas,
+                0,
+                0,
+                canvas.width,
+                canvas.height,
+                0,
+                0,
+                canvas.width * scaleFactor,
+                canvas.height * scaleFactor
+            );
+            // draw back upscaled to canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(
+                tmpCanvas,
+                0,
+                0,
+                canvas.width * scaleFactor,
+                canvas.height * scaleFactor,
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
+        }
+
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.fillStyle = isMobile() ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.2)';
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.globalCompositeOperation = 'source-over';
     }
     
-    // Ensure edges fade to transparent with irregular mask
     ctx.filter = 'none';
+    
+    // Ensure edges fade to transparent with irregular mask
     const finalImageData = ctx.getImageData(0, 0, 256, 256);
     const finalData = finalImageData.data;
     
@@ -242,7 +293,7 @@ function drawIrregularBase(ctx, shapeType) {
                 const tempCanvas = document.createElement('canvas');
                 tempCanvas.width = width;
                 tempCanvas.height = height;
-                const tempCtx = tempCanvas.getContext('2d');
+                const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
                 
                 // Draw noise pattern
                 const imageData = tempCtx.getImageData(0, 0, width, height);
