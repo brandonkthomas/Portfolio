@@ -24,7 +24,6 @@ class Card {
      * @property {Object} rotation - Current card rotation
      * @property {Object} targetRotation - Target rotation for smooth animation
      * @property {Object} position - Current card position
-     * @property {Object} targetPosition - Target position for smooth animation
      * @property {number} springStrength - Spring force for position return (after drag)
      * @property {number} springDamping - Damping factor for spring animation (after drag)
      * @property {Object} velocity - Current velocity for spring animation (after drag)
@@ -81,10 +80,10 @@ class Card {
             x: 0,
             y: 0
         };
-        this.targetPosition = {
-            x: 0,
-            y: 0
-        };
+        // this.targetPosition = {
+        //     x: 0,
+        //     y: 0
+        // };
 
         // Spring configuration for drag return animation
         this.springStrength = 0.05; // Adjust for faster/slower return
@@ -241,7 +240,7 @@ class Card {
         } else {
             // Desktop calculation
             const viewHeight = Math.tan(Math.PI * 45 / 360) * 2;
-            cardWidth = viewHeight * aspect * 1;
+            cardWidth = viewHeight * aspect;
             cardHeight = cardWidth * (700 / 1200);
         }
 
