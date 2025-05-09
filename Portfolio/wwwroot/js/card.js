@@ -61,10 +61,10 @@ class Card {
         };
         this.dragStartTime = 0;
         this.dragDistance = 0;
-        this.dragOffset = {
-            x: 0,
-            y: 0
-        };
+        // this.dragOffset = {
+        //     x: 0,
+        //     y: 0
+        // };
 
         // Rotation state
         this.rotation = {
@@ -332,7 +332,7 @@ class Card {
                     y: e.clientY
                 };
                 // Store the initial drag offset
-                this.dragOffset = this.calculateDragOffset(e);
+                // this.dragOffset = this.calculateDragOffset(e);
 
                 // Capture the pointer to track it even outside the window
                 this.container.setPointerCapture(e.pointerId);
@@ -422,19 +422,19 @@ class Card {
     }
 
     //==============================================================================================
-    /**
-     * Calculate drag offset from mouse position
-     * @description Converts screen coordinates to normalized device coordinates
-     * @param {PointerEvent} e - The pointer event
-     * @returns {Object} Object containing x and y offsets
-     */
-    calculateDragOffset(e) {
-        const rect = this.container.getBoundingClientRect();
-        return {
-            x: ((e.clientX - rect.left) / rect.width) * 2 - 1,
-            y: -(((e.clientY - rect.top) / rect.height) * 2 - 1)
-        };
-    }
+    // /**
+    //  * Calculate drag offset from mouse position
+    //  * @description Converts screen coordinates to normalized device coordinates
+    //  * @param {PointerEvent} e - The pointer event
+    //  * @returns {Object} Object containing x and y offsets
+    //  */
+    // calculateDragOffset(e) {
+    //     const rect = this.container.getBoundingClientRect();
+    //     return {
+    //         x: ((e.clientX - rect.left) / rect.width) * 2 - 1,
+    //         y: -(((e.clientY - rect.top) / rect.height) * 2 - 1)
+    //     };
+    // }
 
     //==============================================================================================
     /**
