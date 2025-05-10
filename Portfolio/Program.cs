@@ -1,11 +1,19 @@
 using Microsoft.AspNetCore.HttpOverrides;
 using WebOptimizer;
 using NUglify;
+using Microsoft.AspNetCore.Routing;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+// Configure routing
+builder.Services.Configure<RouteOptions>(options =>
+{
+    options.LowercaseUrls = true;   // for consistency
+    options.LowercaseQueryStrings = true;
+});
 
 // Add WebOptimizer services
 builder.Services.AddWebOptimizer(pipeline =>
@@ -26,7 +34,7 @@ builder.Services.AddWebOptimizer(pipeline =>
     }
 });
 
-// Configure forwarded headers for working behind a proxy like Cloudflare
+// Configure forwarded headers for working behind a proxy (Cloudflare)
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
@@ -39,10 +47,10 @@ builder.WebHost.UseUrls("http://*:8081");
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configure HTTP request pipeline
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
+    app.UseExceptionHandler("/home/error");
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
@@ -55,13 +63,25 @@ app.UseWebOptimizer();
 
 // app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
 // app.UseAuthorization();
 
+// Map root route to HomeController Index action
 app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    name: "root",
+    pattern: "/",
+    defaults: new { controller = "Home", action = "Index" });
 
+app.MapControllerRoute(
+    name: "error",
+    pattern: "home/error",
+    defaults: new { controller = "Home", action = "Error" });
+
+// Catchall route for unknown endpoints
+app.MapControllerRoute(
+    name: "catchall",
+    pattern: "{*url}",
+    defaults: new { controller = "Home", action = "CatchAll" });
+
+// Done!
 app.Run();
