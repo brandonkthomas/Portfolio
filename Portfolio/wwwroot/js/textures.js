@@ -3,7 +3,7 @@
  * @fileoverview Contains texture generation functions for the starfield
  */
 
-import { isMobile } from './common.js';
+import { isMobile, isErrorPage } from './common.js';
 
 //==============================================================================================
 /**
@@ -144,6 +144,10 @@ function drawIrregularBase(ctx, shapeType) {
     const centerX = width / 2;
     const centerY = height / 2;
     
+    // Reduce base alpha for error pages
+    const baseAlpha = isErrorPage() ? 0.01 : 0.05;
+    const alphaMultiplier = isErrorPage() ? 0.4 : 1.0;
+    
     // Different shape bases depending on type
     switch(shapeType) {
         case 0: // Multiple overlapping blobs
@@ -159,7 +163,7 @@ function drawIrregularBase(ctx, shapeType) {
                     x, y, radius
                 );
                 
-                const blobAlpha = 0.05 + Math.random() * 0.09;
+                const blobAlpha = (baseAlpha + Math.random() * 0.09) * alphaMultiplier;
                 gradient.addColorStop(0, `rgba(255, 255, 255, ${blobAlpha})`);
                 gradient.addColorStop(0.5, `rgba(255, 255, 255, ${blobAlpha * 0.5})`);
                 gradient.addColorStop(0.9, 'rgba(255, 255, 255, 0.01)');
@@ -360,20 +364,24 @@ function drawIrregularBase(ctx, shapeType) {
  * @param {number} size - Canvas size
  */
 function applyTextureNoise(data, size) {
+    const brightnessMultiplier = isErrorPage() ? 0.3 : 1.0;
+    const alphaMultiplier = isErrorPage() ? 0.4 : 1.0;
+    
     for (let i = 0; i < data.length; i += 4) {
         if (data[i + 3] > 0) {
             // Add noise to all channels
-            const noiseAmount = 0.4;
+            const noiseAmount = isErrorPage() ? 0.2 : 0.4;
             const noise = (Math.random() - 0.5) * noiseAmount;
             
             // Alpha noise - keep low but visible values
-            data[i + 3] = Math.max(0, Math.min(140, data[i + 3] + noise * 15));
+            data[i + 3] = Math.max(0, Math.min(140, data[i + 3] * alphaMultiplier + noise * 15));
             
             // Boost RGB channels for better visibility while keeping alpha low
             if (Math.random() > 0.5) {
-                data[i] = Math.min(255, data[i] * 1.7 + noise * 20);
-                data[i + 1] = Math.min(255, data[i + 1] * 1.7 + noise * 20);
-                data[i + 2] = Math.min(255, data[i + 2] * 1.7 + noise * 20);
+                const boost = isErrorPage() ? 1.2 : 1.7;
+                data[i] = Math.min(255, data[i] * boost * brightnessMultiplier + noise * 20);
+                data[i + 1] = Math.min(255, data[i + 1] * boost * brightnessMultiplier + noise * 20);
+                data[i + 2] = Math.min(255, data[i + 2] * boost * brightnessMultiplier + noise * 20);
             }
             
             // Apply distortion near edges

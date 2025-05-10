@@ -4,6 +4,7 @@
  */
 
 import { createNebulaTexture } from './textures.js';
+import { isErrorPage } from './common.js';
 
 //==============================================================================================
 /**
@@ -14,6 +15,7 @@ import { createNebulaTexture } from './textures.js';
  */
 export function createNebulae(nebulaCount, scene) {
     const nebulae = [];
+    const isError = isErrorPage();
     
     // Track distribution
     const existingPositions = [];
@@ -27,7 +29,7 @@ export function createNebulae(nebulaCount, scene) {
             map: texture,
             transparent: true,
             blending: THREE.AdditiveBlending,
-            opacity: 0.005 + Math.random() * 0.005,
+            opacity: (0.005 + Math.random() * 0.005) * (isError ? 0.5 : 1.0),
             depthTest: false,
             depthWrite: false
         });
@@ -117,7 +119,7 @@ export function createNebulae(nebulaCount, scene) {
             map: texture,
             transparent: true,
             blending: THREE.AdditiveBlending,
-            opacity: 0.015 + Math.random() * 0.01,
+            opacity: (0.015 + Math.random() * 0.01) * (isError ? 0.5 : 1.0),
             depthTest: false,
             depthWrite: false
         });

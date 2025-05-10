@@ -4,7 +4,7 @@
  * @description Creates an interactive starfield background with a triggerable warp effect using Three.js
  */
 
-import { isMobile } from './common.js';
+import { isMobile, isErrorPage } from './common.js';
 import { createCircleTexture } from './textures.js';
 import { createNebulae, updateNebulae } from './nebulae.js';
 import { generateStarColor, triggerWarpPulse, setupKonamiCode } from './starfieldUtils.js';
@@ -56,12 +56,26 @@ class Starfield {
         this.konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
         this.konamiHandler = setupKonamiCode(this.konamiCode, () => this.triggerKonamiWarp());
         this.originalBackgroundColor = this.scene.background.clone();
-
+        
+        // Check if this is an error page and setup red glow effect
+        this.isErrorPage = isErrorPage();
+        this.redGlowEffect = null;
+        this.redGlowIntensity = 0;
+        this.glowStartTime = 0;
+        this.glowFadeDuration = 600; // Extended to 600ms
+        
         this.init();
 
         // Cap FPS to 120 without affecting motion timing
         this.minFrameInterval = 1000 / 120; // 1000ms / 120fps = ~8.33ms per frame max
         this.maxFrameInterval = 100;    // clamp large resume gaps to 100ms to prevent resets
+        
+        // Start background glow for error pages after a delay
+        if (this.isErrorPage) {
+            this.createRedGlowEffect();
+            this.glowStartTime = performance.now(); // Remove delay to sync with CSS animation
+        }
+        
         this.animate();
     }
 
@@ -132,6 +146,16 @@ class Starfield {
 
         // Create nebulae (MUST come after stars to ensure correct draw order)
         this.nebulae = createNebulae(this.nebulaCount, this.scene);
+        
+        // If error page, reduce nebulae opacity
+        if (this.isErrorPage) {
+            this.nebulae.forEach(nebula => {
+                if (nebula && nebula.material) {
+                    const originalOpacity = nebula.material.opacity || 1.0;
+                    nebula.material.opacity = originalOpacity * 0.01;
+                }
+            });
+        }
 
         // Create trail geometry for warp pulse effect
         this.trailGeometry = new THREE.BufferGeometry();
@@ -184,6 +208,52 @@ class Starfield {
 
     //==============================================================================================
     /**
+     * Create red glow effect for error pages
+     * @description Creates a red glow effect in the center of the screen resembling the PS2 error screen
+     */
+    createRedGlowEffect() {
+        // Create a circular gradient texture for the glow
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 512;
+        const context = canvas.getContext('2d');
+        
+        // Create radial gradient
+        const gradient = context.createRadialGradient(
+            canvas.width / 2, canvas.height / 2, 0,
+            canvas.width / 2, canvas.height / 2, canvas.width / 2
+        );
+        
+        // Set gradient colors - more subtle
+        gradient.addColorStop(0, 'rgba(160, 0, 0, 0.3)'); // Less intense core
+        gradient.addColorStop(0.4, 'rgba(120, 0, 0, 0.15)'); // Middle of the glow
+        gradient.addColorStop(1, 'rgba(60, 0, 0, 0)'); // Outer edge of the glow
+        
+        // Fill canvas with gradient
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Create texture from canvas
+        const texture = new THREE.Texture(canvas);
+        texture.needsUpdate = true;
+        
+        // Create material and mesh for the glow
+        const glowMaterial = new THREE.SpriteMaterial({
+            map: texture,
+            transparent: true,
+            opacity: 0,
+            blending: THREE.AdditiveBlending
+        });
+        
+        // Create sprite and position it in the scene
+        this.redGlowEffect = new THREE.Sprite(glowMaterial);
+        this.redGlowEffect.scale.set(90, 90, 1); // Larger size to be more ambient
+        this.redGlowEffect.position.set(0, 0, -40); // Positioned further behind
+        this.scene.add(this.redGlowEffect);
+    }
+
+    //==============================================================================================
+    /**
      * Main animation loop
      * @description Updates star positions, trails, and visual effects
      */
@@ -204,6 +274,21 @@ class Starfield {
         const deltaMs = Math.min(elapsed, this.maxFrameInterval);
         const deltaTime = deltaMs / 1000;
         this.lastFrameTime = now;
+
+        // Handle red glow effect for error pages
+        if (this.isErrorPage && this.redGlowEffect && this.glowStartTime > 0) {
+            const fadeElapsed = now - this.glowStartTime;
+            // Apply ease-out using quadratic function
+            const t = Math.min(fadeElapsed / this.glowFadeDuration, 1);
+            const eased = 1 - (1 - t) * (1 - t); // Quadratic ease-out
+            
+            // Apply final values smoothly without a separate end state
+            this.redGlowEffect.material.opacity = 0.7 * eased;
+            const startColor = new THREE.Color('#1A1A1A');
+            const endColor = new THREE.Color('#220000');
+            this.scene.background = startColor.lerp(endColor, 0.5 * eased);
+            this.redGlowEffect.scale.set(90, 90, 1);
+        }
 
         const positions = this.starField.geometry.attributes.position;
         const speeds = this.starField.geometry.attributes.speed;

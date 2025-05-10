@@ -21,6 +21,17 @@ export function isMobile() {
     return hasTouch && isSmallScreen;
 }
 
+//==============================================================================================
+/**
+ * Checks if the current page is an error page
+ * @function isErrorPage
+ * @returns {boolean} true if error page; else false
+ * @description Checks for presence of error-message element to determine if page is an error page
+ */
+export function isErrorPage() {
+    return !!document.querySelector('.error-message');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // Update URL path display
