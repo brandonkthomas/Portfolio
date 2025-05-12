@@ -3,6 +3,6 @@
 .idea
 Sandbox
 scripts/
-Portfolio/bin
-Portfolio/obj
-Portfolio/publish
+bin/
+obj/
+publish/

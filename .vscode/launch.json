@@ -6,9 +6,9 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/Portfolio/bin/Debug/net8.0/Portfolio.dll",
+            "program": "${workspaceFolder}/bin/Debug/net8.0/Portfolio.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/Portfolio",
+            "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
             "serverReadyAction": {
                 "action": "openExternally",
@@ -27,7 +27,7 @@
             ],
             "name": "Launch Chrome against localhost",
             "url": "http://localhost:8081",
-            "webRoot": "${workspaceFolder}/Portfolio/wwwroot",
+            "webRoot": "${workspaceFolder}/wwwroot",
             "sourceMaps": true,
             "sourceMapPathOverrides": {
                 "webpack:///./~/*": "${webRoot}/node_modules/*",

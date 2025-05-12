@@ -7,7 +7,7 @@
         "type": "process",
         "args": [
           "build",
-          "${workspaceFolder}/Portfolio/Portfolio.csproj",
+          "${workspaceFolder}/Portfolio.csproj",
           "/property:GenerateFullPaths=true",
           "/consoleloggerparameters:NoSummary"
         ],
@@ -17,7 +17,7 @@
         "label": "run",
         "type": "process",
         "command": "dotnet",
-        "args": ["run", "--project", "Portfolio/Portfolio.csproj"],
+        "args": ["run", "--project", "Portfolio.csproj"],
         "isBackground": true,
         "problemMatcher": {
           "owner": "dotnet",
