@@ -11,6 +11,9 @@ import { generateStarColor, triggerWarpPulse, setupKonamiCode } from './starfiel
 
 class Starfield {
 
+    // DEBUG FLAG: Set to true to show animated gradient instead of starfield (for testing blur effects)
+    static DEBUG_GRADIENT = true;
+
     //==============================================================================================
     /**
      * Creates new starfield instance -- call init() to start the starfield effect
@@ -29,11 +32,13 @@ class Starfield {
      * @property {HTMLElement} cardContainer - Reference to the card container element
      * @property {number} minFrameInterval - Minimum frame interval to maintain 120fps
      * @property {number} maxFrameInterval - Maximum frame interval to prevent large gaps
+     * @property {THREE.Mesh} debugGradientPlane - Debug gradient plane for testing blur effects
+     * @property {number} gradientTime - Time accumulator for gradient animation
      */
     constructor() {
         // Three.js setup
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color('#1A1A1A');
+        this.scene.background = Starfield.DEBUG_GRADIENT ? new THREE.Color('#000000') : new THREE.Color('#1A1A1A');
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         this.renderer = new THREE.WebGLRenderer({
             canvas: document.getElementById('starfield'),
@@ -51,6 +56,10 @@ class Starfield {
         // Nebula configuration
         this.nebulae = [];
         this.nebulaCount = isMobile() ? 8 : 12;
+
+        // Debug gradient setup
+        this.debugGradientPlane = null;
+        this.gradientTime = 0;
 
         // Konami code setup
         this.konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
@@ -70,8 +79,8 @@ class Starfield {
         this.minFrameInterval = 1000 / 120; // 1000ms / 120fps = ~8.33ms per frame max
         this.maxFrameInterval = 100;    // clamp large resume gaps to 100ms to prevent resets
         
-        // Start background glow for error pages after a delay
-        if (this.isErrorPage) {
+        // Start background glow for error pages after a delay (skip in debug mode)
+        if (this.isErrorPage && !Starfield.DEBUG_GRADIENT) {
             this.createRedGlowEffect();
             this.glowStartTime = performance.now(); // Remove delay to sync with CSS animation
         }
@@ -144,8 +153,22 @@ class Starfield {
         this.scene.add(this.starField);
         this.starMaterial = material;
 
+        // Create debug gradient if enabled (will be behind stars)
+        if (Starfield.DEBUG_GRADIENT) {
+            this.createDebugGradient();
+        }
+
         // Create nebulae (MUST come after stars to ensure correct draw order)
         this.nebulae = createNebulae(this.nebulaCount, this.scene);
+        
+        // Hide nebulae in debug mode for clearer gradient visualization
+        if (Starfield.DEBUG_GRADIENT) {
+            this.nebulae.forEach(nebula => {
+                if (nebula) {
+                    nebula.visible = false;
+                }
+            });
+        }
         
         // If error page, reduce nebulae opacity
         if (this.isErrorPage) {
@@ -254,6 +277,76 @@ class Starfield {
 
     //==============================================================================================
     /**
+     * Create debug gradient for testing blur effects
+     * @description Creates an animated multicolored gradient plane to test overlay blur functionality
+     */
+    createDebugGradient() {
+        // Create a plane geometry that fills the screen
+        const geometry = new THREE.PlaneGeometry(100, 100);
+        
+        // Create canvas for dynamic gradient
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 512;
+        
+        // Create texture from canvas
+        const texture = new THREE.CanvasTexture(canvas);
+        this.debugGradientCanvas = canvas;
+        this.debugGradientTexture = texture;
+        
+        // Create material
+        const material = new THREE.MeshBasicMaterial({
+            map: texture,
+            side: THREE.DoubleSide
+        });
+        
+        // Create mesh and position it (behind all stars)
+        this.debugGradientPlane = new THREE.Mesh(geometry, material);
+        this.debugGradientPlane.position.set(0, 0, -60);
+        this.scene.add(this.debugGradientPlane);
+        
+        // Initial gradient render
+        this.updateDebugGradient();
+    }
+
+    //==============================================================================================
+    /**
+     * Update debug gradient animation
+     * @description Updates the gradient colors based on time for animation
+     */
+    updateDebugGradient() {
+        if (!this.debugGradientCanvas) return;
+        
+        const context = this.debugGradientCanvas.getContext('2d');
+        const width = this.debugGradientCanvas.width;
+        const height = this.debugGradientCanvas.height;
+        
+        // Create animated linear gradient
+        const angle = this.gradientTime * 0.5;
+        const x1 = width / 2 + Math.cos(angle) * width;
+        const y1 = height / 2 + Math.sin(angle) * height;
+        const x2 = width / 2 - Math.cos(angle) * width;
+        const y2 = height / 2 - Math.sin(angle) * height;
+        
+        const gradient = context.createLinearGradient(x1, y1, x2, y2);
+        
+        // Animated color stops
+        const hue1 = (this.gradientTime * 20) % 360;
+        const hue2 = (this.gradientTime * 20 + 120) % 360;
+        const hue3 = (this.gradientTime * 20 + 240) % 360;
+        
+        gradient.addColorStop(0, `hsl(${hue1}, 70%, 50%)`);
+        gradient.addColorStop(0.5, `hsl(${hue2}, 70%, 50%)`);
+        gradient.addColorStop(1, `hsl(${hue3}, 70%, 50%)`);
+        
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, width, height);
+        
+        this.debugGradientTexture.needsUpdate = true;
+    }
+
+    //==============================================================================================
+    /**
      * Main animation loop
      * @description Updates star positions, trails, and visual effects
      */
@@ -274,6 +367,12 @@ class Starfield {
         const deltaMs = Math.min(elapsed, this.maxFrameInterval);
         const deltaTime = deltaMs / 1000;
         this.lastFrameTime = now;
+
+        // Update debug gradient if enabled (background animation)
+        if (Starfield.DEBUG_GRADIENT) {
+            this.gradientTime += deltaTime;
+            this.updateDebugGradient();
+        }
 
         // Handle red glow effect for error pages
         if (this.isErrorPage && this.redGlowEffect && this.glowStartTime > 0) {
