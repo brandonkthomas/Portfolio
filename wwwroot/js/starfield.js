@@ -12,7 +12,7 @@ import { generateStarColor, triggerWarpPulse, setupKonamiCode } from './starfiel
 class Starfield {
 
     // DEBUG FLAG: Set to true to show animated gradient instead of starfield (for testing blur effects)
-    static DEBUG_GRADIENT = true;
+    static DEBUG_GRADIENT = false;
 
     //==============================================================================================
     /**

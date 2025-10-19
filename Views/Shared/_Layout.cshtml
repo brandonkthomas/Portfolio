@@ -11,14 +11,15 @@
     <title>Brandon Thomas</title>
 
     <link rel="stylesheet" href="~/css/common.css" />
+    <link rel="stylesheet" href="~/css/glass-surface.css" />
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
 
-    <link rel="icon" href="~/assets/icons/favicon.ico" asp-append-version="true" />
-    <link rel="apple-touch-icon" sizes="180x180" href="~/assets/icons/apple-touch-icon-180x180.png" asp-append-version="true" />
-    <link rel="apple-touch-icon" sizes="167x167" href="~/assets/icons/apple-touch-icon-167x167.png" asp-append-version="true" />
-    <link rel="apple-touch-icon" sizes="152x152" href="~/assets/icons/apple-touch-icon-152x152.png" asp-append-version="true" />
-    <link rel="apple-touch-icon" sizes="144x144" href="~/assets/icons/apple-touch-icon-144x144.png" asp-append-version="true" />
-    <link rel="apple-touch-icon" sizes="120x120" href="~/assets/icons/apple-touch-icon-120x120.png" asp-append-version="true" />
+    <link rel="icon" href="~/assets/images/branding/favicon.ico" asp-append-version="true" />
+    <link rel="apple-touch-icon" sizes="180x180" href="~/assets/images/branding/apple-touch-icon-180x180.png" asp-append-version="true" />
+    <link rel="apple-touch-icon" sizes="167x167" href="~/assets/images/branding/apple-touch-icon-167x167.png" asp-append-version="true" />
+    <link rel="apple-touch-icon" sizes="152x152" href="~/assets/images/branding/apple-touch-icon-152x152.png" asp-append-version="true" />
+    <link rel="apple-touch-icon" sizes="144x144" href="~/assets/images/branding/apple-touch-icon-144x144.png" asp-append-version="true" />
+    <link rel="apple-touch-icon" sizes="120x120" href="~/assets/images/branding/apple-touch-icon-120x120.png" asp-append-version="true" />
     <link rel="mask-icon" href="~/assets/meta/safari-pinned-tab.svg" color="#1a1a1a" asp-append-version="true">
     
     <meta property="og:title" content="Brandon Thomas" />
@@ -30,16 +31,46 @@
 </head>
 <body>
     <div class="url-display">
-        <div>
-            <span class="url-base">brandonthomas.net</span><span class="url-path">/</span>
-        </div>
-        <div class="url-paths">
-            @* <a href="/" class="url-path-option">home</a> *@
-            @* <a href="/projects" class="url-path-option">projects</a>
-            <a href="/contact" class="url-path-option">contact</a> *@
-            <a href="https://github.com/brandonkthomas" class="url-path-option url-external">github</a>
-            <a href="https://linkedin.com/in/brandonkthomas" class="url-path-option url-external">linkedin</a>
-            <a href="mailto:me@brandonthomas.net" class="url-path-option url-external">contact</a>
+        <div class="glass-surface-wrapper">
+            <div class="url-display-content">
+                <div class="url-display-main">
+                    <span class="url-text">brandonthomas.net</span>
+                    <nav class="url-nav-links desktop">
+                        <a href="https://github.com/brandonkthomas" class="url-link" rel="noopener noreferrer" aria-label="GitHub">
+                            <img src="~/assets/svg/github-logo-filled.svg" alt="" width="20" height="20" />
+                            <span>GitHub</span>
+                        </a>
+                        <a href="https://linkedin.com/in/brandonkthomas" class="url-link" rel="noopener noreferrer" aria-label="LinkedIn">
+                            <img src="~/assets/svg/linkedin-logo-filled.svg" alt="" width="20" height="20" />
+                            <span>LinkedIn</span>
+                        </a>
+                        <a href="mailto:me@brandonthomas.net" class="url-link" aria-label="Contact">
+                            <img src="~/assets/svg/email-filled.svg" alt="" width="20" height="20" />
+                            <span>Contact</span>
+                        </a>
+                    </nav>
+                    <button class="burger-menu mobile" aria-label="Menu" aria-expanded="false">
+                        <span class="burger-icon">
+                            <span class="burger-line burger-line-1"></span>
+                            <span class="burger-line burger-line-2"></span>
+                        </span>
+                    </button>
+                </div>
+                <nav class="url-nav-links mobile">
+                    <a href="https://github.com/brandonkthomas" class="url-link" rel="noopener noreferrer">
+                        <img src="~/assets/svg/github-logo-filled.svg" alt="" width="20" height="20" />
+                        <span>GitHub</span>
+                    </a>
+                    <a href="https://linkedin.com/in/brandonkthomas" class="url-link" rel="noopener noreferrer">
+                        <img src="~/assets/svg/linkedin-logo-filled.svg" alt="" width="20" height="20" />
+                        <span>LinkedIn</span>
+                    </a>
+                    <a href="mailto:me@brandonthomas.net" class="url-link">
+                        <img src="~/assets/svg/email-filled.svg" alt="" width="20" height="20" />
+                        <span>Contact</span>
+                    </a>
+                </nav>
+            </div>
         </div>
     </div>
     <main role="main">
@@ -47,6 +78,7 @@
     </main>
     <script src="~/js/common.js" type="module"></script>
     <script src="~/js/starfield.js" type="module"></script>
+    <script src="~/js/navbar.js" type="module"></script>
     @await RenderSectionAsync("Scripts", required: false)
     @await RenderSectionAsync("Styles", required: false)
 </body>

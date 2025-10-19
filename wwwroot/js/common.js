@@ -32,6 +32,28 @@ export function isErrorPage() {
     return !!document.querySelector('.error-message');
 }
 
+//==============================================================================================
+/**
+ * Check if browser supports SVG filters with backdrop-filter
+ * @function supportsSVGFilters
+ * @param {string} filterId - The filter ID to test
+ * @returns {boolean} True if SVG filters are supported
+ */
+export function supportsSVGFilters(filterId) {
+    const isWebkit = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+    const isFirefox = /Firefox/.test(navigator.userAgent);
+
+    if (isWebkit || isFirefox) {
+        return false;
+    }
+
+    const div = document.createElement('div');
+    div.style.backdropFilter = `url(#${filterId})`;
+    return div.style.backdropFilter !== '';
+}
+
+//==============================================================================================
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // Update URL path display
@@ -61,19 +83,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Handle mobile tap/click for URL display
-    const urlDisplay = document.querySelector('.url-display');
-    if (urlDisplay) {
-        urlDisplay.addEventListener('click', (e) => {
+    const navbar = document.querySelector('.navbar');
+    if (navbar) {
+        navbar.addEventListener('click', (e) => {
             // Only toggle if we're on a mobile device (no hover capability)
             if (window.matchMedia('(hover: none)').matches) {
-                urlDisplay.classList.toggle('active');
+                navbar.classList.toggle('active');
             }
         });
 
         // Close the menu when clicking outside
         document.addEventListener('click', (e) => {
-            if (!urlDisplay.contains(e.target)) {
-                urlDisplay.classList.remove('active');
+            if (!navbar.contains(e.target)) {
+                navbar.classList.remove('active');
             }
         });
     }
