@@ -97,7 +97,7 @@
     display: none;
     background: transparent;
     border: none;
-    padding: 0.5rem;
+    padding: 0.5rem 0 0.5rem 0.5rem;
     cursor: pointer;
     color: rgba(255, 255, 255, 0.7);
     transition: color 0.2s ease, transform 0.2s ease;
@@ -119,8 +119,8 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
     position: relative;
 }
 
@@ -130,6 +130,7 @@
     width: 20px;
     height: 2px;
     background-color: currentColor;
+    color: rgb(179, 179, 179);
     border-radius: 2px;
     transition: all 0.2s ease;
     position: absolute;
@@ -187,6 +188,11 @@
         display: flex;
     }
     
+    .url-nav-links.mobile .url-link {
+        flex-direction: row-reverse;
+        justify-content: space-between;
+    }
+    
     /* Show mobile menu when open */
     .url-display.menu-open .url-nav-links.mobile {
         opacity: 1;
@@ -201,6 +207,6 @@
     }
     
     .url-link {
-        padding: 0.5rem 0.75rem;
+        padding: 0.5rem 0;
     }
 }
