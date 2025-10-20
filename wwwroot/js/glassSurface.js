@@ -1,7 +1,7 @@
 /**
  * glassSurface.js
  * @fileoverview Glass surface component with SVG filter effects
- * @description Creates an Apple-style glass surface with real-time distortion and lighting
+ * @description Creates glass surface material with real-time distortion and lighting
  */
 
 import { supportsSVGFilters } from './common.js';
@@ -14,28 +14,29 @@ let uniqueIdCounter = 0;
  * @param {Object} options - Configuration options
  * @returns {Object} Glass surface instance with methods and element reference
  */
-export function createGlassSurface(options = {}) {
-    const {
-        width = 200,
-        height = 80,
-        borderRadius = 20,
-        borderWidth = 0.07,
-        brightness = 50,
-        opacity = 0.93,
-        blur = 11,
-        displace = 0,
-        backgroundOpacity = 0,
-        saturation = 1,
-        distortionScale = -180,
-        redOffset = 0,
-        greenOffset = 10,
-        blueOffset = 20,
-        xChannel = 'R',
-        yChannel = 'G',
-        mixBlendMode = 'difference',
-        className = '',
-        style = {}
-    } = options;
+export function createGlassSurface(options) {
+
+    // Set defaults (using ternary rather than nullish coalescing for NUglify compatibility)
+    if (!options) options = {};
+    const width = options.width !== undefined ? options.width : 200;
+    const height = options.height !== undefined ? options.height : 80;
+    const borderRadius = options.borderRadius !== undefined ? options.borderRadius : 20;
+    const borderWidth = options.borderWidth !== undefined ? options.borderWidth : 0.07;
+    const brightness = options.brightness !== undefined ? options.brightness : 50;
+    const opacity = options.opacity !== undefined ? options.opacity : 0.93;
+    const blur = options.blur !== undefined ? options.blur : 11;
+    const displace = options.displace !== undefined ? options.displace : 0;
+    const backgroundOpacity = options.backgroundOpacity !== undefined ? options.backgroundOpacity : 0;
+    const saturation = options.saturation !== undefined ? options.saturation : 1;
+    const distortionScale = options.distortionScale !== undefined ? options.distortionScale : -180;
+    const redOffset = options.redOffset !== undefined ? options.redOffset : 0;
+    const greenOffset = options.greenOffset !== undefined ? options.greenOffset : 10;
+    const blueOffset = options.blueOffset !== undefined ? options.blueOffset : 20;
+    const xChannel = options.xChannel !== undefined ? options.xChannel : 'R';
+    const yChannel = options.yChannel !== undefined ? options.yChannel : 'G';
+    const mixBlendMode = options.mixBlendMode !== undefined ? options.mixBlendMode : 'difference';
+    const className = options.className !== undefined ? options.className : '';
+    const style = options.style !== undefined ? options.style : {};
 
     // Generate unique ID
     const uniqueId = `glass-${Date.now()}-${uniqueIdCounter++}`;

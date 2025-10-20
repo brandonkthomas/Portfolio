@@ -9,10 +9,10 @@ import { createCircleTexture } from './textures.js';
 import { createNebulae, updateNebulae } from './nebulae.js';
 import { generateStarColor, triggerWarpPulse, setupKonamiCode } from './starfieldUtils.js';
 
-class Starfield {
+// DEBUG FLAG: if true, show animated gradient instead of starfield (for testing glass material behavior/interactions)
+const DEBUG_GRADIENT = false;
 
-    // DEBUG FLAG: Set to true to show animated gradient instead of starfield (for testing blur effects)
-    static DEBUG_GRADIENT = false;
+class Starfield {
 
     //==============================================================================================
     /**
@@ -38,7 +38,7 @@ class Starfield {
     constructor() {
         // Three.js setup
         this.scene = new THREE.Scene();
-        this.scene.background = Starfield.DEBUG_GRADIENT ? new THREE.Color('#000000') : new THREE.Color('#1A1A1A');
+        this.scene.background = DEBUG_GRADIENT ? new THREE.Color('#000000') : new THREE.Color('#1A1A1A');
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         this.renderer = new THREE.WebGLRenderer({
             canvas: document.getElementById('starfield'),
@@ -80,7 +80,7 @@ class Starfield {
         this.maxFrameInterval = 100;    // clamp large resume gaps to 100ms to prevent resets
         
         // Start background glow for error pages after a delay (skip in debug mode)
-        if (this.isErrorPage && !Starfield.DEBUG_GRADIENT) {
+        if (this.isErrorPage && !DEBUG_GRADIENT) {
             this.createRedGlowEffect();
             this.glowStartTime = performance.now(); // Remove delay to sync with CSS animation
         }
@@ -154,7 +154,7 @@ class Starfield {
         this.starMaterial = material;
 
         // Create debug gradient if enabled (will be behind stars)
-        if (Starfield.DEBUG_GRADIENT) {
+        if (DEBUG_GRADIENT) {
             this.createDebugGradient();
         }
 
@@ -162,7 +162,7 @@ class Starfield {
         this.nebulae = createNebulae(this.nebulaCount, this.scene);
         
         // Hide nebulae in debug mode for clearer gradient visualization
-        if (Starfield.DEBUG_GRADIENT) {
+        if (DEBUG_GRADIENT) {
             this.nebulae.forEach(nebula => {
                 if (nebula) {
                     nebula.visible = false;
@@ -369,7 +369,7 @@ class Starfield {
         this.lastFrameTime = now;
 
         // Update debug gradient if enabled (background animation)
-        if (Starfield.DEBUG_GRADIENT) {
+        if (DEBUG_GRADIENT) {
             this.gradientTime += deltaTime;
             this.updateDebugGradient();
         }
