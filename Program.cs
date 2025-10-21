@@ -63,27 +63,37 @@ app.UseWebOptimizer();
 
 // app.UseHttpsRedirection();
 
-// Cache control for HTML pages - always revalidate
-app.Use(async (ctx, next) =>
-{
-    await next();
-    var ct = ctx.Response.ContentType ?? "";
-    if (ct.Contains("text/html"))
-        ctx.Response.Headers["Cache-Control"] = "no-cache, must-revalidate";
-});
-
-// Static files with aggressive caching for versioned assets
+// Static files with ETag-based caching for JS/CSS
 app.UseStaticFiles(new StaticFileOptions
 {
     OnPrepareResponse = ctx =>
     {
         var n = ctx.File.Name;
         if (n.EndsWith(".js") || n.EndsWith(".css"))
-            ctx.Context.Response.Headers["Cache-Control"] = "public, max-age=31536000, immutable";
+        {
+            // Use ETag validation with 7-day cache - works perfectly with ES6 modules
+            // Cloudflare will cache based on ETag, and browsers revalidate efficiently
+            ctx.Context.Response.Headers["Cache-Control"] = "public, max-age=604800, must-revalidate";
+        }
     }
 });
 
 app.UseRouting();
+
+// Cache control for HTML pages - set before response is sent
+app.Use(async (ctx, next) =>
+{
+    ctx.Response.OnStarting(() =>
+    {
+        var ct = ctx.Response.ContentType ?? "";
+        if (ct.Contains("text/html") && !ctx.Response.Headers.ContainsKey("Cache-Control"))
+        {
+            ctx.Response.Headers["Cache-Control"] = "no-cache, must-revalidate";
+        }
+        return Task.CompletedTask;
+    });
+    await next();
+});
 // app.UseAuthorization();
 
 // Map root route to HomeController Index action
