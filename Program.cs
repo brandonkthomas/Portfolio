@@ -62,7 +62,27 @@ app.UseForwardedHeaders();
 app.UseWebOptimizer();
 
 // app.UseHttpsRedirection();
-app.UseStaticFiles();
+
+// Cache control for HTML pages - always revalidate
+app.Use(async (ctx, next) =>
+{
+    await next();
+    var ct = ctx.Response.ContentType ?? "";
+    if (ct.Contains("text/html"))
+        ctx.Response.Headers["Cache-Control"] = "no-cache, must-revalidate";
+});
+
+// Static files with aggressive caching for versioned assets
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        var n = ctx.File.Name;
+        if (n.EndsWith(".js") || n.EndsWith(".css"))
+            ctx.Context.Response.Headers["Cache-Control"] = "public, max-age=31536000, immutable";
+    }
+});
+
 app.UseRouting();
 // app.UseAuthorization();
 
