@@ -100,10 +100,35 @@ if (app.Environment.IsDevelopment())
             var exts = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
             var files = Directory.EnumerateFiles(devPhotoPath, "*.*", SearchOption.AllDirectories)
                                  .Where(p => exts.Contains(Path.GetExtension(p)))
+                                 .Select(p => "/assets/images/reel/" + Path.GetRelativePath(devPhotoPath, p).Replace("\\", "/"))
                                  .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
-                                 .Select(p => "/assets/images/reel" + p.Replace(devPhotoPath, string.Empty).Replace("\\", "/"))
-                                 .ToArray();
+                                 .ToList();
+            // Natural sort using numeric segments
+            files.Sort((a, b) => StringComparer.OrdinalIgnoreCase.Compare(Normalize(a), Normalize(b)));
             return Results.Json(new { images = files });
+
+            static string Normalize(string s)
+            {
+                var result = new System.Text.StringBuilder(s.Length * 2);
+                int i = 0;
+                while (i < s.Length)
+                {
+                    if (char.IsDigit(s[i]))
+                    {
+                        int j = i;
+                        while (j < s.Length && char.IsDigit(s[j])) j++;
+                        var segment = s.Substring(i, j - i);
+                        result.Append(segment.PadLeft(20, '0'));
+                        i = j;
+                    }
+                    else
+                    {
+                        result.Append(s[i]);
+                        i++;
+                    }
+                }
+                return result.ToString();
+            }
         });
     }
 }
