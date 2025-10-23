@@ -75,6 +75,13 @@ class PhotoGallery {
         `;
 
         this.lightbox = this.container.querySelector('.photo-lightbox');
+        // Harden lightbox image against saving interactions
+        const lightboxImg = this.container.querySelector('.lightbox-image');
+        if (lightboxImg) {
+            lightboxImg.setAttribute('draggable', 'false');
+            lightboxImg.addEventListener('dragstart', (e) => e.preventDefault());
+            lightboxImg.addEventListener('contextmenu', (e) => e.preventDefault());
+        }
         
         // Create glass surface controls
         this.createLightboxControls();
@@ -270,6 +277,10 @@ class PhotoGallery {
             img.alt = `Photo ${photo.index + 1}`;
             img.loading = 'lazy';
             img.decoding = 'async'; // Ensure async decoding
+            // Disable drag/save interactions on grid images
+            img.setAttribute('draggable', 'false');
+            img.addEventListener('dragstart', (e) => e.preventDefault());
+            img.addEventListener('contextmenu', (e) => e.preventDefault());
 
             // After load, update actual aspect ratio for better layout stability
             img.addEventListener('load', () => {
@@ -335,6 +346,24 @@ class PhotoGallery {
                 this.openLightbox(index);
             }
         });
+
+        // Block context menu and drag on images within gallery container (desktop)
+        this.container.addEventListener('contextmenu', (e) => {
+            const target = e.target;
+            if (target && target.tagName === 'IMG') {
+                const imgEl = target;
+                if (imgEl.classList.contains('lightbox-image') || imgEl.closest('.photo-item')) {
+                    e.preventDefault();
+                }
+            }
+        }, { capture: true });
+
+        this.container.addEventListener('dragstart', (e) => {
+            const target = e.target;
+            if (target && target.tagName === 'IMG') {
+                e.preventDefault();
+            }
+        }, { capture: true });
 
         // Lightbox controls
         const closeBtn = this.container.querySelector('.lightbox-close');
