@@ -1,8 +1,11 @@
 *.DS_Store
-.vscode
 .idea
 Sandbox
 scripts/
 bin/
 obj/
 publish/
+
+# Cursor support for .NET Core debugging
+.vscode/dotnet.out
+.vscode/dotnet.pid

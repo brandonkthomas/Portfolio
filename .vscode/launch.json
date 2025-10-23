@@ -16,29 +16,21 @@
                 "uriFormat": "%s"
             },
             "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "ASPNETCORE_URLS": "http://localhost:8081"
             }
         },
         {
-            "type": "chrome",
+            "type": "pwa-chrome",
             "request": "launch",
+            "name": "Launch Chrome against localhost (Cursor compat)",
+            "url": "http://localhost:8081",
+            "webRoot": "${workspaceFolder}/wwwroot",
             "runtimeArgs": [
                 "--auto-open-devtools-for-tabs"
             ],
-            "name": "Launch Chrome against localhost",
-            "url": "http://localhost:8081",
-            "webRoot": "${workspaceFolder}/wwwroot",
-            "sourceMaps": true,
-            "sourceMapPathOverrides": {
-                "webpack:///./~/*": "${webRoot}/node_modules/*",
-                "webpack:///./*": "${webRoot}/*",
-                "webpack:///*": "*"
-            },
-            "preLaunchTask": "run"
+            "preLaunchTask": "dev:start",
+            "postDebugTask": "dev:stop"
         }
-    ],
-    "compounds": [{
-        "name": "Launch .NET and Chrome",
-        "configurations": [".NET Core Launch", "Launch Chrome against localhost"]
-    }]
+    ]
 }
