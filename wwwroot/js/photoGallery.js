@@ -197,44 +197,31 @@ class PhotoGallery {
 
     //==============================================================================================
     /**
-     * Generate placeholder photos with various aspect ratios
+     * Generate photos from manifest
      */
-    generatePhotos() {
+    async generatePhotos() {
         const grid = this.container.querySelector('.photo-grid');
         if (!grid) return;
 
-        // Various aspect ratios for visual interest
-        const aspectRatios = [
-            { width: 800, height: 600 },   // 4:3
-            { width: 800, height: 1200 },  // 2:3 portrait
-            { width: 1200, height: 800 },  // 3:2 landscape
-            { width: 800, height: 800 },   // 1:1 square
-            { width: 1600, height: 900 },  // 16:9
-            { width: 900, height: 1600 },  // 9:16 portrait
-        ];
+        try {
+            const response = await fetch('/assets/images/reel/manifest.json', { cache: 'no-cache' });
+            if (!response.ok) throw new Error(`Failed to load manifest: ${response.status}`);
+            const manifest = await response.json();
+            const images = Array.isArray(manifest.images) ? manifest.images : [];
 
-        // Generate 24 photos
-        const photoCount = 24;
-        
-        // Generate photo data
-        for (let i = 0; i < photoCount; i++) {
-            const ratio = aspectRatios[i % aspectRatios.length];
-            
-            // TODO: replace with actual pics (these are placeholders)
-            // Give each photo a unique ID to ensure variety
-            const photoId = 100 + i * 7; // Use different IDs for variety
-            const imageUrl = `https://picsum.photos/id/${photoId}/${ratio.width}/${ratio.height}`;
-            
-            this.photos.push({
-                url: imageUrl,
-                width: ratio.width,
-                height: ratio.height,
-                aspectRatio: ratio.width / ratio.height,
-                index: i
-            });
+            // Build photo objects with basic aspect ratio guess (lazy load real dimensions)
+            this.photos = images.map((url, index) => ({
+                url,
+                width: 800,
+                height: 1200,
+                aspectRatio: 800 / 1200,
+                index
+            }));
+        } catch (err) {
+            console.error('Error loading photo manifest', err);
+            this.photos = [];
         }
 
-        // Render grid with columns
         this.renderPhotoGrid();
     }
 
@@ -284,10 +271,16 @@ class PhotoGallery {
             img.loading = 'lazy';
             img.decoding = 'async'; // Ensure async decoding
 
-            // Handle image load
+            // After load, update actual aspect ratio for better layout stability
             img.addEventListener('load', () => {
                 photoItem.classList.remove('photo-item--loading');
                 photoItem.classList.add('photo-item--loaded');
+                if (img.naturalWidth && img.naturalHeight) {
+                    photo.width = img.naturalWidth;
+                    photo.height = img.naturalHeight;
+                    photo.aspectRatio = img.naturalWidth / img.naturalHeight;
+                    photoItem.style.aspectRatio = `${photo.width} / ${photo.height}`;
+                }
             });
 
             // Handle image error
@@ -501,8 +494,7 @@ class PhotoGallery {
         if (!this.photosGenerated) {
             this.photosGenerated = true;
             
-            // Use requestIdleCallback for optimal performance
-            // Falls back to setTimeout if not available
+            // Load manifest and render
             if ('requestIdleCallback' in window) {
                 requestIdleCallback(() => {
                     this.generatePhotos();

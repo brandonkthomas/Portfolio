@@ -1,37 +1,19 @@
 using Microsoft.AspNetCore.HttpOverrides;
-using WebOptimizer;
-using NUglify;
 using Microsoft.AspNetCore.Routing;
+using Portfolio.Services;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddSingleton<IAssetManifest, AssetManifest>();
 
 // Configure routing
 builder.Services.Configure<RouteOptions>(options =>
 {
     options.LowercaseUrls = true;   // for consistency
     options.LowercaseQueryStrings = true;
-});
-
-// Add WebOptimizer services
-builder.Services.AddWebOptimizer(pipeline =>
-{
-    // Only minify in production
-    if (!builder.Environment.IsDevelopment())
-    {
-        // Minify all CSS files
-        pipeline.MinifyCssFiles();
-        
-        // Minify all JavaScript files with name mangling enabled
-        pipeline.MinifyJsFiles(new NUglify.JavaScript.CodeSettings 
-        {
-            MinifyCode = true,
-            LocalRenaming = NUglify.JavaScript.LocalRenaming.CrunchAll, // Enable variable/function name mangling
-            PreserveFunctionNames = false // Allow function names to be mangled
-        });
-    }
 });
 
 // Configure forwarded headers for working behind a proxy (Cloudflare)
@@ -58,9 +40,6 @@ if (!app.Environment.IsDevelopment())
 // Use forwarded headers - place this early in the pipeline
 app.UseForwardedHeaders();
 
-// Add WebOptimizer middleware
-app.UseWebOptimizer();
-
 // app.UseHttpsRedirection();
 
 // Static files with ETag-based caching for JS/CSS
@@ -69,14 +48,65 @@ app.UseStaticFiles(new StaticFileOptions
     OnPrepareResponse = ctx =>
     {
         var n = ctx.File.Name;
-        if (n.EndsWith(".js") || n.EndsWith(".css"))
+        var path = ctx.Context.Request.Path.Value ?? string.Empty;
+        if (n.EndsWith(".css"))
         {
-            // Use ETag validation with 7-day cache - works perfectly with ES6 modules
-            // Cloudflare will cache based on ETag, and browsers revalidate efficiently
-            ctx.Context.Response.Headers["Cache-Control"] = "public, max-age=604800, must-revalidate";
+            // Long-lived caching for CSS (uses asp-append-version)
+            ctx.Context.Response.Headers["Cache-Control"] = "public, max-age=31536000, immutable";
+        }
+        else if (n.EndsWith(".js"))
+        {
+            // Hashed build assets under /dist get immutable caching; legacy /js gets revalidation
+            if (path.Contains("/dist/", StringComparison.OrdinalIgnoreCase))
+            {
+                ctx.Context.Response.Headers["Cache-Control"] = "public, max-age=31536000, immutable";
+            }
+            else
+            {
+                ctx.Context.Response.Headers["Cache-Control"] = "public, max-age=0, must-revalidate";
+            }
+        }
+        else if (n.EndsWith(".json"))
+        {
+            // Manifest and other JSON: allow revalidation
+            ctx.Context.Response.Headers["Cache-Control"] = "public, max-age=0, must-revalidate";
+        }
+        else if (n.EndsWith(".jpg") || n.EndsWith(".jpeg") || n.EndsWith(".png") || n.EndsWith(".webp") || n.EndsWith(".gif"))
+        {
+            // Images can be immutable (filenames stable across deploy content) or use cache age
+            ctx.Context.Response.Headers["Cache-Control"] = "public, max-age=31536000, immutable";
         }
     }
 });
+
+// Development-only: serve local photo store directly and generate manifest at runtime
+if (app.Environment.IsDevelopment())
+{
+    var devPhotoPath = "/Volumes/Storage/Media/Portfolio Asset Store";
+    if (Directory.Exists(devPhotoPath))
+    {
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = new PhysicalFileProvider(devPhotoPath),
+            RequestPath = "/assets/images/reel",
+            OnPrepareResponse = ctx =>
+            {
+                ctx.Context.Response.Headers["Cache-Control"] = "public, max-age=0, must-revalidate";
+            }
+        });
+
+        app.MapGet("/assets/images/reel/manifest.json", () =>
+        {
+            var exts = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+            var files = Directory.EnumerateFiles(devPhotoPath, "*.*", SearchOption.AllDirectories)
+                                 .Where(p => exts.Contains(Path.GetExtension(p)))
+                                 .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
+                                 .Select(p => "/assets/images/reel" + p.Replace(devPhotoPath, string.Empty).Replace("\\", "/"))
+                                 .ToArray();
+            return Results.Json(new { images = files });
+        });
+    }
+}
 
 app.UseRouting();
 

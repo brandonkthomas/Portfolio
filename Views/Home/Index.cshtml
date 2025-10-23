@@ -33,10 +33,16 @@
 </div>
 
 @section Scripts {
-    <script src="~/js/card.js" type="module"></script>
+    <environment include="Development">
+        <script src="~/js/card.js" type="module"></script>
+    </environment>
+    <environment exclude="Development">
+        @inject Portfolio.Services.IAssetManifest AssetManifest
+        <script src="@AssetManifest.GetAssetPath("card.js")" type="module"></script>
+    </environment>
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/index.css" />
-    <link rel="stylesheet" href="~/css/cardCta.css" />
+    <link rel="stylesheet" href="~/css/index.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/cardCta.css" asp-append-version="true" />
 }

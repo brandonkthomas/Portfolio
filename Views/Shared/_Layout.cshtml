@@ -10,11 +10,11 @@
     
     <title>Brandon Thomas</title>
 
-    <link rel="stylesheet" href="~/css/common.css" />
-    <link rel="stylesheet" href="~/css/navbar.css" />
-    <link rel="stylesheet" href="~/css/starfield.css" />
-    <link rel="stylesheet" href="~/css/glassSurface.css" />
-    <link rel="stylesheet" href="~/css/photoGallery.css" />
+    <link rel="stylesheet" href="~/css/common.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/navbar.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/starfield.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/glassSurface.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/photoGallery.css" asp-append-version="true" />
 
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
 
@@ -101,11 +101,21 @@
     <main role="main">
         @RenderBody()
     </main>
-    <script src="~/js/common.js" type="module"></script>
-    <script src="~/js/stateManager.js" type="module"></script>
-    <script src="~/js/navbar.js" type="module"></script>
-    <script src="~/js/starfield.js" type="module"></script>
-    <script src="~/js/photoGallery.js" type="module"></script>
+    <environment include="Development">
+        <script src="~/js/common.js" type="module"></script>
+        <script src="~/js/stateManager.js" type="module"></script>
+        <script src="~/js/navbar.js" type="module"></script>
+        <script src="~/js/starfield.js" type="module"></script>
+        <script src="~/js/photoGallery.js" type="module"></script>
+    </environment>
+    <environment exclude="Development">
+        @inject Portfolio.Services.IAssetManifest AssetManifest
+        <script src="@AssetManifest.GetAssetPath("common.js")" type="module"></script>
+        <script src="@AssetManifest.GetAssetPath("stateManager.js")" type="module"></script>
+        <script src="@AssetManifest.GetAssetPath("navbar.js")" type="module"></script>
+        <script src="@AssetManifest.GetAssetPath("starfield.js")" type="module"></script>
+        <script src="@AssetManifest.GetAssetPath("photoGallery.js")" type="module"></script>
+    </environment>
     @await RenderSectionAsync("Scripts", required: false)
     @await RenderSectionAsync("Styles", required: false)
 </body>
