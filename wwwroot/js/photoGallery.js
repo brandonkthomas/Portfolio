@@ -60,10 +60,15 @@ class PhotoGallery {
      * Create gallery HTML structure
      */
     createGalleryHTML() {
+        // Create gallery grid structure inside container
         this.container.innerHTML = `
             <div class="photo-gallery">
                 <div class="photo-grid"></div>
             </div>
+        `;
+
+        // Create lightbox directly in body so it's fixed to viewport
+        const lightboxHTML = `
             <div class="photo-lightbox">
                 <div class="lightbox-control lightbox-close-wrapper"></div>
                 <div class="lightbox-control lightbox-prev-wrapper"></div>
@@ -73,8 +78,15 @@ class PhotoGallery {
                 </div>
             </div>
         `;
-
-        this.lightbox = this.container.querySelector('.photo-lightbox');
+        
+        // Check if lightbox already exists (in case of re-initialization)
+        this.lightbox = document.querySelector('.photo-lightbox');
+        if (!this.lightbox) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = lightboxHTML;
+            this.lightbox = tempDiv.firstElementChild;
+            document.body.appendChild(this.lightbox);
+        }
         
         // Create glass surface controls
         this.createLightboxControls();
@@ -86,7 +98,7 @@ class PhotoGallery {
      */
     createLightboxControls() {
         // Close button
-        const closeWrapper = this.container.querySelector('.lightbox-close-wrapper');
+        const closeWrapper = this.lightbox?.querySelector('.lightbox-close-wrapper');
         const closeGlass = createGlassSurface({
             width: 'auto',
             height: '48px',
@@ -119,11 +131,13 @@ class PhotoGallery {
                 <span>Close</span>
             </button>
         `;
-        closeWrapper.appendChild(closeGlass.element);
+        if (closeWrapper) {
+            closeWrapper.appendChild(closeGlass.element);
+        }
         this.lightboxControls.close = closeGlass;
 
         // Previous button
-        const prevWrapper = this.container.querySelector('.lightbox-prev-wrapper');
+        const prevWrapper = this.lightbox?.querySelector('.lightbox-prev-wrapper');
         const prevGlass = createGlassSurface({
             width: 'auto',
             height: '48px',
@@ -155,11 +169,13 @@ class PhotoGallery {
                 <span>Prev</span>
             </button>
         `;
-        prevWrapper.appendChild(prevGlass.element);
+        if (prevWrapper) {
+            prevWrapper.appendChild(prevGlass.element);
+        }
         this.lightboxControls.prev = prevGlass;
 
         // Next button
-        const nextWrapper = this.container.querySelector('.lightbox-next-wrapper');
+        const nextWrapper = this.lightbox?.querySelector('.lightbox-next-wrapper');
         const nextGlass = createGlassSurface({
             width: 'auto',
             height: '48px',
@@ -191,7 +207,9 @@ class PhotoGallery {
                 <span>Next</span>
             </button>
         `;
-        nextWrapper.appendChild(nextGlass.element);
+        if (nextWrapper) {
+            nextWrapper.appendChild(nextGlass.element);
+        }
         this.lightboxControls.next = nextGlass;
     }
 
@@ -337,9 +355,9 @@ class PhotoGallery {
         });
 
         // Lightbox controls
-        const closeBtn = this.container.querySelector('.lightbox-close');
-        const prevBtn = this.container.querySelector('.lightbox-prev');
-        const nextBtn = this.container.querySelector('.lightbox-next');
+        const closeBtn = this.lightbox?.querySelector('.lightbox-close');
+        const prevBtn = this.lightbox?.querySelector('.lightbox-prev');
+        const nextBtn = this.lightbox?.querySelector('.lightbox-next');
 
         if (closeBtn) {
             closeBtn.addEventListener('click', () => this.closeLightbox());
