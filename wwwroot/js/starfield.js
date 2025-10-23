@@ -6,7 +6,7 @@
 
 import { isMobile, isErrorPage } from './common.js';
 import { createCircleTexture } from './textures.js';
-import { createNebulae, updateNebulae } from './nebulae.js';
+import { createNebulae, updateNebulae, reduceNebulaOpacity, restoreNebulaOpacity } from './nebulae.js';
 import { generateStarColor, triggerWarpPulse, setupKonamiCode } from './starfieldUtils.js';
 
 // DEBUG FLAG: if true, show animated gradient instead of starfield (for testing glass material behavior/interactions)
@@ -227,6 +227,51 @@ class Starfield {
      */
     triggerKonamiWarp() {
         console.log('todo');
+    }
+
+    //==============================================================================================
+    /**
+     * Reduce star count for photo gallery view
+     * @description Gradually reduces stars to 30% of original count
+     */
+    reduceStars() {
+        if (!this.starField) return;
+
+        const positions = this.starField.geometry.attributes.position;
+        const colors = this.starField.geometry.attributes.color;
+        const targetCount = Math.floor(this.starCount * 0.3);
+
+        // Fade out stars beyond target count
+        for (let i = targetCount; i < positions.count; i++) {
+            // Set alpha to 0 to hide stars
+            colors.array[i * 4 + 3] = 0;
+        }
+
+        colors.needsUpdate = true;
+
+        // Reduce nebula opacity
+        reduceNebulaOpacity(this.nebulae, 0.3);
+    }
+
+    //==============================================================================================
+    /**
+     * Restore star count to original
+     * @description Gradually restores all stars to full visibility
+     */
+    restoreStars() {
+        if (!this.starField) return;
+
+        const colors = this.starField.geometry.attributes.color;
+
+        // Restore all stars
+        for (let i = 0; i < colors.count; i++) {
+            colors.array[i * 4 + 3] = 1.0;
+        }
+
+        colors.needsUpdate = true;
+
+        // Restore nebula opacity
+        restoreNebulaOpacity(this.nebulae);
     }
 
     //==============================================================================================
@@ -471,7 +516,12 @@ class Starfield {
     }
 }
 
-// Initialize starfield when the page loads
+// Initialize starfield when the page loads and expose to state manager
+let starfieldInstance = null;
+
 window.addEventListener('load', () => {
-    new Starfield();
+    starfieldInstance = new Starfield();
+    
+    // Expose to window for state manager
+    window.starfieldInstance = starfieldInstance;
 });

@@ -511,7 +511,7 @@ class Card {
         this.rotation.x += (this.targetRotation.x - this.rotation.x) * 0.1;
         this.rotation.y += (this.targetRotation.y - this.rotation.y) * 0.1;
 
-        // only run your ease-out flip when flipStartTime is set (i.e. after click)
+        // only run ease-out flip when flipStartTime is set (i.e. after click)
         if (this.flipStartTime != null) {
             const elapsed = (timestamp - this.flipStartTime) / 1000; // seconds since flip began
             const t = Math.min(elapsed / this.flipDuration, 1); // clamp 0→1
@@ -624,10 +624,51 @@ class Card {
         this.tapIndicatorMobile.style.right = 'auto';
         this.tapIndicatorMobile.style.bottom = 'auto';
     }
+
+    //==============================================================================================
+    /**
+     * Hide the card with scale-back animation
+     * @description Scales down, fades out, and blurs the card container
+     */
+    hide() {
+        if (!this.container) {
+            console.warn('Card container not found for hide()');
+            return;
+        }
+        
+        this.container.classList.add('hidden');
+        
+        // Hide tap indicators as well
+        if (this.tapIndicator) {
+            this.tapIndicator.classList.remove('visible');
+        }
+        if (this.tapIndicatorMobile) {
+            this.tapIndicatorMobile.classList.remove('visible');
+        }
+    }
+
+    //==============================================================================================
+    /**
+     * Show the card with 3D scale-forward animation
+     * @description Scales up, fades in, and removes blur from card container
+     */
+    show() {
+        if (!this.container) {
+            console.warn('Card container not found for show()');
+            return;
+        }
+
+        this.container.classList.remove('hidden');
+    }
 }
 
-// Initialize when DOM is loaded
+// Initialize when DOM is loaded and expose to state manager
+let card3DInstance = null;
+
 document.addEventListener('DOMContentLoaded', () => {
-    const card3D = new Card();
-    window.addEventListener('resize', () => card3D.onWindowResize());
+    card3DInstance = new Card();
+    window.addEventListener('resize', () => card3DInstance.onWindowResize());
+    
+    // Expose to window for state manager
+    window.card3DInstance = card3DInstance;
 });

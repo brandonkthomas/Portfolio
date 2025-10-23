@@ -10,7 +10,7 @@
     z-index: 3;
     opacity: 0;
     transform: translateY(20px);
-    transition: opacity 0.3s ease, transform 0.3s ease;
+    transition: opacity 0.3s ease, transform 0.3s ease, pointer-events 0s 0.3s;
     pointer-events: none;
     margin-left: -24px;
     margin-top: -24px;

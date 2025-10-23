@@ -6,6 +6,7 @@
 
 import { createGlassSurface } from './glassSurface.js';
 import { isMobile } from './common.js';
+import stateManager, { ViewState } from './stateManager.js';
 
 class Navbar {
     constructor() {
@@ -14,10 +15,13 @@ class Navbar {
         this.burgerButton = null;
         this.navLinks = null;
         this.isMenuOpen = false;
+        this.urlText = null;
+        this.mobilePhotosLinks = []; // Store mobile photos links for dynamic updates
         
         this.init();
     }
 
+    //==============================================================================================
     /**
      * Initialize the URL display with glass surface
      */
@@ -30,6 +34,7 @@ class Navbar {
         }
     }
 
+    //==============================================================================================
     /**
      * Setup the glass surface and event listeners
      */
@@ -88,10 +93,14 @@ class Navbar {
         this.handleResize();
     }
 
+    //==============================================================================================
     /**
      * Setup event listeners for burger menu and resize
      */
     setupEventListeners() {
+        // Get URL text element
+        this.urlText = document.querySelector('.url-text');
+
         // On mobile, make the entire bar clickable
         if (this.glassSurface && this.glassSurface.element) {
             this.glassSurface.element.addEventListener('click', (e) => {
@@ -106,6 +115,51 @@ class Navbar {
             });
         }
 
+        // Intercept photos link clicks for SPA navigation (no router, so we need to handle this ourselves)
+        const photoLinks = document.querySelectorAll('.url-link-photos');
+        photoLinks.forEach(link => {
+            // Store mobile links for later updates
+            if (link.closest('.url-nav-links.mobile')) {
+                this.mobilePhotosLinks.push(link);
+            }
+
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Close mobile menu if open
+                if (this.isMenuOpen) {
+                    this.closeMenu();
+                }
+                
+                // Determine target view based on current state
+                const currentView = stateManager.getCurrentView();
+                const targetView = currentView === ViewState.PHOTOS ? ViewState.CARD : ViewState.PHOTOS;
+                
+                // Navigate to target view
+                stateManager.navigateToView(targetView, true);
+            });
+        });
+
+        // Make URL text clickable to return home (desktop only)
+        if (this.urlText) {
+            this.urlText.addEventListener('click', (e) => {
+                // Only work on desktop
+                if (window.innerWidth > 768) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Navigate to card view
+                    stateManager.navigateToView(ViewState.CARD, true);
+                }
+            });
+        }
+
+        // Listen for view changes to update mobile nav
+        stateManager.onViewChange((view) => {
+            this.updateMobileNav(view);
+        });
+
         // Close menu when clicking outside
         document.addEventListener('click', (e) => {
             if (this.isMenuOpen && !this.container.contains(e.target)) {
@@ -117,6 +171,32 @@ class Navbar {
         window.addEventListener('resize', () => this.handleResize());
     }
 
+    //==============================================================================================
+    /**
+     * Update mobile nav based on current view
+     * TODO: dont hardcode this HTML
+     * @param {ViewState} view - Current view state
+     */
+    updateMobileNav(view) {
+        // Only update mobile links
+        this.mobilePhotosLinks.forEach(link => {
+            if (view === ViewState.PHOTOS) {
+                // Change Photos link to Card link
+                link.innerHTML = `
+                    <img src="/assets/svg/card-identity-filled.svg" alt="" width="20" height="20" />
+                    <span>Card</span>
+                `;
+            } else {
+                // Change back to Photos link
+                link.innerHTML = `
+                    <img src="/assets/svg/photo-filled.svg" alt="" width="20" height="20" />
+                    <span>Photos</span>
+                `;
+            }
+        });
+    }
+
+    //==============================================================================================
     /**
      * Toggle the burger menu
      */
@@ -128,6 +208,7 @@ class Navbar {
         }
     }
 
+    //==============================================================================================
     /**
      * Open the burger menu
      */
@@ -139,6 +220,7 @@ class Navbar {
         }
     }
 
+    //==============================================================================================
     /**
      * Close the burger menu
      */
@@ -150,6 +232,7 @@ class Navbar {
         }
     }
 
+    //==============================================================================================
     /**
      * Handle window resize
      */
@@ -160,6 +243,7 @@ class Navbar {
         }
     }
 
+    //==============================================================================================
     /**
      * Cleanup
      */
@@ -172,4 +256,3 @@ class Navbar {
 
 // Initialize when module loads
 export default new Navbar();
-

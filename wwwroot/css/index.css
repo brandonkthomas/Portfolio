@@ -11,9 +11,25 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
+    filter: blur(0px);
+    transition: /* squeeze and fade/blur -- used when transitioning to different views (photo) */
+        opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+        filter 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Ensure the Three.js canvas takes full container space */
+/* squeeze and fade/blur -- used when transitioning to different views (photo) */
+.card-container.hidden {
+    opacity: 0;
+    transform: scale(0.85);
+    filter: blur(20px);
+    pointer-events: none;
+}
+
+/* Ensure Three.js canvas takes full container space */
 .card-container canvas {
     width: 100% !important;
     height: 100% !important;

@@ -6,6 +6,9 @@
 import { createNebulaTexture } from './textures.js';
 import { isErrorPage } from './common.js';
 
+// Store original opacity values for restoration
+const nebulaOriginalOpacities = new WeakMap();
+
 //==============================================================================================
 /**
  * Creates nebula/dust cloud meshes
@@ -89,6 +92,9 @@ export function createNebulae(nebulaCount, scene) {
         
         // Random speed (even slower for background elements)
         const speed = 0.004 + Math.random() * 0.016;
+        
+        // Store original opacity in WeakMap for safe restoration
+        nebulaOriginalOpacities.set(sprite.material, sprite.material.opacity);
         
         nebulae.push({
             mesh: sprite,
@@ -176,6 +182,9 @@ export function createNebulae(nebulaCount, scene) {
         
         // Very slow speed for background elements
         const speed = 0.001 + Math.random() * 0.005;
+        
+        // Store original opacity in WeakMap for safe restoration
+        nebulaOriginalOpacities.set(sprite.material, sprite.material.opacity);
         
         nebulae.push({
             mesh: sprite,
@@ -290,4 +299,45 @@ export function updateNebulae(nebulae, deltaTime, warpIntensity) {
         
         material.color.setHSL(hsl.h, newSaturation, newLightness);
     }
+}
+
+//==============================================================================================
+/**
+ * Reduce nebula opacity -- for state changes (photo gallery view)
+ * @param {Array} nebulae - Array of nebula objects
+ * @param {number} factor - Reduction factor (default 0.3)
+ */
+export function reduceNebulaOpacity(nebulae, factor = 0.3) {
+    nebulae.forEach(nebula => {
+        if (nebula && nebula.mesh && nebula.mesh.material) {
+            const material = nebula.mesh.material;
+            
+            // Store current opacity as original if not already stored
+            if (!nebulaOriginalOpacities.has(material)) {
+                nebulaOriginalOpacities.set(material, material.opacity);
+            }
+            
+            // Set to reduced opacity
+            const originalOpacity = nebulaOriginalOpacities.get(material);
+            material.opacity = originalOpacity * factor;
+        }
+    });
+}
+
+//==============================================================================================
+/**
+ * Restore nebula opacity to original values -- for state changes (card view)
+ * @param {Array} nebulae - Array of nebula objects
+ */
+export function restoreNebulaOpacity(nebulae) {
+    nebulae.forEach(nebula => {
+        if (nebula && nebula.mesh && nebula.mesh.material) {
+            const material = nebula.mesh.material;
+            
+            // Restore from stored original opacity
+            if (nebulaOriginalOpacities.has(material)) {
+                material.opacity = nebulaOriginalOpacities.get(material);
+            }
+        }
+    });
 } 

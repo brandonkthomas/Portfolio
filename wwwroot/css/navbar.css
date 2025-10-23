@@ -36,11 +36,27 @@
     width: 100%;
 }
 
+/* URL text -- brandonthomas.net element */
 .url-text {
     color: rgba(255, 255, 255, 0.7);
     font-weight: 500;
     white-space: nowrap;
     text-shadow: 0px 1px 8px rgba(0, 0, 0, 0.3);
+    padding: 0.25rem 0.5rem;
+    border-radius: 8px;
+    transition: color 0.2s ease, background 0.2s ease;
+}
+
+/* Desktop only - clickable to return home (disabled on mobile so that full navbar is clickable to invoke dropdown) */
+@media (min-width: 769px) {
+    .url-text {
+        cursor: pointer;
+    }
+
+    .url-text:hover {
+        color: rgba(255, 255, 255, 1);
+        background: rgba(255, 255, 255, 0.1);
+    }
 }
 
 /* Navigation links */
@@ -89,7 +105,15 @@
 .url-link svg,
 .url-link img {
     flex-shrink: 0;
+}
+
+.url-link img {
     filter: brightness(0) invert(1);
+}
+
+.url-link svg {
+    width: 20px;
+    height: 20px;
 }
 
 /* Burger menu button */
@@ -122,6 +146,7 @@
     width: 20px;
     height: 20px;
     position: relative;
+    filter: drop-shadow(0px 1px 8px rgba(0, 0, 0, 0.3))
 }
 
 /* Burger lines */
