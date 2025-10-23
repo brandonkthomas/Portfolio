@@ -78,7 +78,7 @@ class PhotoGallery {
                 </div>
             </div>
         `;
-        
+
         // Check if lightbox already exists (in case of re-initialization)
         this.lightbox = document.querySelector('.photo-lightbox');
         if (!this.lightbox) {
@@ -86,6 +86,14 @@ class PhotoGallery {
             tempDiv.innerHTML = lightboxHTML;
             this.lightbox = tempDiv.firstElementChild;
             document.body.appendChild(this.lightbox);
+        }
+
+        // Harden lightbox image against saving interactions
+        const lightboxImg = this.lightbox.querySelector('.lightbox-image');
+        if (lightboxImg) {
+            lightboxImg.setAttribute('draggable', 'false');
+            lightboxImg.addEventListener('dragstart', (e) => e.preventDefault());
+            lightboxImg.addEventListener('contextmenu', (e) => e.preventDefault());
         }
         
         // Create glass surface controls
@@ -288,6 +296,10 @@ class PhotoGallery {
             img.alt = `Photo ${photo.index + 1}`;
             img.loading = 'lazy';
             img.decoding = 'async'; // Ensure async decoding
+            // Disable drag/save interactions on grid images
+            img.setAttribute('draggable', 'false');
+            img.addEventListener('dragstart', (e) => e.preventDefault());
+            img.addEventListener('contextmenu', (e) => e.preventDefault());
 
             // After load, update actual aspect ratio for better layout stability
             img.addEventListener('load', () => {
@@ -353,6 +365,24 @@ class PhotoGallery {
                 this.openLightbox(index);
             }
         });
+
+        // Block context menu and drag on images within gallery container (desktop)
+        this.container.addEventListener('contextmenu', (e) => {
+            const target = e.target;
+            if (target && target.tagName === 'IMG') {
+                const imgEl = target;
+                if (imgEl.classList.contains('lightbox-image') || imgEl.closest('.photo-item')) {
+                    e.preventDefault();
+                }
+            }
+        }, { capture: true });
+
+        this.container.addEventListener('dragstart', (e) => {
+            const target = e.target;
+            if (target && target.tagName === 'IMG') {
+                e.preventDefault();
+            }
+        }, { capture: true });
 
         // Lightbox controls
         const closeBtn = this.lightbox?.querySelector('.lightbox-close');

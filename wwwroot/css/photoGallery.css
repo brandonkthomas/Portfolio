@@ -333,3 +333,20 @@
 }
 
 
+/*
+    Disable saving interactions on images in Photos view
+    - Prevent long-press callout on mobile
+    - Prevent text selection and dragging on all platforms
+*/
+.photo-gallery-container img,
+.photo-lightbox .lightbox-image {
+    -webkit-touch-callout: none; /* iOS Safari: disable callout */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-user-drag: none; /* Safari/Chrome: disable drag */
+    /* user-drag: none; */
+    -webkit-tap-highlight-color: transparent;
+}
+
