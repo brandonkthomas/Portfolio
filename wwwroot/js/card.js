@@ -119,7 +119,13 @@ class Card {
         this.scene = new THREE.Scene();
 
         // Show card tap CTA indicator after 2.25s; hide after 14.2s
+        // Only show if card container is visible (not hidden for photos view)
         this._showTapTimeout = setTimeout(() => {
+            // Don't show tap indicator if the card is hidden
+            if (this.container.classList.contains('hidden')) {
+                return;
+            }
+            
             if (isMobile()) {
                 this.tapIndicatorMobile.classList.add('visible');
             } else {

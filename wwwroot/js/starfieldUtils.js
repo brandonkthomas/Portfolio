@@ -22,11 +22,12 @@ export function generateStarColor() {
 /**
  * Trigger warp effect
  * @param {function} setWarpIntensity - Function to set warp intensity
+ * @param {boolean} reverse - If true, warp direction is reversed (default: false)
  * @description Initiates a warp pulse that fades out over 0.5 seconds
  */
-export function triggerWarpPulse(setWarpIntensity) {
-    // Set warp intensity to 1 immediately
-    setWarpIntensity(1);
+export function triggerWarpPulse(setWarpIntensity, reverse = false) {
+    // Set warp intensity to 1 immediately with direction
+    setWarpIntensity(reverse ? -1 : 1);
 
     // smooth fade out over 0.5 seconds
     const startTime = Date.now();
@@ -37,7 +38,8 @@ export function triggerWarpPulse(setWarpIntensity) {
         const progress = Math.min(elapsed / duration, 1);
 
         // easeOutQuart for smoother deceleration at the end
-        setWarpIntensity(Math.pow(1 - progress, 4));
+        const intensity = Math.pow(1 - progress, 4);
+        setWarpIntensity(reverse ? -intensity : intensity);
 
         if (progress < 1) {
             requestAnimationFrame(fadeOut);

@@ -7,6 +7,23 @@
 import { isMobile } from './common.js';
 
 //==============================================================================================
+// Early init: Hide card immediately if we're loading /photos
+// This prevents the card from flashing before JS modules initialize
+(() => {
+    const path = window.location.pathname;
+    if (path === '/photos' || path === '/Photos') {
+        const cardContainer = document.querySelector('.card-container');
+        const photoContainer = document.querySelector('.photo-gallery-container');
+        if (cardContainer) {
+            cardContainer.classList.add('hidden');
+        }
+        if (photoContainer) {
+            photoContainer.classList.add('visible');
+        }
+    }
+})();
+
+//==============================================================================================
 /**
  * View state enumeration
  * @enum {string}
@@ -40,7 +57,11 @@ class StateManager {
             const viewString = state.view || ViewState.CARD;
             // Map string to enum (for backward compatibility)
             const view = viewString === ViewState.PHOTOS ? ViewState.PHOTOS : ViewState.CARD;
-            this.navigateToView(view, false); // false = don't push history
+            this.navigateToView(
+                /* view */ view, 
+                /* pushHistory */ false, 
+                /* skipAnimations */ false
+            );
         });
 
         // Check initial URL and navigate accordingly
@@ -54,9 +75,24 @@ class StateManager {
         const path = window.location.pathname;
         
         if (path === '/photos' || path === '/Photos') {
-            // Wait for modules to be ready
+            // Set current view immediately (DOM already updated by early init)
+            this.currentView = ViewState.PHOTOS;
+            history.replaceState({ view: ViewState.PHOTOS }, '', '/photos');
+            
+            // Notify listeners immediately so navbar updates
+            this.notifyListeners();
+            
+            // Wait for modules to be ready, then finalize setup (no animations needed)
             this.waitForModules(() => {
-                this.navigateToView(ViewState.PHOTOS, false);
+                // Set star direction for photos view
+                if (this.starfield) {
+                    this.starfield.setStarDirection(-1);
+                    this.starfield.reduceStars();
+                }
+                // Ensure photo gallery is initialized
+                if (this.photoGallery && !this.photoGallery.isGalleryVisible()) {
+                    this.photoGallery.show();
+                }
             });
         } else {
             // Default to card view
@@ -136,8 +172,9 @@ class StateManager {
      * Navigate to a specific view
      * @param {ViewState} view - View state enum value
      * @param {boolean} pushHistory - Whether to push to browser history
+     * @param {boolean} skipAnimations - Whether to skip animations (for initial load)
      */
-    async navigateToView(view, pushHistory = true) {
+    async navigateToView(view, pushHistory = true, skipAnimations = false) {
         if (this.isTransitioning || view === this.currentView) {
             return;
         }
@@ -146,7 +183,11 @@ class StateManager {
         if (!this.starfield || !this.card || !this.photoGallery) {
             console.warn('Waiting for modules to be ready...');
             this.waitForModules(() => {
-                this.navigateToView(view, pushHistory);
+                this.navigateToView(
+                    /* view */ view, 
+                    /* pushHistory */ pushHistory, 
+                    /* skipAnimations */ skipAnimations
+                );
             });
             return;
         }
@@ -161,9 +202,9 @@ class StateManager {
 
         // Perform transition
         if (view === ViewState.PHOTOS) {
-            await this.transitionToPhotos();
+            await this.transitionToPhotos(skipAnimations);
         } else {
-            await this.transitionToCard();
+            await this.transitionToCard(skipAnimations);
         }
 
         this.currentView = view;
@@ -173,13 +214,33 @@ class StateManager {
 
     /**
      * Transition to photo gallery view
+     * @param {boolean} skipAnimations - Whether to skip animations
      */
-    async transitionToPhotos() {
+    async transitionToPhotos(skipAnimations = false) {
+        
+        // Set star direction to reverse (away from camera)
+        if (this.starfield) {
+            this.starfield.setStarDirection(-1);
+        }
+        
+        if (skipAnimations) {
+            // No animations - instantly show photos view
+            if (this.card) {
+                this.card.hide();
+            }
+            if (this.photoGallery) {
+                this.photoGallery.show();
+            }
+            if (this.starfield) {
+                this.starfield.reduceStars();
+            }
+            return;
+        }
         
         // Start both animations simultaneously for 3D effect
-        // Trigger starfield warp
+        // Trigger starfield warp in reverse
         if (window.triggerStarfieldWarp) {
-            window.triggerStarfieldWarp();
+            window.triggerStarfieldWarp(true); // true = reverse
         }
 
         // Hide card (scales down, fades, blurs)
@@ -210,8 +271,28 @@ class StateManager {
 
     /**
      * Transition to card view
+     * @param {boolean} skipAnimations - Whether to skip animations
      */
-    async transitionToCard() {
+    async transitionToCard(skipAnimations = false) {
+        
+        // Set star direction to forward (toward camera)
+        if (this.starfield) {
+            this.starfield.setStarDirection(1);
+        }
+        
+        if (skipAnimations) {
+            // No animations - instantly show card view
+            if (this.photoGallery) {
+                this.photoGallery.hide();
+            }
+            if (this.card) {
+                this.card.show();
+            }
+            if (this.starfield) {
+                this.starfield.restoreStars();
+            }
+            return;
+        }
         
         // Start both animations simultaneously for 3D effect
         // Hide photo gallery (scales up, fades, blurs)
@@ -228,9 +309,9 @@ class StateManager {
             console.warn('Card instance not available');
         }
 
-        // Trigger starfield warp
+        // Trigger starfield warp (forward direction)
         if (window.triggerStarfieldWarp) {
-            window.triggerStarfieldWarp();
+            window.triggerStarfieldWarp(false); // false = forward
         }
 
         // Wait for animations to complete

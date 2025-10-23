@@ -103,6 +103,11 @@ app.MapControllerRoute(
     defaults: new { controller = "Home", action = "Index" });
 
 app.MapControllerRoute(
+    name: "photos",
+    pattern: "/photos",
+    defaults: new { controller = "Home", action = "Photos" });
+
+app.MapControllerRoute(
     name: "error",
     pattern: "/error",
     defaults: new { controller = "Home", action = "Error" });

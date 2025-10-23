@@ -50,6 +50,7 @@ class Starfield {
         this.starCount = isMobile() ? 1500 : 2000;
         this.starField = null;
         this.warpIntensity = 0;
+        this.starDirection = 1; // 1 for forward, -1 for reverse
         this.cardContainer = document.querySelector('.card-container');
         this.starSize = isMobile() ? 0.2 : 0.15;
 
@@ -213,11 +214,21 @@ class Starfield {
      */
     setupClickDetection() {
         // Allow card to trigger warp pulse
-        window.triggerStarfieldWarp = () => {
+        window.triggerStarfieldWarp = (reverse = false) => {
             triggerWarpPulse((intensity) => {
                 this.warpIntensity = intensity;
-            });
+            }, reverse);
         };
+    }
+
+    //==============================================================================================
+    /**
+     * Set star movement direction
+     * @param {number} direction - 1 for forward (toward camera), -1 for reverse (away from camera)
+     * @description Changes the direction stars move
+     */
+    setStarDirection(direction) {
+        this.starDirection = direction;
     }
 
     //==============================================================================================
@@ -441,22 +452,25 @@ class Starfield {
 
         for (let i = 0; i < positions.count; i++) {
             // Calculate warp speed (up to 50x faster when warping)
-            const warpSpeed = originalSpeeds.array[i] * (1 + this.warpIntensity * 299);
+            const absWarpIntensity = Math.abs(this.warpIntensity);
+            const warpSpeed = originalSpeeds.array[i] * (1 + absWarpIntensity * 299);
             speeds.array[i] = warpSpeed;
 
-            // Move star using delta time
-            positions.array[i * 3 + 2] += speeds.array[i] * deltaTime * 60; // Scale by 60 to maintain original speed
+            // Move star using delta time with direction
+            positions.array[i * 3 + 2] += speeds.array[i] * deltaTime * 60 * this.starDirection; // Scale by 60 to maintain original speed
 
             // Apply stretch effect when warping - only stretch along Z axis
-            if (this.warpIntensity > 0) {
-                const stretchFactor = 1 + this.warpIntensity * 1;
+            if (absWarpIntensity > 0) {
+                const stretchFactor = 1 + absWarpIntensity * 1;
                 // Apply stretch by moving the star an additional distance
-                positions.array[i * 3 + 2] += speeds.array[i] * (stretchFactor - 1) * deltaTime * 60;
+                positions.array[i * 3 + 2] += speeds.array[i] * (stretchFactor - 1) * deltaTime * 60 * this.starDirection;
             }
 
-            // Reset star if it's too close
-            if (positions.array[i * 3 + 2] > 10) {
-                positions.array[i * 3 + 2] = -50;
+            // Reset star based on direction
+            const shouldReset = this.starDirection > 0 ? positions.array[i * 3 + 2] > 10 : positions.array[i * 3 + 2] < -50;
+            if (shouldReset) {
+                // Reset to opposite end based on direction
+                positions.array[i * 3 + 2] = this.starDirection > 0 ? -50 : 10;
 
                 // Reset position maintaining original X and Y
                 const radius = 8 + Math.random() * 20;
@@ -466,7 +480,7 @@ class Starfield {
 
                 // Only start fade in if we're not warping 
                 // (0.05 for a little bit of buffer toward the end when the warp is slowing down)
-                if (this.warpIntensity < 0.05) {
+                if (absWarpIntensity < 0.05) {
                     colors.array[i * 4 + 3] = 0; // Set alpha to 0
                 } else {
                     colors.array[i * 4 + 3] = 1; // Keep fully opaque during warp
@@ -495,21 +509,23 @@ class Starfield {
             const y = positions.array[base3 + 1];
             const z = positions.array[base3 + 2];
             // Trail length scales with warpIntensity and star speed
-            const trailLen = this.warpIntensity * speeds.array[i] * 5;
+            const absWarpIntensityTrail = Math.abs(this.warpIntensity);
+            const trailLen = absWarpIntensityTrail * speeds.array[i] * 5;
             // Start point at current star position
             trailPositions[base6] = x;
             trailPositions[base6 + 1] = y;
             trailPositions[base6 + 2] = z;
-            // End point slightly behind along Z axis for faint trail
+            // End point behind the star based on direction of travel (opposite of starDirection)
             trailPositions[base6 + 3] = x;
             trailPositions[base6 + 4] = y;
-            trailPositions[base6 + 5] = z - trailLen;
+            trailPositions[base6 + 5] = z - (trailLen * this.starDirection);
         }
         this.trailGeometry.attributes.position.needsUpdate = true;
 
         // Subtle glow effect: scale star size and trail opacity during warp
-        this.starField.material.size = this.starSize + this.warpIntensity * 0.05;
-        this.trailMaterial.opacity = (isMobile() ? 0.225 : 0.1) + this.warpIntensity * 0.05;
+        const absWarpIntensity = Math.abs(this.warpIntensity);
+        this.starField.material.size = this.starSize + absWarpIntensity * 0.05;
+        this.trailMaterial.opacity = (isMobile() ? 0.225 : 0.1) + absWarpIntensity * 0.05;
 
         this.camera.position.z = 5;
         this.renderer.render(this.scene, this.camera);

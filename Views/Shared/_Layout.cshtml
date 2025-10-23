@@ -65,10 +65,23 @@
                     </button>
                 </div>
                 <nav class="url-nav-links mobile">
-                    <a href="/photos" class="url-link url-link-photos" data-nav-link="photos">
-                        <img src="~/assets/svg/photo-filled.svg" alt="" width="20" height="20" />
-                        <span>Photos</span>
-                    </a>
+                    @{
+                        var isPhotosPage = Context.Request.Path.StartsWithSegments("/photos", StringComparison.OrdinalIgnoreCase);
+                    }
+                    @if (isPhotosPage)
+                    {
+                        <a href="/photos" class="url-link url-link-photos" data-nav-link="photos">
+                            <img src="~/assets/svg/card-identity-filled.svg" alt="" width="20" height="20" />
+                            <span>Card</span>
+                        </a>
+                    }
+                    else
+                    {
+                        <a href="/photos" class="url-link url-link-photos" data-nav-link="photos">
+                            <img src="~/assets/svg/photo-filled.svg" alt="" width="20" height="20" />
+                            <span>Photos</span>
+                        </a>
+                    }
                     <a href="https://github.com/brandonkthomas" class="url-link" rel="noopener noreferrer">
                         <img src="~/assets/svg/github-logo-filled.svg" alt="" width="20" height="20" />
                         <span>GitHub</span>
