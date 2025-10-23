@@ -54,6 +54,13 @@ class Starfield {
         this.cardContainer = document.querySelector('.card-container');
         this.starSize = isMobile() ? 0.2 : 0.15;
 
+        // Rear-center core population to fill back-center gap
+        // Stars spawned in the far back slice close to the axis
+        this.coreBackZThreshold = -45; // stars with z below this are considered rear-center core
+        this.coreCullZ = -25;          // before reaching this, core stars will be faded and reset
+        this.coreFadeRange = 8;        // range (in Z) over which core stars fade out
+        this.coreBackRadiusMax = 2.5;  // maximum radius for rear-center core stars
+
         // Nebula configuration
         this.nebulae = [];
         this.nebulaCount = isMobile() ? 8 : 12;
@@ -107,21 +114,32 @@ class Starfield {
         const speeds = [];
         const originalSpeeds = []; // Store original speeds for warp effect
         const opacities = []; // Store opacity values for fade effect
+        const coreBackFlags = []; // 1 if star belongs to rear-center core group
 
-        // Create a cylindrical distribution of stars
+        // Create a cylindrical distribution of stars, with a special rear-center core fill
         for (let i = 0; i < this.starCount; i++) {
             // Create an even distribution along Z-axis first
             const z = -50 + (i / this.starCount) * 60; // Distribute evenly from -50 to +10 (matches reset point in animation code)
 
-            // Cylindrical coordinates with wider distribution
-            const radius = 8 + Math.random() * 20; // Increased range for more spread
-            const theta = Math.random() * Math.PI * 2;
+            // Choose distribution based on back-slice membership
+            const isCoreBack = z < this.coreBackZThreshold;
+            let radius, theta;
+            if (isCoreBack) {
+                // Dense near-axis distribution using sqrt for uniform area density
+                radius = Math.sqrt(Math.random()) * this.coreBackRadiusMax;
+                theta = Math.random() * Math.PI * 2;
+            } else {
+                // Cylindrical coordinates with wider distribution
+                radius = 8 + Math.random() * 20; // Increased range for more spread
+                theta = Math.random() * Math.PI * 2;
+            }
 
             // Convert to Cartesian coordinates
             const x = radius * Math.cos(theta);
             const y = radius * Math.sin(theta);
 
             positions.push(x, y, z);
+            coreBackFlags.push(isCoreBack ? 1 : 0);
 
             const color = generateStarColor();
             colors.push(color.r, color.g, color.b, 1.0); // Add alpha channel
@@ -138,6 +156,7 @@ class Starfield {
         geometry.setAttribute('speed', new THREE.Float32BufferAttribute(speeds, 1));
         geometry.setAttribute('originalSpeed', new THREE.Float32BufferAttribute(originalSpeeds, 1));
         geometry.setAttribute('opacity', new THREE.Float32BufferAttribute(opacities, 1));
+        geometry.setAttribute('coreBack', new THREE.Float32BufferAttribute(coreBackFlags, 1));
 
         const material = new THREE.PointsMaterial({
             size: this.starSize, // mobile-specific size for better visibility
@@ -449,6 +468,7 @@ class Starfield {
         const speeds = this.starField.geometry.attributes.speed;
         const originalSpeeds = this.starField.geometry.attributes.originalSpeed;
         const colors = this.starField.geometry.attributes.color;
+        const coreBack = this.starField.geometry.attributes.coreBack;
 
         for (let i = 0; i < positions.count; i++) {
             // Calculate warp speed (up to 50x faster when warping)
@@ -466,15 +486,51 @@ class Starfield {
                 positions.array[i * 3 + 2] += speeds.array[i] * (stretchFactor - 1) * deltaTime * 60 * this.starDirection;
             }
 
+            // Special handling for rear-center core stars to avoid the card area
+            if (this.starDirection > 0 && coreBack.array[i] > 0) {
+                const z = positions.array[i * 3 + 2];
+                // Fade out as we approach the cull plane
+                if (z > (this.coreCullZ - this.coreFadeRange) && z < this.coreCullZ) {
+                    if (absWarpIntensity < 0.05) {
+                        const t = (z - (this.coreCullZ - this.coreFadeRange)) / this.coreFadeRange; // 0→1
+                        const fade = Math.max(0, 1 - t);
+                        const baseIndex = i * 4 + 3;
+                        colors.array[baseIndex] = Math.min(colors.array[baseIndex], fade);
+                    }
+                }
+                // Cull before reaching the card depth
+                if (z >= this.coreCullZ) {
+                    // Send back to far rear slice and keep near-axis radius
+                    positions.array[i * 3 + 2] = -50;
+                    const r = Math.sqrt(Math.random()) * this.coreBackRadiusMax;
+                    const th = Math.random() * Math.PI * 2;
+                    positions.array[i * 3 + 0] = r * Math.cos(th);
+                    positions.array[i * 3 + 1] = r * Math.sin(th);
+                    if (absWarpIntensity < 0.05) {
+                        colors.array[i * 4 + 3] = 0; // fade back in from the rear
+                    } else {
+                        colors.array[i * 4 + 3] = 1;
+                    }
+                    continue; // skip normal reset handling for this star this frame
+                }
+            }
+
             // Reset star based on direction
             const shouldReset = this.starDirection > 0 ? positions.array[i * 3 + 2] > 10 : positions.array[i * 3 + 2] < -50;
             if (shouldReset) {
                 // Reset to opposite end based on direction
-                positions.array[i * 3 + 2] = this.starDirection > 0 ? -50 : 10;
+                const resetToBack = this.starDirection > 0;
+                positions.array[i * 3 + 2] = resetToBack ? -50 : 10;
 
-                // Reset position maintaining original X and Y
-                const radius = 8 + Math.random() * 20;
-                const theta = Math.random() * Math.PI * 2;
+                // Reset position, using near-axis distribution for coreBack stars when sent to back
+                let radius, theta;
+                if (resetToBack && coreBack.array[i] > 0) {
+                    radius = Math.sqrt(Math.random()) * this.coreBackRadiusMax;
+                    theta = Math.random() * Math.PI * 2;
+                } else {
+                    radius = 8 + Math.random() * 20;
+                    theta = Math.random() * Math.PI * 2;
+                }
                 positions.array[i * 3 + 0] = radius * Math.cos(theta);
                 positions.array[i * 3 + 1] = radius * Math.sin(theta);
 
