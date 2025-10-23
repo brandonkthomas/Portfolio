@@ -45,6 +45,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
+    @{ var hideNavbar = (ViewData["HideNavbar"] as bool?) ?? false; }
+    @if (!hideNavbar)
+    {
     <div class="url-display">
         <div class="glass-surface-wrapper">
             <div class="url-display-content">
@@ -109,6 +112,7 @@
             </div>
         </div>
     </div>
+    }
     <main role="main">
         @RenderBody()
     </main>
