@@ -4,9 +4,7 @@
  * @description Handles 3D card rendering, flip animations, and drag interactions
  */
 
-import {
-    isMobile
-} from './common.js';
+import { isMobile, isReducedMotion, ensureThree, whenIdle } from './common.js';
 
 // import Stats from 'https://cdnjs.cloudflare.com/ajax/libs/stats.js/r17/Stats.min.js';
 
@@ -114,8 +112,14 @@ class Card {
      * Initialize the card
      * @description Sets up Three.js scene, creates card, and starts animation
      */
-    init() {
+    async init() {
         // Scene setup
+        try {
+            await ensureThree();
+        } catch (e) {
+            console.warn('Card disabled:', e);
+            return;
+        }
         this.scene = new THREE.Scene();
 
         // Show card tap CTA indicator after 2.25s; hide after 14.2s
@@ -162,8 +166,10 @@ class Card {
         this.mouse = new THREE.Vector2();
         this.setupEventListeners();
 
-        // Start animation
-        requestAnimationFrame(this.animate.bind(this));
+        // Start animation (respect reduced motion)
+        if (!isReducedMotion()) {
+            requestAnimationFrame(this.animate.bind(this));
+        }
     }
 
     //==============================================================================================
@@ -505,6 +511,12 @@ class Card {
         // Begin stats monitoring for this frame
         // this.stats.begin();
 
+        // Pause heavy work when tab hidden
+        if (document.hidden) {
+            requestAnimationFrame(this.animate.bind(this));
+            return;
+        }
+
         // first frame: seed lastTimestamp so it's never undefined
         if (this.lastTimestamp === undefined) {
             this.lastTimestamp = timestamp;
@@ -672,9 +684,11 @@ class Card {
 let card3DInstance = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-    card3DInstance = new Card();
-    window.addEventListener('resize', () => card3DInstance.onWindowResize());
-    
-    // Expose to window for state manager
-    window.card3DInstance = card3DInstance;
+    const start = () => {
+        card3DInstance = new Card();
+        window.addEventListener('resize', () => card3DInstance.onWindowResize());
+        window.card3DInstance = card3DInstance;
+    };
+    // Yield to TTI
+    whenIdle(start);
 });

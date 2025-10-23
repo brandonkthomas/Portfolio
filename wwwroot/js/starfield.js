@@ -4,7 +4,7 @@
  * @description Creates an interactive starfield background with a triggerable warp effect using Three.js
  */
 
-import { isMobile, isErrorPage } from './common.js';
+import { isMobile, isErrorPage, isReducedMotion, ensureThree, whenIdle } from './common.js';
 import { createCircleTexture } from './textures.js';
 import { createNebulae, updateNebulae, reduceNebulaOpacity, restoreNebulaOpacity } from './nebulae.js';
 import { generateStarColor, triggerWarpPulse, setupKonamiCode } from './starfieldUtils.js';
@@ -37,6 +37,7 @@ class Starfield {
      */
     constructor() {
         // Three.js setup
+        // THREE is guaranteed to be available before constructing
         this.scene = new THREE.Scene();
         this.scene.background = DEBUG_GRADIENT ? new THREE.Color('#000000') : new THREE.Color('#1A1A1A');
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -86,7 +87,10 @@ class Starfield {
             this.glowStartTime = performance.now(); // Remove delay to sync with CSS animation
         }
         
-        this.animate();
+        // Start render loop only if user doesn't prefer reduced motion
+        if (!isReducedMotion()) {
+            this.animate();
+        }
     }
 
     //==============================================================================================
@@ -204,6 +208,16 @@ class Starfield {
             this.camera.updateProjectionMatrix();
             this.renderer.setSize(window.innerWidth, window.innerHeight);
             this.renderer.setPixelRatio(window.devicePixelRatio); // mobile-specific pixel ratio for better visibility
+        });
+
+        // Pause render updates when tab is hidden to save CPU
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                this._pausedForVisibility = true;
+            } else {
+                this._pausedForVisibility = false;
+                this.lastFrameTime = undefined; // reset delta
+            }
         });
     }
 
@@ -409,6 +423,9 @@ class Starfield {
     animate() {
         requestAnimationFrame(() => this.animate());
         const now = performance.now();
+        if (document.hidden) {
+            return; // skip work this frame
+        }
         // On first frame or after long background, initialize lastFrameTime
         if (this.lastFrameTime === undefined) {
             this.lastFrameTime = now;
@@ -535,9 +552,50 @@ class Starfield {
 // Initialize starfield when the page loads and expose to state manager
 let starfieldInstance = null;
 
+// Lazy-init: wait for idle and viewport visibility, then ensure THREE is loaded
 window.addEventListener('load', () => {
-    starfieldInstance = new Starfield();
-    
-    // Expose to window for state manager
-    window.starfieldInstance = starfieldInstance;
+    const canvas = document.getElementById('starfield');
+    const start = async () => {
+        try {
+            await ensureThree();
+            starfieldInstance = new Starfield();
+            window.starfieldInstance = starfieldInstance;
+        } catch (e) {
+            // Fail silently; background is non-critical
+            console.warn('Starfield disabled:', e);
+        }
+    };
+
+    if (isReducedMotion()) {
+        // Respect user preference: don't initialize heavy animation
+        return;
+    }
+
+    // Yield to TTI
+    whenIdle(() => {
+        // If canvas is visible, start immediately; otherwise wait for visibility
+        if (canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const visible = rect.bottom > 0 && rect.top < window.innerHeight;
+            if (visible) {
+                start();
+            } else {
+                const onVisible = async () => {
+                    await start();
+                };
+                // Fallback simple scroll check if IntersectionObserver not used here
+                const onScroll = () => {
+                    const r = canvas.getBoundingClientRect();
+                    if (r.bottom > 0 && r.top < window.innerHeight) {
+                        window.removeEventListener('scroll', onScroll);
+                        onVisible();
+                    }
+                };
+                window.addEventListener('scroll', onScroll, { passive: true });
+                onScroll();
+            }
+        } else {
+            start();
+        }
+    });
 });

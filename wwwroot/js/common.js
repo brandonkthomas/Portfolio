@@ -1,4 +1,4 @@
-﻿/**
+/**
  * common.js
  * @fileoverview Main site JavaScript functionality
  * @description Handles mobile detection, URL path display, navigation
@@ -19,6 +19,77 @@ export function isMobile() {
     const isSmallScreen = window.innerWidth <= 768;
 
     return hasTouch && isSmallScreen;
+}
+
+//==============================================================================================
+/**
+ * Check user prefers-reduced-motion setting
+ * @returns {boolean} True if user prefers reduced motion
+ */
+export function isReducedMotion() {
+    try {
+        return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    } catch {
+        return false;
+    }
+}
+
+//==============================================================================================
+/**
+ * Schedule a callback during browser idle time
+ * @param {Function} cb - Callback to run when idle
+ */
+export function whenIdle(cb) {
+    if (typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(() => cb());
+    } else {
+        // Small timeout to yield to TTI
+        setTimeout(() => cb(), 60);
+    }
+}
+
+//==============================================================================================
+/**
+ * Ensure THREE global is loaded (lazy-loads from CDN if needed)
+ * @returns {Promise<any>} Resolves with window.THREE
+ */
+export function ensureThree() {
+    if (window.THREE) return Promise.resolve(window.THREE);
+    if (window.__threePromise) return window.__threePromise;
+
+    const CDN_URL = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+    window.__threePromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = CDN_URL;
+        script.async = true;
+        script.crossOrigin = 'anonymous';
+        script.referrerPolicy = 'no-referrer';
+        script.onload = () => resolve(window.THREE);
+        script.onerror = (e) => reject(new Error('Failed to load three.js'));
+        document.head.appendChild(script);
+    });
+    return window.__threePromise;
+}
+
+//==============================================================================================
+/**
+ * Resolve when an element becomes visible in the viewport
+ * @param {Element} el - Element to observe
+ * @param {number} [threshold=0.01] - Intersection threshold
+ * @returns {Promise<void>} Resolves once visible
+ */
+export function whenElementVisible(el, threshold = 0.01) {
+    if (!el) return Promise.resolve();
+    return new Promise((resolve) => {
+        const io = new IntersectionObserver((entries) => {
+            const entry = entries[0];
+            if (entry && entry.isIntersecting) {
+                io.disconnect();
+                resolve();
+            }
+        }, { threshold });
+        io.observe(el);
+    });
 }
 
 //==============================================================================================
