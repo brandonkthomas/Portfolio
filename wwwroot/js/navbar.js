@@ -183,13 +183,13 @@ class Navbar {
             if (view === ViewState.PHOTOS) {
                 // Change Photos link to Card link
                 link.innerHTML = `
-                    <img src="/assets/svg/card-identity-filled.svg" alt="" width="20" height="20" />
+                    <img src="/assets/svg/bt-logo-boxed.svg" alt="" width="20" height="20" />
                     <span>Card</span>
                 `;
             } else {
                 // Change back to Photos link
                 link.innerHTML = `
-                    <img src="/assets/svg/photo-filled.svg" alt="" width="20" height="20" />
+                    <img src="/assets/svg/polaroid-filled.svg" alt="" width="20" height="20" />
                     <span>Photos</span>
                 `;
             }
