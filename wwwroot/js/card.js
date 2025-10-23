@@ -85,20 +85,32 @@ class Card {
         //     y: 0
         // };
 
-        // Spring configuration for drag return animation
-        this.springStrength = 0.05; // Adjust for faster/slower return
-        this.springDamping = 0.75; // Adjust for more/less bounce
+        // Spring configuration for drag return animation (base values)
+        // this.springStrength = 0.05; // pre-spring-v2 field
+        // this.springDamping = 0.75; // pre-spring-v2 field
+
+        this.baseSpringStrength = 0.05; // base spring strength when returning to center
+        this.baseSpringDamping = 0.78;   // slightly higher damping for stability
+
+        // Snap-back boost (temporary snapback on release)
+        this.snapSpringStrength = 0.18;  // stronger spring for quick snap
+        this.snapSpringDamping = 0.63;   // allow a tiny bit of bounce
+        this.snapBoostDuration = 140;    // ms duration of the boosted snap back
+        this.snapBoostEndTime = 0;       // timestamp when snap boost ends
+        this.releaseBoost = 0.25;        // initial inward velocity on release
         this.velocity = {
             x: 0,
             y: 0
         };
 
         // Position limits and drag resistance
+        // Tighter limits to keep the card near center, with soft saturation
         this.positionLimits = {
-            x: 1.5,
-            y: 1.5
-        }; // Maximum distance from center
-        this.dragResistance = 0; // resistance with distance from center
+            x: 0.85,
+            y: 0.85
+        }; // Soft maximum distance from center (soft-clamped via tanh)
+        // Exponential drag resistance factor (higher => stronger resistance with distance)
+        this.dragResistance = 1.85;
 
         // Flip animation
         this.flipDuration = 0.26; // seconds
@@ -298,6 +310,8 @@ class Card {
             if (e.clientX <= 0 || e.clientX >= window.innerWidth ||
                 e.clientY <= 0 || e.clientY >= window.innerHeight) {
                 if (this.isDragging) {
+                    // Trigger snap-back on release when leaving the window bounds
+                    this.onDragRelease();
                     this.isDragging = false;
                     this.container.releasePointerCapture(e.pointerId);
                 }
@@ -336,6 +350,9 @@ class Card {
                     x: e.clientX,
                     y: e.clientY
                 };
+                // Clear any residual spring velocity so dragging starts from rest
+                this.velocity.x = 0;
+                this.velocity.y = 0;
                 // Store the initial drag offset
                 // this.dragOffset = this.calculateDragOffset(e);
 
@@ -349,18 +366,23 @@ class Card {
             if (this.isDragging) {
                 this.isDragging = false;
                 this.container.releasePointerCapture(e.pointerId);
+                this.onDragRelease();
             }
         });
 
         // Handle when pointer is lost (e.g., leaves window)
         this.container.addEventListener('lostpointercapture', () => {
+            const wasDragging = this.isDragging;
             this.isDragging = false;
+            if (wasDragging) this.onDragRelease();
         });
 
         // Backup: also handle when window loses focus
         window.addEventListener('blur', () => {
-            if (this.isDragging) {
+            const wasDragging = this.isDragging;
+            if (wasDragging) {
                 this.isDragging = false;
+                this.onDragRelease();
             }
         });
     }
@@ -384,27 +406,45 @@ class Card {
         const worldMovementY = -(movementY / window.innerHeight) * 1.5;
 
         // Calculate distance from center for resistance
-        const currentDistance = Math.sqrt(
-            this.position.x * this.position.x +
-            this.position.y * this.position.y
-        );
+        const currentDistance = Math.hypot(this.position.x, this.position.y);
 
-        // Apply distance-based resistance
-        const resistance = 1 / (1 + (currentDistance * this.dragResistance));
+        // Exponential distance-based resistance: slight at first, stronger farther out
+        // resistance in (0,1], equals 1 at center and decays exponentially with distance
+        const resistance = Math.exp(-this.dragResistance * currentDistance);
 
-        // Update position with limits and resistance
+        // Update position using resistance
         const newX = this.position.x + (worldMovementX * resistance);
         const newY = this.position.y + (worldMovementY * resistance);
 
-        // Apply position limits
-        this.position.x = Math.max(-this.positionLimits.x, Math.min(this.positionLimits.x, newX));
-        this.position.y = Math.max(-this.positionLimits.y, Math.min(this.positionLimits.y, newY));
+        // Soft-clamp using tanh to prevent straying too far from center (rubber-band feel)
+        const softX = this.positionLimits.x * Math.tanh(newX / this.positionLimits.x);
+        const softY = this.positionLimits.y * Math.tanh(newY / this.positionLimits.y);
+
+        // Final safety clamp (hard cap) just in case
+        this.position.x = Math.max(-this.positionLimits.x, Math.min(this.positionLimits.x, softX));
+        this.position.y = Math.max(-this.positionLimits.y, Math.min(this.positionLimits.y, softY));
 
         // Update previous position for next frame
         this.previousMousePosition = {
             x: e.clientX,
             y: e.clientY
         };
+    }
+
+    //==============================================================================================
+    /**
+     * Handle drag release snap-back setup
+     * @description Seeds inward velocity and enables temporary spring boost for a snappy return
+     */
+    onDragRelease() {
+        const dist = Math.hypot(this.position.x, this.position.y);
+        // Only snap if we're away from center by a noticeable amount
+        if (dist > 0.005) {
+            this.snapBoostEndTime = performance.now() + this.snapBoostDuration;
+            // Add an inward velocity impulse proportional to displacement
+            this.velocity.x += (-this.position.x) * this.releaseBoost;
+            this.velocity.y += (-this.position.y) * this.releaseBoost;
+        }
     }
 
     //==============================================================================================
@@ -477,21 +517,30 @@ class Card {
      */
     updateSpringAnimation() {
         if (!this.isDragging) {
+            const now = performance.now();
+            const useSnap = now < this.snapBoostEndTime;
+            const springStrength = useSnap ? this.snapSpringStrength : this.baseSpringStrength;
+            const springDamping = useSnap ? this.snapSpringDamping : this.baseSpringDamping;
+
             // Calculate spring force
-            const springForceX = -this.position.x * this.springStrength;
-            const springForceY = -this.position.y * this.springStrength;
+            const springForceX = -this.position.x * springStrength;
+            const springForceY = -this.position.y * springStrength;
 
             // Apply spring physics
             this.velocity.x += springForceX;
             this.velocity.y += springForceY;
 
             // Apply damping
-            this.velocity.x *= this.springDamping;
-            this.velocity.y *= this.springDamping;
+            this.velocity.x *= springDamping;
+            this.velocity.y *= springDamping;
 
             // Update position
             this.position.x += this.velocity.x;
             this.position.y += this.velocity.y;
+
+            // Snap to exact center when very close to avoid micro jitter
+            if (Math.abs(this.position.x) < 0.0005) this.position.x = 0;
+            if (Math.abs(this.position.y) < 0.0005) this.position.y = 0;
         }
     }
 
