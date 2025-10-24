@@ -4,9 +4,7 @@
  * @description Handles 3D card rendering, flip animations, and drag interactions
  */
 
-import {
-    isMobile
-} from './common.js';
+import { isMobile } from './common.js';
 
 // import Stats from 'https://cdnjs.cloudflare.com/ajax/libs/stats.js/r17/Stats.min.js';
 
@@ -474,21 +472,6 @@ class Card {
         // Set cursor to pointer when hovering over card
         this.container.style.cursor = 'pointer';
     }
-
-    //==============================================================================================
-    // /**
-    //  * Calculate drag offset from mouse position
-    //  * @description Converts screen coordinates to normalized device coordinates
-    //  * @param {PointerEvent} e - The pointer event
-    //  * @returns {Object} Object containing x and y offsets
-    //  */
-    // calculateDragOffset(e) {
-    //     const rect = this.container.getBoundingClientRect();
-    //     return {
-    //         x: ((e.clientX - rect.left) / rect.width) * 2 - 1,
-    //         y: -(((e.clientY - rect.top) / rect.height) * 2 - 1)
-    //     };
-    // }
 
     //==============================================================================================
     /**
