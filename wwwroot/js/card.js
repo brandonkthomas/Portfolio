@@ -53,6 +53,15 @@ class Card {
         this.isFlipped = false;
         this.isDragging = false;
 
+        // Signal to subscribers that the card is ready
+        this.readyPromise = new Promise((resolve) => {
+            this._resolveReady = resolve;
+        });
+
+        this.readyPromise = new Promise((resolve) => {
+            this._resolveReady = resolve;
+        });
+
         // Mouse/touch tracking
         this.previousMousePosition = {
             x: 0,
@@ -602,6 +611,12 @@ class Card {
         // End stats monitoring for this frame
         // this.stats.end();
 
+        // Signal to subscribers that the card is ready
+        if (this._resolveReady) {
+            this._resolveReady();
+            this._resolveReady = null;
+        }
+
         requestAnimationFrame(this.animate.bind(this));
     }
 
@@ -722,6 +737,7 @@ let card3DInstance = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     card3DInstance = new Card();
+    card3DInstance.ready = card3DInstance.readyPromise;
     window.addEventListener('resize', () => card3DInstance.onWindowResize());
     
     // Expose to window for state manager

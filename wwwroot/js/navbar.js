@@ -17,7 +17,9 @@ class Navbar {
         this.isMenuOpen = false;
         this.urlText = null;
         this.mobilePhotosLinks = []; // Store mobile photos links for dynamic updates
-        
+        this.readyPromise = new Promise((resolve) => { // Signal to subscribers that the navbar is ready
+            this._resolveReady = resolve;
+        });
         this.init();
     }
 
@@ -91,6 +93,12 @@ class Navbar {
         
         // Initial responsive check
         this.handleResize();
+
+        // Signal to subscribers that the navbar is ready
+        if (this._resolveReady) {
+            this._resolveReady();
+            this._resolveReady = null;
+        }
     }
 
     //==============================================================================================
@@ -255,4 +263,7 @@ class Navbar {
 }
 
 // Initialize when module loads
-export default new Navbar();
+const navbarManager = new Navbar();
+window.navbarManagerInstance = navbarManager;
+
+export default navbarManager;

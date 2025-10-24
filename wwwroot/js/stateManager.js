@@ -39,10 +39,15 @@ class StateManager {
         this.isTransitioning = false;
         this.listeners = [];
         
+        // Loop controlling initial reveal state
+        this.initialRevealDone = false;
+        this.initialRevealAbortController = null;
+        
         // References to other modules (will be set via setters)
         this.starfield = null;
         this.card = null;
         this.photoGallery = null;
+        this.navbar = null;
         
         this.init();
     }
@@ -66,6 +71,10 @@ class StateManager {
 
         // Check initial URL and navigate accordingly
         this.checkInitialRoute();
+
+        // Setup initial reveal for card and photo gallery
+        // This will fade in the card and photo gallery when the page loads
+        this.setupInitialReveal();
     }
 
     /**
@@ -136,6 +145,9 @@ class StateManager {
         if (window.photoGalleryInstance && !this.photoGallery) {
             this.setPhotoGallery(window.photoGalleryInstance);
         }
+        if (window.navbarManagerInstance && !this.navbar) {
+            this.navbar = window.navbarManagerInstance;
+        }
     }
 
     /**
@@ -153,6 +165,10 @@ class StateManager {
         this.photoGallery = photoGallery;
     }
 
+    setNavbar(navbar) {
+        this.navbar = navbar;
+    }
+
     /**
      * Register a listener for view changes
      * @param {function} callback - Function to call when view changes
@@ -166,6 +182,120 @@ class StateManager {
      */
     notifyListeners() {
         this.listeners.forEach(listener => listener(this.currentView));
+    }
+
+    /**
+     * Initialize on-load reveal for card and photo gallery
+     */
+    setupInitialReveal() {
+        if (this.initialRevealDone) {
+            return;
+        }
+
+        const abortController = new AbortController();
+        this.initialRevealAbortController = abortController;
+
+        this.getInitialRevealElements().forEach(({ element, className }) => {
+            if (element) {
+                element.classList.add(className);
+            }
+        });
+
+        const moduleReadyPromises = [];
+
+        const collectModules = () => {
+            this.connectModules();
+
+            if (this.card && this.card.readyPromise && !moduleReadyPromises.includes(this.card.readyPromise)) {
+                moduleReadyPromises.push(this.card.readyPromise);
+            }
+
+            if (this.starfield && this.starfield.readyPromise && !moduleReadyPromises.includes(this.starfield.readyPromise)) {
+                moduleReadyPromises.push(this.starfield.readyPromise);
+            }
+
+            if (this.navbar && this.navbar.readyPromise && !moduleReadyPromises.includes(this.navbar.readyPromise)) {
+                moduleReadyPromises.push(this.navbar.readyPromise);
+            }
+
+            return this.card && this.starfield;
+        };
+
+        const tryFinalize = () => {
+            if (abortController.signal.aborted) {
+                return;
+            }
+
+            const promises = moduleReadyPromises.length ? moduleReadyPromises : [Promise.resolve()];
+            Promise.allSettled(promises).then(() => {
+                if (abortController.signal.aborted) {
+                    return;
+                }
+
+                const revealDelay = isMobile() ? 50 : 30;
+                setTimeout(() => {
+                    if (abortController.signal.aborted) return;
+                    this.triggerInitialReveal();
+                }, revealDelay);
+            });
+        };
+
+        const moduleInterval = setInterval(() => {
+            if (collectModules()) {
+                clearInterval(moduleInterval);
+                tryFinalize();
+            }
+        }, 50);
+
+        abortController.signal.addEventListener('abort', () => {
+            clearInterval(moduleInterval);
+        });
+    }
+
+    /**
+     * Trigger initial reveal for card and photo gallery
+     * @description Fades in the card and photo gallery
+     */
+    triggerInitialReveal() {
+        if (this.initialRevealDone) {
+            return;
+        }
+
+        this.initialRevealDone = true;
+        document.body.dataset.initialState = 'ready';
+
+        const mainElements = this.getInitialRevealElements();
+        mainElements.forEach(({ element, className }) => {
+            if (!element) return;
+
+            element.classList.add(className);
+
+            requestAnimationFrame(() => {
+                element.classList.remove(className);
+                element.classList.add(`${className}--enter`);
+
+                setTimeout(() => {
+                    element.classList.remove(`${className}--enter`);
+                }, 200);
+            });
+        });
+
+        if (this.initialRevealAbortController) {
+            this.initialRevealAbortController.abort();
+            this.initialRevealAbortController = null;
+        }
+    }
+
+    /**
+     * Retrieve initial reveal elements
+     * @returns {Array} Array of elements to reveal
+     */
+    getInitialRevealElements() {
+        return [
+            { element: document.querySelector('.card-container'), className: 'card-initial' },
+            { element: document.getElementById('starfield'), className: 'starfield-initial' },
+            { element: document.querySelector('.photo-gallery-container'), className: 'photo-gallery-initial' }
+        ];
     }
 
     /**

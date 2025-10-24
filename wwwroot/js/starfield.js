@@ -38,7 +38,7 @@ class Starfield {
     constructor() {
         // Three.js setup
         this.scene = new THREE.Scene();
-        this.scene.background = DEBUG_GRADIENT ? new THREE.Color('#000000') : new THREE.Color('#1A1A1A');
+        this.scene.background = DEBUG_GRADIENT ? new THREE.Color('#000000') : new THREE.Color('#1C1C1C');
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         this.renderer = new THREE.WebGLRenderer({
             canvas: document.getElementById('starfield'),
@@ -93,6 +93,10 @@ class Starfield {
             this.glowStartTime = performance.now(); // Remove delay to sync with CSS animation
         }
         
+        this.readyPromise = new Promise((resolve) => {
+            this._resolveReady = resolve;
+        });
+
         this.animate();
     }
 
@@ -614,6 +618,12 @@ class Starfield {
 
         this.camera.position.z = 5;
         this.renderer.render(this.scene, this.camera);
+
+        // Signal to subscribers that the starfield is ready
+        if (this._resolveReady) {
+            this._resolveReady();
+            this._resolveReady = null;
+        }
     }
 }
 
@@ -622,7 +632,7 @@ let starfieldInstance = null;
 
 window.addEventListener('load', () => {
     starfieldInstance = new Starfield();
-    
-    // Expose to window for state manager
+
+    // Expose to window for stateManager
     window.starfieldInstance = starfieldInstance;
 });

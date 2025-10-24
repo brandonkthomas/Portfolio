@@ -30,6 +30,20 @@
     filter: blur(0px);
 }
 
+/* Initial state loading styles */
+.photo-gallery-container.photo-gallery-initial {
+    opacity: 0;
+    transform: scale(1.08);
+    filter: blur(25px);
+}
+
+.photo-gallery-container.photo-gallery-initial--enter {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0px);
+    transition-duration: 0.15s;
+}
+
 /* Photo gallery */
 .photo-gallery {
     width: 100%;
@@ -117,6 +131,9 @@
     animation: skeleton-shimmer 1.5s ease-in-out infinite;
     border-radius: inherit;
     z-index: 1;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+    will-change: opacity;
 }
 
 @keyframes skeleton-shimmer {
@@ -152,7 +169,6 @@
 
 .photo-item--loaded .photo-skeleton {
     opacity: 0;
-    transition: opacity 0.3s ease;
 }
 
 /* Error state - hide skeleton, show placeholder */
