@@ -223,9 +223,11 @@ class PhotoGallery {
 
     //==============================================================================================
     /**
-     * Generate photos from manifest
+     * Retrieve photos from manifest
+     * @description Retrieves photos from the manifest and builds photo objects with basic aspect 
+     * ratio guess (lazy load real dimensions on load)
      */
-    async generatePhotos() {
+    async retrievePhotos() {
         const grid = this.container.querySelector('.photo-grid');
         if (!grid) return;
 
@@ -292,7 +294,6 @@ class PhotoGallery {
 
             // Create image
             const img = document.createElement('img');
-            img.src = photo.url;
             img.alt = `Photo ${photo.index + 1}`;
             img.loading = 'lazy';
             img.decoding = 'async'; // Ensure async decoding
@@ -301,15 +302,33 @@ class PhotoGallery {
             img.addEventListener('dragstart', (e) => e.preventDefault());
             img.addEventListener('contextmenu', (e) => e.preventDefault());
 
-            // After load, update actual aspect ratio for better layout stability
-            img.addEventListener('load', () => {
-                photoItem.classList.remove('photo-item--loading');
-                photoItem.classList.add('photo-item--loaded');
+            // Reveal helper to ensure CSS transition runs even for cached images
+            const revealLoadedImage = () => {
+
                 if (img.naturalWidth && img.naturalHeight) {
                     photo.width = img.naturalWidth;
                     photo.height = img.naturalHeight;
                     photo.aspectRatio = img.naturalWidth / img.naturalHeight;
                     photoItem.style.aspectRatio = `${photo.width} / ${photo.height}`;
+                }
+
+                // Wait for next frame so initial opacity:0 is committed, then toggle classes
+                requestAnimationFrame(() => {
+                    // Force a reflow to ensure transition kicks in
+                    // eslint-disable-next-line no-unused-expressions
+                    img.offsetWidth;
+                    photoItem.classList.remove('photo-item--loading');
+                    photoItem.classList.add('photo-item--loaded');
+                });
+            };
+
+            // After load, update actual aspect ratio and fade-in image
+            img.addEventListener('load', () => {
+                // Use decode() if available to ensure the image is fully decoded
+                if (typeof img.decode === 'function') {
+                    img.decode().catch(() => {}).finally(revealLoadedImage);
+                } else {
+                    revealLoadedImage();
                 }
             });
 
@@ -319,9 +338,13 @@ class PhotoGallery {
                 photoItem.classList.add('photo-item--error');
             });
 
+            // Append elements to DOM BEFORE setting src to ensure transitions can run
             photoItem.appendChild(skeleton);
             photoItem.appendChild(img);
             column.appendChild(photoItem);
+
+            // Set src after listeners and after DOM insertion to avoid missing cached load
+            img.src = photo.url;
         });
     }
 
@@ -545,11 +568,11 @@ class PhotoGallery {
             // Load manifest and render
             if ('requestIdleCallback' in window) {
                 requestIdleCallback(() => {
-                    this.generatePhotos();
+                    this.retrievePhotos();
                 }, { timeout: 100 });
             } else {
                 setTimeout(() => {
-                    this.generatePhotos();
+                    this.retrievePhotos();
                 }, 0);
             }
         }

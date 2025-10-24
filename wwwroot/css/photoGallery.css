@@ -155,6 +155,7 @@
     transition: opacity 0.3s ease;
     position: relative;
     z-index: 2;
+    will-change: opacity; /* signal to browser that we'll need to animate this quickly after load */
 }
 
 /* Loading state - image is transparent, skeleton visible */
