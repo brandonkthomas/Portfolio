@@ -55,6 +55,12 @@ body[data-initial-state="loading"] .photo-gallery-container {
     transform: scale(1.08);
 }
 
+/* Prevent initial flash of CTA SVGs before page-specific CSS loads */
+.tap-indicator {
+    visibility: hidden;
+    opacity: 0;
+}
+
 * {
     /* Disable text selection on mobile */
     -webkit-touch-callout: none;
