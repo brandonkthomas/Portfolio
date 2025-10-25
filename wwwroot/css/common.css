@@ -61,8 +61,8 @@ body[data-initial-state="loading"] .photo-gallery-container {
     opacity: 0;
 }
 
+/* Disable text selection on mobile */
 * {
-    /* Disable text selection on mobile */
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     -khtml-user-select: none;
