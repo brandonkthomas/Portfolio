@@ -66,7 +66,23 @@ export function supportsSVGFilters(filterId) {
 //==============================================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
+    
+    // Minimal global pinch-zoom prevention (does not affect single-tap/double-tap)
+    const isTouchEnv = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    if (isTouchEnv) {
+        const preventIfPinch = (e) => {
+            if (e.touches && e.touches.length > 1) {
+                e.preventDefault();
+            }
+        };
+        document.addEventListener('touchstart', preventIfPinch, { passive: false });
+        document.addEventListener('touchmove', preventIfPinch, { passive: false });
 
+        const preventGesture = (e) => { e.preventDefault(); };
+        document.addEventListener('gesturestart', preventGesture, { passive: false });
+        document.addEventListener('gesturechange', preventGesture, { passive: false });
+        document.addEventListener('gestureend', preventGesture, { passive: false });
+    }
     // Update URL path display
     const updateUrlPath = () => {
         const pathElement = document.querySelector('.url-path');

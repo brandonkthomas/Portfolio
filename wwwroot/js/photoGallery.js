@@ -395,10 +395,14 @@ class PhotoGallery {
 
         if (prevBtn) {
             prevBtn.addEventListener('click', () => this.showPreviousPhoto());
+            // Prevent double-tap zoom on mobile for prev button only
+            this.addDoubleTapGuard(prevBtn, () => this.showPreviousPhoto());
         }
 
         if (nextBtn) {
             nextBtn.addEventListener('click', () => this.showNextPhoto());
+            // Prevent double-tap zoom on mobile for next button only
+            this.addDoubleTapGuard(nextBtn, () => this.showNextPhoto());
         }
 
         // Close lightbox when clicking outside image
@@ -428,6 +432,35 @@ class PhotoGallery {
 
         // Handle window resize for responsive column layout
         window.addEventListener('resize', () => this.handleResize());
+    }
+
+    //==============================================================================================
+    /**
+     * Add a targeted double-tap guard to a specific element
+     * - Blocks UA double-tap zoom without affecting the rest of the page
+     * - Synthesizes a click on second tap to keep fast navigation responsive
+     * @param {Element} element
+     * @param {Function} onDoubleTap - Optional action to invoke on double tap
+     */
+    addDoubleTapGuard(element, onDoubleTap) {
+        if (!element) return;
+        let lastTap = 0;
+        const DOUBLE_TAP_MS = 300;
+
+        element.addEventListener('touchend', (e) => {
+            const now = Date.now();
+            const delta = now - lastTap;
+            if (delta > 0 && delta <= DOUBLE_TAP_MS) {
+                e.preventDefault();
+                // Prefer explicit handler if provided; otherwise synthesize click
+                if (typeof onDoubleTap === 'function') {
+                    onDoubleTap();
+                } else {
+                    element.click();
+                }
+            }
+            lastTap = now;
+        }, { passive: false });
     }
 
     //==============================================================================================
