@@ -47,8 +47,14 @@ export function createGlassSurface(options) {
     // Create container element
     const container = document.createElement('div');
     const isSVGSupported = supportsSVGFilters(filterId);
+
+    // glass-surface--svg is SVG-based "clear glass" (not supported by WebKit)
+    // glass-surface--fallback is CSS-based "frosted glass" (supported by WebKit)
     
-    container.className = `glass-surface ${isSVGSupported ? 'glass-surface--svg' : 'glass-surface--fallback'} ${className}`.trim();
+    var glassSurfaceClass = isSVGSupported ? 'glass-surface--svg' : 'glass-surface--fallback';
+    glassSurfaceClass = 'glass-surface--fallback'; // testing with frosted glass on all browsers...
+
+    container.className = `glass-surface ${glassSurfaceClass} ${className}`.trim();
     
     // Apply styles
     Object.assign(container.style, style, {

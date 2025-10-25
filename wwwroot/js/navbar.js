@@ -67,7 +67,7 @@ class Navbar {
             blur: 50,
             displace: 0,
             backgroundOpacity: 0.12,
-            saturation: 1.2,
+            saturation: 0.8,
             distortionScale: -15,
             redOffset: 8,
             greenOffset: 8,

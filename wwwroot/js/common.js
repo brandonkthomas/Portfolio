@@ -35,18 +35,29 @@ export function isErrorPage() {
 //==============================================================================================
 /**
  * Check if browser supports SVG filters with backdrop-filter
+ * BT 2025-10-24: is user agent still the most reliable way to figure this out?
  * @function supportsSVGFilters
  * @param {string} filterId - The filter ID to test
  * @returns {boolean} True if SVG filters are supported
  */
 export function supportsSVGFilters(filterId) {
-    const isWebkit = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
-    const isFirefox = /Firefox/.test(navigator.userAgent);
+    const ua = navigator.userAgent || '';
+    const isIOS = /iP(hone|ad|od)/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isFirefox = /Firefox/i.test(ua);
+    const isWebkit = /Safari/.test(ua) && !/Chrome/.test(ua);
 
-    if (isWebkit || isFirefox) {
+    // Force fallback on iOS/WebKit (Safari, Chrome on iOS, in-app WebViews like Instagram) and Firefox
+    if (isIOS || isWebkit || isFirefox) {
         return false;
     }
 
+    // Ensure backdrop-filter is supported at all
+    const hasBackdrop = (window.CSS && (CSS.supports('backdrop-filter', 'blur(1px)') || CSS.supports('-webkit-backdrop-filter', 'blur(1px)')));
+    if (!hasBackdrop) {
+        return false;
+    }
+
+    // Heuristic: property assignment acceptance (not fully reliable but sufficient for non-iOS Blink)
     const div = document.createElement('div');
     div.style.backdropFilter = `url(#${filterId})`;
     return div.style.backdropFilter !== '';
