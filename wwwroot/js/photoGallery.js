@@ -223,9 +223,50 @@ class PhotoGallery {
 
     //==============================================================================================
     /**
-     * Generate photos from manifest
+     * Measure an image's natural width/height before rendering
+     * @param {string} url
+     * @param {number} timeoutMs
+     * @returns {Promise<{width:number,height:number}>}
      */
-    async generatePhotos() {
+    measureImage(url, timeoutMs = 8000) {
+        return new Promise((resolve) => {
+            const fallback = { width: 800, height: 1200 };
+            let settled = false;
+
+            const done = (w, h) => {
+                if (settled) return;
+                settled = true;
+                resolve({ width: Math.max(1, w || fallback.width), height: Math.max(1, h || fallback.height) });
+            };
+
+            const img = new Image();
+            const timer = setTimeout(() => done(fallback.width, fallback.height), timeoutMs);
+
+            img.onload = () => {
+                clearTimeout(timer);
+                done(img.naturalWidth, img.naturalHeight);
+            };
+            img.onerror = () => {
+                clearTimeout(timer);
+                done(fallback.width, fallback.height);
+            };
+
+            // Avoid blocking rendering; decode if supported
+            try {
+                img.decoding = 'async';
+            } catch (_) { /* no-op */ }
+
+            img.src = url;
+        });
+    }
+
+    //==============================================================================================
+    /**
+     * Retrieve/read photos from manifest
+     * This won't actually render yet - just reads manifest and calculates image data/mesaurements
+     * @returns {Promise<void>}
+     */
+    async retrievePhotos() {
         const grid = this.container.querySelector('.photo-grid');
         if (!grid) return;
 
@@ -235,14 +276,23 @@ class PhotoGallery {
             const manifest = await response.json();
             const images = Array.isArray(manifest.images) ? manifest.images : [];
 
-            // Build photo objects with basic aspect ratio guess (lazy load real dimensions)
-            this.photos = images.map((url, index) => ({
-                url,
-                width: 800,
-                height: 1200,
-                aspectRatio: 800 / 1200,
-                index
-            }));
+            // Pre-measure images to obtain accurate aspect ratios for balanced layout
+            const measured = await Promise.allSettled(
+                images.map((url) => this.measureImage(url))
+            );
+
+            this.photos = images.map((url, index) => {
+                const result = measured[index];
+                const width = result?.status === 'fulfilled' ? result.value.width : 800;
+                const height = result?.status === 'fulfilled' ? result.value.height : 1200;
+                return {
+                    url,
+                    width,
+                    height,
+                    aspectRatio: width / height,
+                    index
+                };
+            });
         } catch (err) {
             console.error('Error loading photo manifest', err);
             this.photos = [];
@@ -275,11 +325,26 @@ class PhotoGallery {
             grid.appendChild(column);
         }
 
-        // Distribute photos across columns (round-robin)
-        this.photos.forEach((photo, index) => {
-            const columnIndex = index % columnCount;
-            const column = columns[columnIndex];
+        // Distribute photos across columns by predicted (and then actual) column height
+        const getColumnGapPx = () => {
+            const parentStyles = window.getComputedStyle(grid);
 
+            // row-gap is defined on the column, but using the grid's column gap here is fine for estimate
+            const columnStyles = columns[0] ? window.getComputedStyle(columns[0]) : null;
+            const rowGap = columnStyles ? parseFloat(columnStyles.rowGap || '0') : 0;
+            const paddingTop = columnStyles ? parseFloat(columnStyles.paddingTop || '0') : 0;
+            const paddingBottom = columnStyles ? parseFloat(columnStyles.paddingBottom || '0') : 0;
+
+            // Include vertical gaps and paddings in height estimate
+            return { rowGap, paddingTop, paddingBottom };
+        };
+
+        const { rowGap, paddingTop, paddingBottom } = getColumnGapPx();
+
+        // Track predicted heights to avoid bias from yet-to-load images
+        const predictedHeights = columns.map(col => col.offsetHeight + paddingTop + paddingBottom);
+
+        this.photos.forEach((photo) => {
             // Create photo item with skeleton
             const photoItem = document.createElement('div');
             photoItem.className = 'photo-item photo-item--loading';
@@ -321,7 +386,30 @@ class PhotoGallery {
 
             photoItem.appendChild(skeleton);
             photoItem.appendChild(img);
-            column.appendChild(photoItem);
+
+            // Find the current shortest column using predicted heights
+            let targetIndex = 0;
+            let minPredicted = predictedHeights[0] ?? 0;
+            for (let i = 1; i < predictedHeights.length; i++) {
+                if (predictedHeights[i] < minPredicted) {
+                    minPredicted = predictedHeights[i];
+                    targetIndex = i;
+                }
+            }
+            const targetColumn = columns[targetIndex];
+            targetColumn.appendChild(photoItem);
+
+            // Update prediction by adding this item's estimated rendered height
+            // The item width equals the column content width
+            const columnWidth = targetColumn.clientWidth; // excludes scrollbar
+            const estimatedItemHeight = Math.round(columnWidth / (photo.width / photo.height));
+            
+            // Include the row gap only if not the very first item in that column (heuristic)
+            const addGap = predictedHeights[targetIndex] > 0 ? rowGap : 0;
+            predictedHeights[targetIndex] += estimatedItemHeight + addGap;
+
+            // When image actually loads and aspect ratio updates, no need to reflow everything;
+            // we rely on CSS aspect-ratio to minimize jumps
         });
     }
 
@@ -578,11 +666,11 @@ class PhotoGallery {
             // Load manifest and render
             if ('requestIdleCallback' in window) {
                 requestIdleCallback(() => {
-                    this.generatePhotos();
+                    this.retrievePhotos();
                 }, { timeout: 100 });
             } else {
                 setTimeout(() => {
-                    this.generatePhotos();
+                    this.retrievePhotos();
                 }, 0);
             }
         }
