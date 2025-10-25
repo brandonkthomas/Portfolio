@@ -587,7 +587,7 @@ class Starfield {
         colors.needsUpdate = true;
 
         // Update nebulae positions
-        updateNebulae(this.nebulae, deltaTime, this.warpIntensity);
+        updateNebulae(this.nebulae, deltaTime, this.warpIntensity, this.starDirection);
 
         // Update subtle trails during warp pulse
         const trailPositions = this.trailGeometry.attributes.position.array;

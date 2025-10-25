@@ -212,18 +212,21 @@ export function createNebulae(nebulaCount, scene) {
  * @param {Array} nebulae - Array of nebula objects to update
  * @param {number} deltaTime - Time since last frame in seconds
  * @param {number} warpIntensity - Current warp effect intensity (0-1)
+ * @param {number} starDirection - 1 for forward (toward camera), -1 for reverse (away from camera)
  */
-export function updateNebulae(nebulae, deltaTime, warpIntensity) {
+export function updateNebulae(nebulae, deltaTime, warpIntensity, starDirection = 1) {
     const time = performance.now() * 0.001; // Current time in seconds for animation
+    const absWarpIntensity = Math.abs(warpIntensity);
+    const direction = starDirection >= 0 ? 1 : -1;
     
     for (let i = 0; i < nebulae.length; i++) {
         const nebula = nebulae[i];
         
         // Calculate warp speed for nebulae (increases during warp)
-        const warpSpeed = nebula.originalSpeed * (1 + warpIntensity * 120);
+        const warpSpeed = nebula.originalSpeed * (1 + absWarpIntensity * 120);
         
-        // Move nebula forward
-        nebula.mesh.position.z += warpSpeed * deltaTime * 60;
+        // Move nebula based on star direction
+        nebula.mesh.position.z += warpSpeed * deltaTime * 60 * direction;
         
         // Apply subtle organic movement
         nebula.mesh.rotation.z += nebula.rotationSpeed * deltaTime;
@@ -236,52 +239,92 @@ export function updateNebulae(nebulae, deltaTime, warpIntensity) {
         const wobbleY = Math.cos(time * nebula.wobbleSpeed * 0.7) * nebula.wobbleY;
         
         // Scale effect during warp
-        const stretchFactor = 1 + warpIntensity * 1.5;
+        const stretchFactor = 1 + absWarpIntensity * 1.5;
         
         // Apply non-uniform scaling for more organic feel
         nebula.mesh.scale.x = nebula.initialScale.x * (1 + pulse + wobbleX);
         nebula.mesh.scale.y = nebula.initialScale.y * (1 + pulse + wobbleY);
         nebula.mesh.scale.z = Math.min(nebula.initialScale.x, nebula.initialScale.y) * stretchFactor;
         
-        // Reset nebula if it's too close to camera
-        if (nebula.mesh.position.z > 10) {
-            nebula.mesh.position.z = -85 - Math.random() * 30; // More varied and further back
-            
-            // New random position
-            const radius = 3 + Math.random() * 25;
-            const theta = Math.random() * Math.PI * 2;
-            nebula.mesh.position.x = radius * Math.cos(theta);
-            nebula.mesh.position.y = radius * Math.sin(theta);
-            
-            // Randomize scale again for variety
-            const baseScale = i < nebulae.length/1.5 ? 
-                (5 + Math.random() * 10) : 
-                (15 + Math.random() * 20);
+        // Reset nebula based on direction
+        if (direction > 0) {
+            // Forward: reset when too close to camera
+            if (nebula.mesh.position.z > 10) {
+                nebula.mesh.position.z = -85 - Math.random() * 30; // More varied and further back
                 
-            const xScale = baseScale * (0.7 + Math.random() * 0.6);
-            const yScale = baseScale * (0.7 + Math.random() * 0.6);
-            nebula.initialScale = {x: xScale, y: yScale};
-            nebula.mesh.scale.set(xScale, yScale, 1);
-            
-            // New random opacity (visible but won't block stars due to material settings)
-            const baseOpacity = i < nebulae.length/1.5 ? 0.02 : 0.015;
-            nebula.mesh.material.opacity = baseOpacity + Math.random() * 0.02;
-            
-            // Create new texture with different shape
-            nebula.mesh.material.map = createNebulaTexture(
-                i >= nebulae.length/1.5, // background flag
-                Math.floor(Math.random() * 5) // random shape type
-            );
-            nebula.mesh.material.map.needsUpdate = true;
-            
-            // Fade in effect
-            if (warpIntensity < 0.05) {
-                nebula.mesh.material.opacity = 0;  // Will fade in during animation
+                // New random position
+                const radius = 3 + Math.random() * 25;
+                const theta = Math.random() * Math.PI * 2;
+                nebula.mesh.position.x = radius * Math.cos(theta);
+                nebula.mesh.position.y = radius * Math.sin(theta);
+                
+                // Randomize scale again for variety
+                const baseScale = i < nebulae.length/1.5 ? 
+                    (5 + Math.random() * 10) : 
+                    (15 + Math.random() * 20);
+                    
+                const xScale = baseScale * (0.7 + Math.random() * 0.6);
+                const yScale = baseScale * (0.7 + Math.random() * 0.6);
+                nebula.initialScale = {x: xScale, y: yScale};
+                nebula.mesh.scale.set(xScale, yScale, 1);
+                
+                // New random opacity (visible but won't block stars due to material settings)
+                const baseOpacity = i < nebulae.length/1.5 ? 0.02 : 0.015;
+                nebula.mesh.material.opacity = baseOpacity + Math.random() * 0.02;
+                
+                // Create new texture with different shape
+                nebula.mesh.material.map = createNebulaTexture(
+                    i >= nebulae.length/1.5, // background flag
+                    Math.floor(Math.random() * 5) // random shape type
+                );
+                nebula.mesh.material.map.needsUpdate = true;
+                
+                // Fade in effect
+                if (absWarpIntensity < 0.05) {
+                    nebula.mesh.material.opacity = 0;  // Will fade in during animation
+                }
+            }
+        } else {
+            // Reverse: reset when too far back
+            if (nebula.mesh.position.z < -115) {
+                nebula.mesh.position.z = 10; // Bring to front
+                
+                // New random position
+                const radius = 3 + Math.random() * 25;
+                const theta = Math.random() * Math.PI * 2;
+                nebula.mesh.position.x = radius * Math.cos(theta);
+                nebula.mesh.position.y = radius * Math.sin(theta);
+                
+                // Randomize scale again for variety
+                const baseScale = i < nebulae.length/1.5 ? 
+                    (5 + Math.random() * 10) : 
+                    (15 + Math.random() * 20);
+                    
+                const xScale = baseScale * (0.7 + Math.random() * 0.6);
+                const yScale = baseScale * (0.7 + Math.random() * 0.6);
+                nebula.initialScale = {x: xScale, y: yScale};
+                nebula.mesh.scale.set(xScale, yScale, 1);
+                
+                // New random opacity (visible but won't block stars due to material settings)
+                const baseOpacity = i < nebulae.length/1.5 ? 0.02 : 0.015;
+                nebula.mesh.material.opacity = baseOpacity + Math.random() * 0.02;
+                
+                // Create new texture with different shape
+                nebula.mesh.material.map = createNebulaTexture(
+                    i >= nebulae.length/1.5, // background flag
+                    Math.floor(Math.random() * 5) // random shape type
+                );
+                nebula.mesh.material.map.needsUpdate = true;
+                
+                // Fade in effect
+                if (absWarpIntensity < 0.05) {
+                    nebula.mesh.material.opacity = 0;  // Will fade in during animation
+                }
             }
         }
         
         // Handle fade in effect when not warping (slower for nebulae)
-        if (warpIntensity < 0.05 && nebula.mesh.material.opacity < 0.04) {
+        if (absWarpIntensity < 0.05 && nebula.mesh.material.opacity < 0.04) {
             nebula.mesh.material.opacity = Math.min(0.04, nebula.mesh.material.opacity + 0.01 * deltaTime);
         }
         
@@ -291,8 +334,8 @@ export function updateNebulae(nebulae, deltaTime, warpIntensity) {
         material.color.getHSL(hsl);
         
         // Keep base saturation low but increase lightness to compensate for very low opacity
-        const targetSaturation = 0.2 + Math.min(0.4, warpIntensity * 0.5);
-        const targetLightness = 0.7 + Math.min(0.3, warpIntensity * 0.3);
+        const targetSaturation = 0.2 + Math.min(0.4, absWarpIntensity * 0.5);
+        const targetLightness = 0.7 + Math.min(0.3, absWarpIntensity * 0.3);
         
         const newSaturation = hsl.s + (targetSaturation - hsl.s) * 0.1;
         const newLightness = hsl.l + (targetLightness - hsl.l) * 0.1;
