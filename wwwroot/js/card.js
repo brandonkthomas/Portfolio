@@ -67,10 +67,6 @@ class Card {
         };
         this.dragStartTime = 0;
         this.dragDistance = 0;
-        // this.dragOffset = {
-        //     x: 0,
-        //     y: 0
-        // };
 
         // Rotation state
         this.rotation = {
@@ -82,20 +78,20 @@ class Card {
             y: 0
         };
 
+        // Stronger tilt applied while dragging (inverse of hover direction)
+        this.dragTiltStrength = 0.3;
+
+        // Follow speeds for tilt smoothing (dragging reacts faster)
+        this.hoverTiltFollow = 0.10;
+        this.dragTiltFollow = 0.35;
+
         // Position state
         this.position = {
             x: 0,
             y: 0
         };
-        // this.targetPosition = {
-        //     x: 0,
-        //     y: 0
-        // };
 
         // Spring configuration for drag return animation (base values)
-        // this.springStrength = 0.05; // pre-spring-v2 field
-        // this.springDamping = 0.75; // pre-spring-v2 field
-
         this.baseSpringStrength = 0.05; // base spring strength when returning to center
         this.baseSpringDamping = 0.78;   // slightly higher damping for stability
 
@@ -436,6 +432,14 @@ class Card {
             x: e.clientX,
             y: e.clientY
         };
+
+        // While dragging, tilt aggressively in the opposite direction of the pointer
+        const rect = this.container.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+        this.targetRotation.x = y * this.dragTiltStrength;   // invert hover's -y
+        this.targetRotation.y = -x * this.dragTiltStrength;  // invert hover's +x
+        this.container.style.cursor = 'grabbing';
     }
 
     //==============================================================================================
@@ -554,9 +558,10 @@ class Card {
         // spring return animation
         this.updateSpringAnimation();
 
-        // smooth hover tilt
-        this.rotation.x += (this.targetRotation.x - this.rotation.x) * 0.1;
-        this.rotation.y += (this.targetRotation.y - this.rotation.y) * 0.1;
+        // smooth tilt - faster while dragging
+        const tiltFollow = this.isDragging ? this.dragTiltFollow : this.hoverTiltFollow;
+        this.rotation.x += (this.targetRotation.x - this.rotation.x) * tiltFollow;
+        this.rotation.y += (this.targetRotation.y - this.rotation.y) * tiltFollow;
 
         // only run ease-out flip when flipStartTime is set (i.e. after click)
         if (this.flipStartTime != null) {
