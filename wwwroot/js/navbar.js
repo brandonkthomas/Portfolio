@@ -17,6 +17,7 @@ class Navbar {
         this.isMenuOpen = false;
         this.urlText = null;
         this.mobilePhotosLinks = []; // Store mobile photos links for dynamic updates
+        this.mobileProjectsLinks = []; // Store mobile projects links for dynamic updates
         this.readyPromise = new Promise((resolve) => { // Signal to subscribers that the navbar is ready
             this._resolveReady = resolve;
         });
@@ -135,17 +136,62 @@ class Navbar {
                 e.preventDefault();
                 e.stopPropagation();
                 
-                // Close mobile menu if open
+                // Close mobile navbar dropdown if open
                 if (this.isMenuOpen) {
                     this.closeMenu();
                 }
                 
-                // Determine target view based on current state
-                const currentView = stateManager.getCurrentView();
-                const targetView = currentView === ViewState.PHOTOS ? ViewState.CARD : ViewState.PHOTOS;
-                
-                // Navigate to target view
-                stateManager.navigateToView(targetView, true);
+                // Determine if SPA navigation is possible on this page
+                const hasContainers = !!document.querySelector('.photo-gallery-container') && !!document.querySelector('.card-container');
+                const canSpa = hasContainers && !!window.photoGalleryInstance && !!window.card3DInstance;
+
+                if (canSpa) {
+                    // Determine target view based on current state
+                    const currentView = stateManager.getCurrentView();
+                    const targetView = currentView === ViewState.PHOTOS ? ViewState.CARD : ViewState.PHOTOS;
+                    stateManager.navigateToView(targetView, true);
+                } else {
+                    // Fallback to full navigation
+                    const path = window.location.pathname;
+                    if (path.toLowerCase().startsWith('/photos')) {
+                        window.location.reload();
+                    } else {
+                        window.location.href = '/photos';
+                    }
+                }
+            });
+        });
+
+        // Intercept projects link clicks
+        const projectLinks = document.querySelectorAll('.url-link-projects');
+        projectLinks.forEach(link => {
+            if (link.closest('.url-nav-links.mobile')) {
+                this.mobileProjectsLinks.push(link);
+            }
+
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                if (this.isMenuOpen) {
+                    this.closeMenu();
+                }
+
+                const hasContainers = !!document.querySelector('.projects-container') && !!document.querySelector('.card-container');
+                const canSpa = hasContainers && !!window.projectsInstance && !!window.card3DInstance;
+
+                if (canSpa) {
+                    const currentView = stateManager.getCurrentView();
+                    const targetView = currentView === ViewState.PROJECTS ? ViewState.CARD : ViewState.PROJECTS;
+                    stateManager.navigateToView(targetView, true);
+                } else {
+                    const path = window.location.pathname;
+                    if (path.toLowerCase() === '/projects') {
+                        window.location.reload();
+                    } else {
+                        window.location.href = '/projects';
+                    }
+                }
             });
         });
 
@@ -156,9 +202,16 @@ class Navbar {
                 if (window.innerWidth > 768) {
                     e.preventDefault();
                     e.stopPropagation();
-                    
-                    // Navigate to card view
-                    stateManager.navigateToView(ViewState.CARD, true);
+
+                    const hasContainers = !!document.querySelector('.card-container'); // does card container exist?
+                    const canSpa = hasContainers && !!window.card3DInstance; // do card container & card3d both exist?
+
+                    if (canSpa) {
+                        // Navigate to card view
+                        stateManager.navigateToView(ViewState.CARD, true);
+                    } else {
+                        window.location.href = '/';
+                    }
                 }
             });
         }
@@ -186,19 +239,32 @@ class Navbar {
      * @param {ViewState} view - Current view state
      */
     updateMobileNav(view) {
-        // Only update mobile links
+        // Update Photos link state
         this.mobilePhotosLinks.forEach(link => {
             if (view === ViewState.PHOTOS) {
-                // Change Photos link to Card link
                 link.innerHTML = `
                     <img src="/assets/svg/bt-logo-boxed.svg" alt="" width="20" height="20" />
                     <span>Card</span>
                 `;
             } else {
-                // Change back to Photos link
                 link.innerHTML = `
                     <img src="/assets/svg/polaroid-filled.svg" alt="" width="20" height="20" />
                     <span>Photos</span>
+                `;
+            }
+        });
+
+        // Update Projects link state
+        this.mobileProjectsLinks.forEach(link => {
+            if (view === ViewState.PROJECTS) {
+                link.innerHTML = `
+                    <img src="/assets/svg/bt-logo-boxed.svg" alt="" width="20" height="20" />
+                    <span>Card</span>
+                `;
+            } else {
+                link.innerHTML = `
+                    <img src="/assets/svg/project-filled.svg" alt="" width="20" height="20" />
+                    <span>Projects</span>
                 `;
             }
         });

@@ -1,0 +1,42 @@
+{
+  "projects": [
+    {
+      "slug": "portfolio",
+      "title": "Portfolio",
+      "tag": "Web",
+      "footer": ".NET Core, Vanilla, Three.js",
+      "gradientAngle": 24,
+      "gradientColor1": "#1f1f1f",
+      "gradientColor2": "#2f2f2f",
+      "span": "2x2",
+      "url": "https://github.com/brandonkthomas/Portfolio",
+      "external": true,
+      "component": { "type": "cardStack", "props": { "layers": 3 } }
+    },
+    {
+      "slug": "spectrometer",
+      "title": "Spectrometer",
+      "tag": "Windows",
+      "footer": "WPF",
+      "gradientAngle": 90,
+      "gradientColor1": "#1e301e",
+      "gradientColor2": "#1f2e2e",
+      "span": "2x1",
+      "url": "https://github.com/brandonkthomas/Spectrometer",
+      "external": true,
+      "component": { "type": "lineGraph", "props": {} }
+    },
+    {
+      "slug": "utility-scripts",
+      "title": "Utility Scripts",
+      "tag": "CLI",
+      "footer": "Bash",
+      "gradientColor1": "#1c1f2a",
+      "gradientColor2": "#2a1f24",
+      "span": "1x1",
+      "url": "https://github.com/brandonkthomas/scripts",
+      "external": true,
+      "component": { "type": "terminalBlink", "props": { "prompt": "brandonthomas@mbp ~ %" } }
+    }
+  ]
+}

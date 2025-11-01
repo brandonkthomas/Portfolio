@@ -157,10 +157,23 @@ app.MapControllerRoute(
     pattern: "/",
     defaults: new { controller = "Home", action = "Index" });
 
+// Photos route to HomeController Photos action
 app.MapControllerRoute(
     name: "photos",
     pattern: "/photos",
     defaults: new { controller = "Home", action = "Photos" });
+
+// Projects route to HomeController Projects action
+app.MapControllerRoute(
+    name: "projects-spa",
+    pattern: "/projects",
+    defaults: new { controller = "Home", action = "Projects" });
+
+// Project detail route to ProjectsController Detail action
+app.MapControllerRoute(
+    name: "project-detail",
+    pattern: "/projects/{slug}",
+    defaults: new { controller = "Projects", action = "Detail" });
 
 app.MapControllerRoute(
     name: "error",

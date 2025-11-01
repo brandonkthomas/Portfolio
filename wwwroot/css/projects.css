@@ -1,0 +1,247 @@
+/*
+    projects.css
+    Projects bento grid + container styles
+    -- same transitions as in photoGallery.css
+*/
+
+/* Projects container */
+.projects-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 5;
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(1.15);
+    filter: blur(20px);
+    transition: 
+        opacity 0.33s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.33s cubic-bezier(0.4, 0, 0.2, 1),
+        filter 0.33s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.projects-container.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+    filter: none;
+}
+
+/* Initial state loading styles */
+.projects-container.projects-initial {
+    opacity: 0;
+    transform: scale(1.08);
+    filter: blur(25px);
+}
+
+.projects-container.projects-initial--enter {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0px);
+    transition-duration: 0.15s;
+}
+
+/* Projects root */
+.projects-gallery {
+    width: 100%;
+    min-height: 100vh;
+    padding: 6rem 1rem 2rem 1rem;
+    box-sizing: border-box;
+}
+
+/* Bento grid */
+.projects-grid {
+    --row-size: 120px; /* base height for one row (mobile) */
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    grid-auto-rows: var(--row-size);
+    gap: 0.5rem;
+    align-items: stretch;
+    max-width: 1400px;
+    margin: 0 auto;
+    grid-auto-flow: dense;
+}
+
+@media (min-width: 768px) {
+    .projects-gallery {
+        padding: 6rem 2rem 3rem 2rem;
+    }
+    .projects-grid {
+        --row-size: 150px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+    }
+}
+
+@media (min-width: 1200px) {
+    .projects-grid {
+        --row-size: 180px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1.5rem;
+    }
+}
+
+/* Tile spans (columns x rows) */
+.span-1x1 { grid-column: span 1; grid-row: span 1; }
+.span-2x1 { grid-column: span 2; grid-row: span 1; }
+.span-1x2 { grid-column: span 1; grid-row: span 2; }
+.span-2x2 { grid-column: span 2; grid-row: span 2; }
+
+/* Mobile: ensure single-column layout regardless of span */
+@media (max-width: 767.98px) {
+    .projects-grid > .bento-item { grid-column: span 1 !important; }
+}
+
+/* Tile visuals */
+.bento-item {
+    position: relative;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+}
+
+.bento-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.bento-link {
+    display: block;
+    width: 100%;
+    height: 100%;
+    color: inherit;
+    text-decoration: none;
+}
+
+.bento-content {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+/* Title bar */
+.bento-header {
+    position: absolute;
+    left: 0.75rem;
+    right: 0.75rem;
+    top: 0.75rem;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: rgba(255, 255, 255, 0.92);
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", monospace;
+    font-size: 13px;
+    text-shadow: 0 1px 8px rgba(0,0,0,0.35);
+}
+
+.bento-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.bento-thumb {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.85;
+    filter: saturate(1.05) contrast(1.05);
+    transition: opacity 0.25s ease, transform 0.25s ease, filter 0.25s ease;
+}
+
+.bento-item:hover .bento-thumb { opacity: 1; transform: scale(1.02); }
+
+/* Stack-of-cards hover effect */
+.card-stack {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    z-index: 2;
+}
+
+.card-layer {
+    position: absolute;
+    width: auto; /* size by height for predictable containment */
+    height: var(--stack-h, 56%); /* computed in JS from tile height (fallback for CSS-only) */
+    aspect-ratio: 3 / 2;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.08);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+    backdrop-filter: blur(5px);
+    transform: translate3d(0,0,0) rotate(0deg) scale(1);
+    transition: transform 220ms ease, background 220ms ease;
+}
+
+/* No per-span overrides required; card layers size via --stack-h */
+
+.card-layer.layer-1 { transform: translate3d(-8px, 10px, 0) rotate(-6deg) scale(0.98); }
+.card-layer.layer-2 { transform: translate3d(6px, 0, 0) rotate(2deg) scale(1.0); }
+.card-layer.layer-3 { transform: translate3d(14px, -10px, 0) rotate(8deg) scale(0.98); }
+
+.bento-item:hover .card-layer.layer-1 { transform: translate3d(-18px, 16px, 0) rotate(-10deg) scale(0.98); }
+.bento-item:hover .card-layer.layer-2 { transform: translate3d(8px, -4px, 0) rotate(4deg) scale(1.02); }
+.bento-item:hover .card-layer.layer-3 { transform: translate3d(24px, -20px, 0) rotate(12deg) scale(1.0); }
+
+/* Footer chip */
+.bento-footer {
+    position: absolute;
+    left: 0.75rem;
+    bottom: 0.75rem;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.35);
+    color: rgba(255,255,255,0.9);
+    font-size: 11px;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", monospace;
+    backdrop-filter: blur(6px);
+}
+
+/* Scrollbar (match photos view) */
+.projects-container::-webkit-scrollbar { width: 8px; }
+.projects-container::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
+.projects-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+.projects-container::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
+
+
+/* Footer link */
+.projects-footer {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 1.25rem;
+    padding-bottom: 1rem;
+    position: sticky;
+    bottom: 16px;
+}
+
+.projects-footer-link {
+    display: inline-block; /* wraps glass surface so full area is clickable */
+    color: rgba(255,255,255,0.92);
+    text-decoration: none;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", monospace;
+    font-size: 13px;
+}
+
+.projects-footer-link img {
+    width: 20px;
+    height: auto;
+    filter: brightness(0) invert(1);
+}

@@ -4,6 +4,7 @@ using Portfolio.Models;
 
 namespace Portfolio.Controllers;
 
+// HomeController handles the root route and redirects to the index view
 public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger; 
@@ -19,6 +20,11 @@ public class HomeController : Controller
     }
 
     public IActionResult Photos()
+    {
+        return View("Index");
+    }
+
+    public IActionResult Projects()
     {
         return View("Index");
     }

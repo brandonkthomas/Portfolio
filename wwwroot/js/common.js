@@ -1,6 +1,6 @@
 ﻿/**
  * common.js
- * @fileoverview Main site JavaScript functionality
+ * @fileoverview Shared functions used by other modules
  * @description Handles mobile detection, URL path display, navigation
  */
 
@@ -61,6 +61,16 @@ export function supportsSVGFilters(filterId) {
     const div = document.createElement('div');
     div.style.backdropFilter = `url(#${filterId})`;
     return div.style.backdropFilter !== '';
+}
+
+//==============================================================================================
+/**
+ * wait for a given number of milliseconds
+ * @param {number} ms - Milliseconds to wait
+ * @returns {Promise} Promise that resolves after the given number of milliseconds
+ */
+export function wait(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 //==============================================================================================

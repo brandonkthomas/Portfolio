@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="~/css/starfield.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/glassSurface.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/photoGallery.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/projects.css" asp-append-version="true" />
 
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
 
@@ -58,9 +59,9 @@
                             <img src="~/assets/svg/photo-filled.svg" alt="" width="20" height="20" />
                             <span>Photos</span>
                         </a>
-                        <a href="https://github.com/brandonkthomas" class="url-link" rel="noopener noreferrer" aria-label="GitHub">
-                            <img src="~/assets/svg/github-logo-roundrect-filled.svg" alt="" width="20" height="20" />
-                            <span>GitHub</span>
+                        <a href="/projects" class="url-link url-link-projects" data-nav-link="projects" aria-label="Projects">
+                            <img src="~/assets/svg/project-filled.svg" alt="" width="20" height="20" />
+                            <span>Projects</span>
                         </a>
                         <a href="https://linkedin.com/in/brandonkthomas" class="url-link" rel="noopener noreferrer" aria-label="LinkedIn">
                             <img src="~/assets/svg/linkedin-logo-filled.svg" alt="" width="20" height="20" />
@@ -81,24 +82,31 @@
                 <nav class="url-nav-links mobile">
                     @{
                         var isPhotosPage = Context.Request.Path.StartsWithSegments("/photos", StringComparison.OrdinalIgnoreCase);
+                        var isProjectsPage = Context.Request.Path.StartsWithSegments("/projects", StringComparison.OrdinalIgnoreCase);
                     }
-                    @if (isPhotosPage)
-                    {
-                        <a href="/photos" class="url-link url-link-photos" data-nav-link="photos">
+                    <a href="/photos" class="url-link url-link-photos" data-nav-link="photos">
+                        @if (isPhotosPage)
+                        {
                             <img src="~/assets/svg/bt-logo-boxed.svg" alt="" width="20" height="20" />
                             <span>Card</span>
-                        </a>
-                    }
-                    else
-                    {
-                        <a href="/photos" class="url-link url-link-photos" data-nav-link="photos">
+                        }
+                        else
+                        {
                             <img src="~/assets/svg/polaroid-filled.svg" alt="" width="20" height="20" />
                             <span>Photos</span>
-                        </a>
-                    }
-                    <a href="https://github.com/brandonkthomas" class="url-link" rel="noopener noreferrer">
-                        <img src="~/assets/svg/github-logo-roundrect-filled.svg" alt="" width="20" height="20" />
-                        <span>GitHub</span>
+                        }
+                    </a>
+                    <a href="/projects" class="url-link url-link-projects" data-nav-link="projects">
+                        @if (isProjectsPage)
+                        {
+                            <img src="~/assets/svg/bt-logo-boxed.svg" alt="" width="20" height="20" />
+                            <span>Card</span>
+                        }
+                        else
+                        {
+                            <img src="~/assets/svg/project-filled.svg" alt="" width="20" height="20" />
+                            <span>Projects</span>
+                        }
                     </a>
                     <a href="https://linkedin.com/in/brandonkthomas" class="url-link" rel="noopener noreferrer">
                         <img src="~/assets/svg/linkedin-logo-filled.svg" alt="" width="20" height="20" />
@@ -122,6 +130,7 @@
         <script src="~/js/navbar.js" type="module"></script>
         <script src="~/js/starfield.js" type="module"></script>
         <script src="~/js/photoGallery.js" type="module"></script>
+        <script src="~/js/projects.js" type="module"></script>
     </environment>
     <environment exclude="Development">
         @inject Portfolio.Services.IAssetManifest AssetManifest
@@ -130,6 +139,7 @@
         <script src="@AssetManifest.GetAssetPath("navbar.js")" type="module"></script>
         <script src="@AssetManifest.GetAssetPath("starfield.js")" type="module"></script>
         <script src="@AssetManifest.GetAssetPath("photoGallery.js")" type="module"></script>
+        <script src="@AssetManifest.GetAssetPath("projects.js")" type="module"></script>
     </environment>
     @await RenderSectionAsync("Scripts", required: false)
     @await RenderSectionAsync("Styles", required: false)

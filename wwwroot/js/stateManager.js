@@ -4,7 +4,7 @@
  * @description Handles view transitions between card and photo gallery views
  */
 
-import { isMobile } from './common.js';
+import { isMobile, wait } from './common.js';
 
 //==============================================================================================
 // Early init: Hide card immediately if we're loading /photos
@@ -20,6 +20,15 @@ import { isMobile } from './common.js';
         if (photoContainer) {
             photoContainer.classList.add('visible');
         }
+    } else if (path === '/projects' || path === '/Projects') {
+        const cardContainer = document.querySelector('.card-container');
+        const projectsContainer = document.querySelector('.projects-container');
+        if (cardContainer) {
+            cardContainer.classList.add('hidden');
+        }
+        if (projectsContainer) {
+            projectsContainer.classList.add('visible');
+        }
     }
 })();
 
@@ -30,9 +39,26 @@ import { isMobile } from './common.js';
  */
 export const ViewState = Object.freeze({
     CARD: 'card',
-    PHOTOS: 'photos'
+    PHOTOS: 'photos',
+    PROJECTS: 'projects'
 });
 
+//==============================================================================================
+/**
+ * State manager for single-page application routing
+ * @constructor
+ * @description Handles view transitions between card and photo gallery views
+ * @property {ViewState} currentView - Current view state
+ * @property {boolean} isTransitioning - Whether a transition is in progress
+ * @property {Array} listeners - Array of listeners for view changes
+ * @property {boolean} initialRevealDone - Whether the initial reveal has been done
+ * @property {AbortController} initialRevealAbortController - Abort controller for initial reveal
+ * @property {Object} starfield - Reference to starfield module
+ * @property {Object} card - Reference to card module
+ * @property {Object} photoGallery - Reference to photo gallery module
+ * @property {Object} projects - Reference to projects module
+ * @property {Object} navbar - Reference to navbar module
+ */
 class StateManager {
     constructor() {
         this.currentView = ViewState.CARD;
@@ -47,13 +73,16 @@ class StateManager {
         this.starfield = null;
         this.card = null;
         this.photoGallery = null;
+        this.projects = null;
         this.navbar = null;
         
         this.init();
     }
 
+    //==============================================================================================
     /**
-     * Initialize state manager
+     * Initialize state manager -- call ctor first
+     * @returns {void}
      */
     init() {
         // Handle browser back/forward buttons
@@ -61,7 +90,9 @@ class StateManager {
             const state = e.state || {};
             const viewString = state.view || ViewState.CARD;
             // Map string to enum (for backward compatibility)
-            const view = viewString === ViewState.PHOTOS ? ViewState.PHOTOS : ViewState.CARD;
+            const view = viewString === ViewState.PHOTOS
+                ? ViewState.PHOTOS
+                : (viewString === ViewState.PROJECTS ? ViewState.PROJECTS : ViewState.CARD);
             this.navigateToView(
                 /* view */ view, 
                 /* pushHistory */ false, 
@@ -74,11 +105,16 @@ class StateManager {
 
         // Setup initial reveal for card and photo gallery
         // This will fade in the card and photo gallery when the page loads
+        // BT 2025-10-31: finally got this working last week and then Safari 26 decided to cause 
+        //   issues... to investigate
         this.setupInitialReveal();
     }
 
+
+    //==============================================================================================
     /**
      * Check initial route on page load
+     * @returns {void}
      */
     checkInitialRoute() {
         const path = window.location.pathname;
@@ -103,18 +139,41 @@ class StateManager {
                     this.photoGallery.show();
                 }
             });
+        } else if (path === '/projects' || path === '/Projects') {
+            // Set current view immediately (DOM already updated by early init)
+            this.currentView = ViewState.PROJECTS;
+            history.replaceState({ view: ViewState.PROJECTS }, '', '/projects');
+
+            // Notify listeners immediately so navbar updates
+            this.notifyListeners();
+
+            // Wait for modules to be ready, then finalize setup (no animations needed)
+            this.waitForModules(() => {
+                if (this.starfield) {
+                    this.starfield.setStarDirection(-1);
+                    this.starfield.reduceStars();
+                }
+                this.waitForProjects(() => {
+                    if (this.projects && !this.projects.isGridVisible()) {
+                        this.projects.show();
+                    }
+                });
+            });
         } else {
-            // Default to card view
+            // Default to card view; do not rewrite URL for non-SPA routes (e.g., /projects/slug)
             this.currentView = ViewState.CARD;
-            history.replaceState({ view: ViewState.CARD }, '', '/');
-            
-            // Still connect modules for later use
-            this.waitForModules();
+            if (path === '/' || path === '') {
+                history.replaceState({ view: ViewState.CARD }, '', '/');
+                // Still connect modules for later use
+                this.waitForModules();
+            }
         }
     }
 
+    //==============================================================================================
     /**
      * Wait for all modules to be ready, then call callback
+     * @param {function} callback - Function to call when all modules are ready
      */
     waitForModules(callback) {
         const checkModules = () => {
@@ -132,43 +191,48 @@ class StateManager {
         setTimeout(checkModules, 100);
     }
 
+    //==============================================================================================
+    /**
+     * Wait for projects module then call callback
+     * @param {function} callback - Function to call when projects module is ready
+     * @returns {void}
+     */
+    waitForProjects(callback) {
+        const check = () => {
+            this.connectModules();
+            if (this.projects) {
+                if (callback) callback();
+            } else {
+                setTimeout(check, 50);
+            }
+        };
+        setTimeout(check, 50);
+    }
+
+    //==============================================================================================
     /**
      * Connect to module instances exposed on window
+     * @returns {void}
      */
     connectModules() {
         if (window.starfieldInstance && !this.starfield) {
-            this.setStarfield(window.starfieldInstance);
+            this.starfield = window.starfieldInstance;
         }
         if (window.card3DInstance && !this.card) {
-            this.setCard(window.card3DInstance);
+            this.card = window.card3DInstance;
         }
         if (window.photoGalleryInstance && !this.photoGallery) {
-            this.setPhotoGallery(window.photoGalleryInstance);
+            this.photoGallery = window.photoGalleryInstance;
+        }
+        if (window.projectsInstance && !this.projects) {
+            this.projects = window.projectsInstance;
         }
         if (window.navbarManagerInstance && !this.navbar) {
             this.navbar = window.navbarManagerInstance;
         }
     }
 
-    /**
-     * Set module references
-     */
-    setStarfield(starfield) {
-        this.starfield = starfield;
-    }
-
-    setCard(card) {
-        this.card = card;
-    }
-
-    setPhotoGallery(photoGallery) {
-        this.photoGallery = photoGallery;
-    }
-
-    setNavbar(navbar) {
-        this.navbar = navbar;
-    }
-
+    //==============================================================================================
     /**
      * Register a listener for view changes
      * @param {function} callback - Function to call when view changes
@@ -177,6 +241,7 @@ class StateManager {
         this.listeners.push(callback);
     }
 
+    //==============================================================================================
     /**
      * Notify all listeners of view change
      */
@@ -184,25 +249,30 @@ class StateManager {
         this.listeners.forEach(listener => listener(this.currentView));
     }
 
+    //==============================================================================================
     /**
      * Initialize on-load reveal for card and photo gallery
+     * @returns {void}
      */
     setupInitialReveal() {
         if (this.initialRevealDone) {
             return;
         }
 
+        // Create abort controller to abort initial reveal if needed (if loading /photos or /projects)
         const abortController = new AbortController();
         this.initialRevealAbortController = abortController;
 
+        // Add initial reveal classes to elements
         this.getInitialRevealElements().forEach(({ element, className }) => {
             if (element) {
                 element.classList.add(className);
             }
         });
 
+        // Collect module ready promises
         const moduleReadyPromises = [];
-
+        
         const collectModules = () => {
             this.connectModules();
 
@@ -221,6 +291,7 @@ class StateManager {
             return this.card && this.starfield;
         };
 
+        // Try to finalize initial reveal
         const tryFinalize = () => {
             if (abortController.signal.aborted) {
                 return;
@@ -240,6 +311,7 @@ class StateManager {
             });
         };
 
+        // Check if modules are ready every 50ms
         const moduleInterval = setInterval(() => {
             if (collectModules()) {
                 clearInterval(moduleInterval);
@@ -247,11 +319,13 @@ class StateManager {
             }
         }, 50);
 
+        // Abort initial reveal if needed
         abortController.signal.addEventListener('abort', () => {
             clearInterval(moduleInterval);
         });
     }
 
+    //==============================================================================================
     /**
      * Trigger initial reveal for card and photo gallery
      * @description Fades in the card and photo gallery
@@ -286,6 +360,7 @@ class StateManager {
         }
     }
 
+    //==============================================================================================
     /**
      * Retrieve initial reveal elements
      * @returns {Array} Array of elements to reveal
@@ -294,10 +369,12 @@ class StateManager {
         return [
             { element: document.querySelector('.card-container'), className: 'card-initial' },
             { element: document.getElementById('starfield'), className: 'starfield-initial' },
-            { element: document.querySelector('.photo-gallery-container'), className: 'photo-gallery-initial' }
+            { element: document.querySelector('.photo-gallery-container'), className: 'photo-gallery-initial' },
+            { element: document.querySelector('.projects-container'), className: 'projects-initial' }
         ];
     }
 
+    //==============================================================================================
     /**
      * Navigate to a specific view
      * @param {ViewState} view - View state enum value
@@ -310,9 +387,19 @@ class StateManager {
         }
 
         // Ensure modules are connected
-        if (!this.starfield || !this.card || !this.photoGallery) {
+        if (!this.starfield || !this.card || !this.photoGallery || (view === ViewState.PROJECTS && !this.projects)) {
             console.warn('Waiting for modules to be ready...');
             this.waitForModules(() => {
+                if (view === ViewState.PROJECTS) {
+                    this.waitForProjects(() => {
+                        this.navigateToView(
+                            /* view */ view, 
+                            /* pushHistory */ pushHistory, 
+                            /* skipAnimations */ skipAnimations
+                        );
+                    });
+                    return;
+                }
                 this.navigateToView(
                     /* view */ view, 
                     /* pushHistory */ pushHistory, 
@@ -326,13 +413,17 @@ class StateManager {
 
         // Update browser history
         if (pushHistory) {
-            const path = view === ViewState.PHOTOS ? '/photos' : '/';
+            let path = '/';
+            if (view === ViewState.PHOTOS) path = '/photos';
+            else if (view === ViewState.PROJECTS) path = '/projects';
             history.pushState({ view }, '', path);
         }
 
         // Perform transition
         if (view === ViewState.PHOTOS) {
             await this.transitionToPhotos(skipAnimations);
+        } else if (view === ViewState.PROJECTS) {
+            await this.transitionToProjects(skipAnimations);
         } else {
             await this.transitionToCard(skipAnimations);
         }
@@ -342,6 +433,7 @@ class StateManager {
         this.notifyListeners();
     }
 
+    //==============================================================================================
     /**
      * Transition to photo gallery view
      * @param {boolean} skipAnimations - Whether to skip animations
@@ -358,6 +450,9 @@ class StateManager {
             if (this.card) {
                 this.card.hide();
             }
+            if (this.projects) {
+                this.projects.hide();
+            }
             if (this.photoGallery) {
                 this.photoGallery.show();
             }
@@ -368,19 +463,23 @@ class StateManager {
         }
         
         // Start both animations simultaneously for 3D effect
-        // Trigger starfield warp in reverse
-        if (window.triggerStarfieldWarp) {
+        // Only warp when transitioning from CARD
+        if (window.triggerStarfieldWarp && this.currentView === ViewState.CARD) {
             window.triggerStarfieldWarp(true); // true = reverse
         }
 
-        // Hide card (scales down, fades, blurs)
+        // Hide card (scale down, fade, blur)
         if (this.card) {
             this.card.hide();
         } else {
             console.warn('Card instance not available');
         }
 
-        // Show photo gallery immediately (will animate in)
+        // Hide projects if visible, then show photo gallery
+        if (this.projects) {
+            this.projects.hide();
+        }
+        // Show photo gallery immediately (we'll animate it in)
         if (this.photoGallery) {
             this.photoGallery.show();
         } else {
@@ -388,7 +487,7 @@ class StateManager {
         }
 
         // Wait for animations to complete
-        await this.wait(250);
+        await wait(250);
 
         // Reduce star count during transition
         if (this.starfield) {
@@ -399,6 +498,49 @@ class StateManager {
         
     }
 
+    //==============================================================================================
+    /**
+     * Transition to projects view
+     * @param {boolean} skipAnimations - Whether to skip animations
+     */
+    async transitionToProjects(skipAnimations = false) {
+
+        // Set star direction to reverse (away from camera)
+        if (this.starfield) {
+            this.starfield.setStarDirection(-1);
+        }
+
+        // Instantly show projects view if no animations are requested, then short circuit
+        if (skipAnimations) {
+            if (this.card) this.card.hide();
+            if (this.photoGallery) this.photoGallery.hide();
+            if (this.projects) this.projects.show();
+            if (this.starfield) this.starfield.reduceStars();
+            return;
+        }
+
+        // Only warp when transitioning from CARD
+        if (window.triggerStarfieldWarp && this.currentView === ViewState.CARD) {
+            window.triggerStarfieldWarp(true);
+        }
+
+        // Hide card
+        if (this.card) this.card.hide();
+
+        // Hide photo gallery if visible
+        if (this.photoGallery) this.photoGallery.hide();
+
+        // Show projects grid
+        if (this.projects) this.projects.show();
+
+        // Wait for CSS animations to complete
+        await wait(250);
+
+        // Reduce star count
+        if (this.starfield) this.starfield.reduceStars();
+    }
+
+    //==============================================================================================
     /**
      * Transition to card view
      * @param {boolean} skipAnimations - Whether to skip animations
@@ -412,27 +554,19 @@ class StateManager {
         
         if (skipAnimations) {
             // No animations - instantly show card view
-            if (this.photoGallery) {
-                this.photoGallery.hide();
-            }
-            if (this.card) {
-                this.card.show();
-            }
-            if (this.starfield) {
-                this.starfield.restoreStars();
-            }
+            if (this.photoGallery) this.photoGallery.hide();
+            if (this.projects) this.projects.hide();
+            if (this.card) this.card.show();
+            if (this.starfield) this.starfield.restoreStars();
             return;
         }
         
         // Start both animations simultaneously for 3D effect
         // Hide photo gallery (scales up, fades, blurs)
-        if (this.photoGallery) {
-            this.photoGallery.hide();
-        } else {
-            console.warn('Photo gallery instance not available');
-        }
+        if (this.photoGallery) this.photoGallery.hide();
+        if (this.projects) this.projects.hide();
 
-        // Show card immediately (will animate in)
+        // Show card immediately (we'll animate it in)
         if (this.card) {
             this.card.show();
         } else {
@@ -445,7 +579,7 @@ class StateManager {
         }
 
         // Wait for animations to complete
-        await this.wait(250);
+        await wait(250);
 
         // Restore star count during transition
         if (this.starfield) {
@@ -456,16 +590,9 @@ class StateManager {
         
     }
 
+    //==============================================================================================
     /**
-     * Utility function to wait
-     * @param {number} ms - Milliseconds to wait
-     */
-    wait(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-    /**
-     * Get current view
+     * Retrieve current view
      * @returns {ViewState} Current view state
      */
     getCurrentView() {
