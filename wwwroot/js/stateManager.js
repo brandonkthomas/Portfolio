@@ -366,12 +366,17 @@ class StateManager {
      * @returns {Array} Array of elements to reveal
      */
     getInitialRevealElements() {
-        return [
+        const path = window.location.pathname;
+        const elements = [
             { element: document.querySelector('.card-container'), className: 'card-initial' },
             { element: document.getElementById('starfield'), className: 'starfield-initial' },
-            { element: document.querySelector('.photo-gallery-container'), className: 'photo-gallery-initial' },
-            { element: document.querySelector('.projects-container'), className: 'projects-initial' }
+            { element: document.querySelector('.photo-gallery-container'), className: 'photo-gallery-initial' }
         ];
+        // Only include projects container in initial reveal when landing directly on /projects
+        if (path === '/projects' || path === '/Projects') {
+            elements.push({ element: document.querySelector('.projects-container'), className: 'projects-initial' });
+        }
+        return elements;
     }
 
     //==============================================================================================

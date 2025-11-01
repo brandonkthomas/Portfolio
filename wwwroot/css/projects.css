@@ -221,6 +221,11 @@
 
 
 /* Footer link */
+/* Prevent footer flash when projects view is not active */
+.projects-container:not(.visible) .projects-footer {
+    visibility: hidden;
+}
+
 .projects-footer {
     width: 100%;
     display: flex;
