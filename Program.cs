@@ -40,6 +40,26 @@ if (!app.Environment.IsDevelopment())
 // Use forwarded headers - place this early in the pipeline
 app.UseForwardedHeaders();
 
+// In prod, block direct access to original sources (/js/*) and source maps (*.map) via devtools/direct request
+if (!app.Environment.IsDevelopment())
+{
+    app.Use(async (ctx, next) =>
+    {
+        var pathValue = ctx.Request.Path.Value ?? string.Empty;
+        if (pathValue.EndsWith(".map", StringComparison.OrdinalIgnoreCase))
+        {
+            ctx.Response.StatusCode = 404;
+            return;
+        }
+        if (pathValue.StartsWith("/js/", StringComparison.OrdinalIgnoreCase))
+        {
+            ctx.Response.StatusCode = 404;
+            return;
+        }
+        await next();
+    });
+}
+
 // app.UseHttpsRedirection();
 
 // Static files with ETag-based caching for JS/CSS
