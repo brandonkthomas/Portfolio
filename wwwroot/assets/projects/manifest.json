@@ -24,7 +24,9 @@
       "span": "2x1",
       "url": "https://github.com/brandonkthomas/Spectrometer",
       "external": true,
-      "component": { "type": "lineGraph", "props": {} }
+      "component": { "type": "lineGraph", "props": {} },
+      "downloadOperatingSystem": "Windows",
+      "downloadUrl": "https://github.com/brandonkthomas/Spectrometer/releases/latest/download/Spectrometer.exe"
     },
     {
       "slug": "utility-scripts",

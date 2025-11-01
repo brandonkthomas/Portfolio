@@ -213,6 +213,38 @@
     backdrop-filter: blur(6px);
 }
 
+/* Download button chip (bottom-right) */
+.bento-download {
+    position: absolute;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.42);
+    color: rgba(255,255,255,0.95);
+    font-size: 11px;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", monospace;
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.18);
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+.bento-download:hover {
+    background: rgba(0, 0, 0, 0.52);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+}
+
+.bento-download img {
+    width: 20px;
+    height: auto;
+    filter: brightness(0) invert(1);
+}
+
 /* Scrollbar (match photos view) */
 .projects-container::-webkit-scrollbar { width: 8px; }
 .projects-container::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }

@@ -3,7 +3,7 @@
  * @fileoverview Bento grid of personal projects with hover/tap animations
  */
 
-// import { isMobile } from './common.js';
+import { isMobile, getOperatingSystem } from './common.js';
 import { createGlassSurface } from './glassSurface.js';
 import { mountComponent } from './components/registry.js';
 
@@ -229,6 +229,21 @@ class ProjectsGrid {
             return `linear-gradient(${angle}deg, ${toRgba(c1, a)} 0%, ${toRgba(mid, a + 0.03)} ${pos}%, ${toRgba(c2, a)} 100%)`;
         };
 
+        const parseCsv = (value) => {
+            if (Array.isArray(value)) return value;
+            if (typeof value === 'string') {
+                return value.split(',').map(s => s.trim()).filter(Boolean);
+            }
+            return [];
+        };
+        const shouldShowDownload = (proj) => {
+            const osList = parseCsv(proj.downloadOperatingSystem || proj.downloadOperatingSystems || '');
+            if (!proj.downloadUrl || osList.length === 0) return false;
+            
+            const os = getOperatingSystem();
+            return !isMobile() && osList.some(v => v.toLowerCase() === String(os).toLowerCase());
+        };
+
         // On mobile, force single column; spans are normalized via CSS
         this.projects.forEach((proj, index) => {
             const link = document.createElement('a');
@@ -282,6 +297,33 @@ class ProjectsGrid {
                 footer.className = 'bento-footer';
                 footer.textContent = proj.footer;
                 wrapper.appendChild(footer);
+            }
+
+            // Optional per-project Download button (e.g., Spectrometer on Windows desktop)
+            if (shouldShowDownload(proj)) {
+                const dlBtn = document.createElement('button');
+                dlBtn.type = 'button';
+                dlBtn.className = 'bento-download';
+                dlBtn.setAttribute('aria-label', `Download ${proj.title || 'app'}`);
+                dlBtn.title = `Download ${proj.title || ''}`.trim();
+                dlBtn.textContent = 'Download';
+
+                const icon = document.createElement('img');
+                icon.src = '/assets/svg/download.svg';
+                icon.alt = '';
+                icon.width = 20;
+                icon.height = 20;
+
+                dlBtn.appendChild(icon);
+                dlBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const href = proj.downloadUrl;
+                    if (href) {
+                        window.location.href = href;
+                    }
+                });
+                wrapper.appendChild(dlBtn);
             }
 
             link.appendChild(wrapper);

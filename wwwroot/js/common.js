@@ -65,6 +65,37 @@ export function supportsSVGFilters(filterId) {
 
 //==============================================================================================
 /**
+ * Detect the current operating system
+ * @returns {string} One of 'Windows','macOS','Linux','Android','iOS','ChromeOS','Unknown'
+ */
+export function getOperatingSystem() {
+    const ua = navigator.userAgent || '';
+    const platform = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';
+    const p = String(platform).toLowerCase();
+
+    switch (true) {
+        case /iphone|ipad|ipod/i.test(ua):
+            return 'iOS';
+        case /android/i.test(ua):
+            return 'Android';
+        case /cros/i.test(ua):
+            return 'ChromeOS';
+        case /(win32|win64|windows|wow64)/i.test(p):
+        case /Windows NT/i.test(ua):
+            return 'Windows';
+        case /mac|macintel|macintosh|macos/i.test(p):
+        case /Mac OS X/i.test(ua):
+            return 'macOS';
+        case /linux/i.test(p):
+        case /Linux/i.test(ua):
+            return 'Linux';
+        default:
+            return 'Unknown';
+    }
+}
+
+//==============================================================================================
+/**
  * wait for a given number of milliseconds
  * @param {number} ms - Milliseconds to wait
  * @returns {Promise} Promise that resolves after the given number of milliseconds
