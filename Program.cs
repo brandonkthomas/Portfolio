@@ -102,7 +102,7 @@ app.UseStaticFiles(new StaticFileOptions
 // Development-only: serve local photo store directly and generate manifest at runtime
 if (app.Environment.IsDevelopment())
 {
-    var devPhotoPath = "/Volumes/Storage/Media/Portfolio Asset Store";
+    var devPhotoPath = app.Configuration["DevPhotoPath"];
     if (Directory.Exists(devPhotoPath))
     {
         app.UseStaticFiles(new StaticFileOptions
