@@ -5,6 +5,7 @@ scripts/
 bin/
 obj/
 publish/
+appsettings.Development.json
 
 # Cursor support for .NET Core debugging
 .vscode/dotnet.out
