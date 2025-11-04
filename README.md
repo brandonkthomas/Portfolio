@@ -1,12 +1,46 @@
-<img width="3080" height="2270" alt="Portfolio site preview" src="https://github.com/user-attachments/assets/e2bf6d8b-c6c6-4b53-a39b-6406c774b05f" />
+<div align="center">
+  <a href="https://github.com/brandonkthomas/Portfolio">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="wwwroot/assets/svg/bt-logo-boxed-darkm.svg">
+      <source media="(prefers-color-scheme: light)" srcset="wwwroot/assets/svg/bt-logo-boxed-lightm.svg">
+      <img src="wwwroot/assets/svg/bt-logo-boxed.svg" alt="Logo" width="80" height="80">
+    </picture>
+  </a>
 
-# Portfolio
+  <h3 align="center">Portfolio</h3>
 
-Personal portfolio site w/ interactive business card, project showcase, photo gallery & contact links
+  <p align="center">
+    Responsive portfolio site w/ interactive business card, project showcase, photo gallery & contact links.
+    <br />
+    <a href="https://brandonthomas.net">View Demo</a>
+    <br />
+    <br />
+    <a href="https://dotnet.microsoft.com/en-us/apps/aspnet"><img alt=".NET Core" src="https://img.shields.io/badge/.NET%20Core-512BD4?logo=dotnet&logoColor=white"></a>
+    <a href="https://threejs.org"><img alt="Three.js" src="https://img.shields.io/badge/Three.js-000000?logo=three.js&logoColor=white"></a>
+    <a href="https://www.w3.org/html/"><img alt="HTML" src="https://shields.io/badge/HTML-f06529?logo=html5&logoColor=white&labelColor=f06529"></a>
+    <a href="https://ecma-international.org/publications-and-standards/standards/ecma-262/"><img alt="JavaScript" src="https://shields.io/badge/JavaScript-F7DF1E?logo=JavaScript&logoColor=000&style=flat-square"></a>
+    <a href="https://www.w3.org/Style/CSS/Overview.en.html"><img alt="CSS" src="https://shields.io/badge/CSS-009CFF?logo=css&logoColor=white&labelColor=009CFF"></a>
+  </p>
+</div>
 
-This code is currently hosted at [brandonthomas.net](https://brandonthomas.net).
+## About the Project
+<img width="3080" height="2270" alt="Portfolio site preview" src="https://github.com/user-attachments/assets/9181d459-4f75-47e8-a2f9-59a5617895b9" />
 
-**Stack:** ASP.NET Core MVC backend, vanilla HTML/CSS/JavaScript (*+ Three.js*) frontend
+This project began as a simple Three.js card experiment and has since evolved into a more comprehensive personal portfolio. 
 
-> **Remarks:**  
-> This project began as a simple Three.js card experiment and has since evolved into a more comprehensive personal portfolio. I plan to keep adding new features as I'm inspired.
+I plan to keep adding new features as I'm inspired.
+
+## Roadmap
+
+- [ ] Convert all JavaScript to TypeScript
+
+[threejs-shield]: https://img.shields.io/badge/Three.js-000000?logo=three.js&logoColor=white
+[threejs-url]: https://threejs.org
+[dotnetcore-shield]: https://img.shields.io/badge/.NET%20Core-512BD4?logo=dotnet&logoColor=white
+[dotnetcore-url]: https://dotnet.microsoft.com/en-us/apps/aspnet
+[html-shield]: https://shields.io/badge/HTML-f06529?logo=html5&logoColor=white&labelColor=f06529
+[html-url]: https://www.w3.org/html/
+[js-shield]: https://shields.io/badge/JavaScript-F7DF1E?logo=JavaScript&logoColor=000&style=flat-square
+[js-url]: https://ecma-international.org/publications-and-standards/standards/ecma-262/
+[css-shield]: https://shields.io/badge/CSS-009CFF?logo=css&logoColor=white&labelColor=009CFF
+[css-url]: https://www.w3.org/Style/CSS/Overview.en.html
