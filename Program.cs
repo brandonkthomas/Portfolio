@@ -153,6 +153,52 @@ if (app.Environment.IsDevelopment())
     }
 }
 
+// Production (or when dev mapping didn't run): generate manifest from packaged wwwroot assets
+if (!app.Environment.IsDevelopment())
+{
+    var webRoot = app.Environment.WebRootPath;
+    var reelPath = Path.Combine(webRoot, "assets", "images", "reel");
+    if (Directory.Exists(reelPath))
+    {
+        app.MapGet("/assets/images/reel/manifest.json", () =>
+        {
+            var exts = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+            var files = Directory.EnumerateFiles(reelPath, "*.*", SearchOption.AllDirectories)
+                                 .Where(p => exts.Contains(Path.GetExtension(p)))
+                                 .Select(p => "/assets/images/reel/" + Path.GetRelativePath(reelPath, p).Replace("\\", "/"))
+                                 .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
+                                 .ToList();
+
+            // Natural sort using numeric segments (same logic as dev mapping)
+            files.Sort((a, b) => StringComparer.OrdinalIgnoreCase.Compare(Normalize(a), Normalize(b)));
+            return Results.Json(new { images = files });
+
+            static string Normalize(string s)
+            {
+                var result = new System.Text.StringBuilder(s.Length * 2);
+                int i = 0;
+                while (i < s.Length)
+                {
+                    if (char.IsDigit(s[i]))
+                    {
+                        int j = i;
+                        while (j < s.Length && char.IsDigit(s[j])) j++;
+                        var segment = s.Substring(i, j - i);
+                        result.Append(segment.PadLeft(20, '0'));
+                        i = j;
+                    }
+                    else
+                    {
+                        result.Append(s[i]);
+                        i++;
+                    }
+                }
+                return result.ToString();
+            }
+        });
+    }
+}
+
 app.UseRouting();
 
 // Cache control for HTML pages - set before response is sent
