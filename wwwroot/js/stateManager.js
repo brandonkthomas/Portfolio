@@ -162,10 +162,16 @@ class StateManager {
         } else {
             // Default to card view; do not rewrite URL for non-SPA routes (e.g., /projects/slug)
             this.currentView = ViewState.CARD;
+            
             if (path === '/' || path === '') {
                 history.replaceState({ view: ViewState.CARD }, '', '/');
-                // Still connect modules for later use
-                this.waitForModules();
+
+                // Ensure modules are connected, then trigger card.show() so CTA scheduling starts on initial load
+                this.waitForModules(() => {
+                    if (this.card) {
+                        this.card.show();
+                    }
+                });
             }
         }
     }

@@ -5,6 +5,7 @@
  */
 
 import { isMobile } from './common.js';
+import stateManager, { ViewState } from './stateManager.js';
 
 // import Stats from 'https://cdnjs.cloudflare.com/ajax/libs/stats.js/r17/Stats.min.js';
 
@@ -50,6 +51,7 @@ class Card {
         // State flags
         this.isFlipped = false;
         this.isDragging = false;
+        this.hasInteracted = false; // once true, CTA should never reappear this session
 
         // Signal to subscribers that the card is ready
         this.readyPromise = new Promise((resolve) => {
@@ -122,6 +124,16 @@ class Card {
         this.flipStartTime = null; // only start timing on user click
 
         this.init();
+
+        // Ensure CTA timer aligns with actual active view state
+        // Start when card view becomes active; clear when leaving
+        stateManager.onViewChange((view) => {
+            if (view === ViewState.CARD) {
+                this._startCtaTimer();
+            } else {
+                this._clearCtaTimers();
+            }
+        });
     }
 
     //==============================================================================================
@@ -132,28 +144,6 @@ class Card {
     init() {
         // Scene setup
         this.scene = new THREE.Scene();
-
-        // Show card tap CTA indicator after 2.25s; hide after 14.2s
-        // Only show if card container is visible (not hidden for photos view)
-        this._showTapTimeout = setTimeout(() => {
-            // Don't show tap indicator if the card is hidden
-            if (this.container.classList.contains('hidden')) {
-                return;
-            }
-            
-            if (isMobile()) {
-                this.tapIndicatorMobile.classList.add('visible');
-            } else {
-                this.tapIndicator.classList.add('visible');
-            }
-            this._hideTapTimeout = setTimeout(() => {
-                if (isMobile()) {
-                    this.tapIndicatorMobile.classList.remove('visible');
-                } else {
-                    this.tapIndicator.classList.remove('visible');
-                }
-            }, 14200);
-        }, 2250);
 
         // Use window dimensions for proper viewport
         const aspect = window.innerWidth / window.innerHeight;
@@ -284,6 +274,7 @@ class Card {
 
             if (!isDragGesture && this.isMouseOverCard(e)) {
                 this.flipCard();
+                this.hasInteracted = true;
                 // Remove the tap indicator immediately
                 if (this.tapIndicator) {
                     this.tapIndicator.classList.remove('visible');
@@ -685,6 +676,68 @@ class Card {
 
     //==============================================================================================
     /**
+     * Start CTA (tap indicator) timer if card is visible
+     * @description Schedules show/hide of the tap indicator only when card view is active
+     */
+    _startCtaTimer() {
+        // Always clear any existing timers before starting a new one
+        this._clearCtaTimers();
+
+        // Do not schedule if the card is hidden
+        if (!this.container || this.container.classList.contains('hidden')) {
+            return;
+        }
+
+        // If user has already interacted, never show CTA again this session
+        if (this.hasInteracted) {
+            return;
+        }
+
+        this._showTapTimeout = setTimeout(() => {
+            // If hidden by the time we fire, abort
+            if (this.container.classList.contains('hidden')) {
+                return;
+            }
+
+            if (isMobile()) {
+                this.tapIndicatorMobile.classList.add('visible');
+            } else {
+                this.tapIndicator.classList.add('visible');
+            }
+
+            this._hideTapTimeout = setTimeout(() => {
+                if (isMobile()) {
+                    this.tapIndicatorMobile.classList.remove('visible');
+                } else {
+                    this.tapIndicator.classList.remove('visible');
+                }
+            }, 14200);
+        }, 2250);
+    }
+
+    //==============================================================================================
+    /**
+     * Clear CTA timers and hide indicators
+     */
+    _clearCtaTimers() {
+        if (this._showTapTimeout) {
+            clearTimeout(this._showTapTimeout);
+            this._showTapTimeout = null;
+        }
+        if (this._hideTapTimeout) {
+            clearTimeout(this._hideTapTimeout);
+            this._hideTapTimeout = null;
+        }
+        if (this.tapIndicator) {
+            this.tapIndicator.classList.remove('visible');
+        }
+        if (this.tapIndicatorMobile) {
+            this.tapIndicatorMobile.classList.remove('visible');
+        }
+    }
+
+    //==============================================================================================
+    /**
      * Hide the card with scale-back animation
      * @description Scales down, fades out, and blurs the card container
      */
@@ -695,14 +748,9 @@ class Card {
         }
         
         this.container.classList.add('hidden');
-        
-        // Hide tap indicators as well
-        if (this.tapIndicator) {
-            this.tapIndicator.classList.remove('visible');
-        }
-        if (this.tapIndicatorMobile) {
-            this.tapIndicatorMobile.classList.remove('visible');
-        }
+
+        // Cancel CTA and hide indicators when leaving card view
+        this._clearCtaTimers();
     }
 
     //==============================================================================================
@@ -717,6 +765,9 @@ class Card {
         }
 
         this.container.classList.remove('hidden');
+
+        // Start CTA timer now that card view is active
+        this._startCtaTimer();
     }
 }
 
