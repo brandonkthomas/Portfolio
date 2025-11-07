@@ -2,19 +2,14 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": ".NET Core Launch",
+            "name": "App (Server)",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "build",
+            "preLaunchTask": "dev:prelaunch",
             "program": "${workspaceFolder}/bin/Debug/net8.0/Portfolio.dll",
             "args": [],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
-            "serverReadyAction": {
-                "action": "openExternally",
-                "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
-                "uriFormat": "%s"
-            },
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "ASPNETCORE_URLS": "http://localhost:8081"
@@ -23,14 +18,37 @@
         {
             "type": "pwa-chrome",
             "request": "launch",
-            "name": "Launch Chrome against localhost (Cursor compat)",
+            "name": "Chrome (DevTools)",
             "url": "http://localhost:8081",
             "webRoot": "${workspaceFolder}/wwwroot",
+            "sourceMapPathOverrides": {
+                "../../ts/*": "${workspaceFolder}/wwwroot/ts/*",
+                "*/ts/*": "${workspaceFolder}/wwwroot/ts/*",
+                "ts/*": "${workspaceFolder}/wwwroot/ts/*",
+                "webpack:///./*": "${webRoot}/*",
+                "webpack:///*": "${webRoot}/*",
+                "http://localhost:8081/*": "${webRoot}/*"
+            },
+            "resolveSourceMapLocations": [
+                "${workspaceFolder}/wwwroot/**",
+                "!**/node_modules/**"
+            ],
             "runtimeArgs": [
                 "--auto-open-devtools-for-tabs"
             ],
-            "preLaunchTask": "dev:start",
-            "postDebugTask": "dev:stop"
+            "smartStep": true,
+            "trace": true,
+            "preLaunchTask": "wait:app-ready"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Launch App + Chrome (DevTools)",
+            "configurations": [
+                "App (Server)",
+                "Chrome (DevTools)"
+            ],
+            "stopAll": true
         }
     ]
 }

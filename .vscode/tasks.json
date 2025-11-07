@@ -14,24 +14,151 @@
         "problemMatcher": "$msCompile"
       },
       {
-        "label": "dev:start",
-        "type": "shell",
-        "command": "/bin/bash",
+        "label": "typecheck:once",
+        "type": "process",
+        "command": "npx",
         "args": [
-          "-c",
-          "bash \"${workspaceFolder}/.vscode/dev-run.sh\""
+          "--yes",
+          "tsc",
+          "--noEmit",
+          "-p",
+          "tsconfig.json"
         ],
+        "problemMatcher": "$tsc",
+        "dependsOn": "npm:install"
+      },
+      {
+        "label": "typecheck:watch",
+        "type": "process",
+        "command": "npx",
+        "args": [
+          "--yes",
+          "tsc",
+          "--noEmit",
+          "-w",
+          "-p",
+          "tsconfig.json"
+        ],
+        "isBackground": true,
+        "problemMatcher": "$tsc-watch",
+        "dependsOn": "npm:install"
+      },
+      {
+        "label": "npm:install",
+        "type": "process",
+        "command": "npm",
+        "args": [
+          "install"
+        ],
+        "options": {
+          "cwd": "${workspaceFolder}"
+        },
         "problemMatcher": []
       },
       {
-        "label": "dev:stop",
-        "type": "shell",
-        "command": "/bin/bash",
+        "label": "frontend:esbuild:watch",
+        "type": "process",
+        "command": "npx",
         "args": [
-          "-c",
-          "bash \"${workspaceFolder}/.vscode/dev-stop.sh\""
+          "--yes",
+          "esbuild",
+          "${workspaceFolder}/wwwroot/ts/common.ts",
+          "${workspaceFolder}/wwwroot/ts/stateManager.ts",
+          "${workspaceFolder}/wwwroot/ts/navbar.ts",
+          "${workspaceFolder}/wwwroot/ts/starfield.ts",
+          "${workspaceFolder}/wwwroot/ts/photoGallery.ts",
+          "${workspaceFolder}/wwwroot/ts/card.ts",
+          "${workspaceFolder}/wwwroot/ts/projects.ts",
+          "--bundle",
+          "--format=esm",
+          "--splitting",
+          "--outdir=${workspaceFolder}/wwwroot/js",
+          "--entry-names=[name]",
+          "--chunk-names=chunks/[name]-[hash]",
+          "--sourcemap=inline",
+          "--watch"
         ],
-        "problemMatcher": []
+        "isBackground": true,
+        "problemMatcher": [
+          {
+            "owner": "esbuild",
+            "fileLocation": [
+              "relative",
+              "${workspaceFolder}"
+            ],
+            "pattern": [
+              {
+                "regexp": "^(.*):(\\d+):(\\d+):\\s+(error|warning):\\s+(.*)$",
+                "file": 1,
+                "line": 2,
+                "column": 3,
+                "severity": 4,
+                "message": 5
+              }
+            ],
+            "background": {
+              "activeOnStart": true,
+              "beginsPattern": ".",
+              "endsPattern": "."
+            }
+          }
+        ],
+        "dependsOn": [
+          "npm:install",
+          "frontend:esbuild:build"
+        ]
+      },
+      {
+        "label": "frontend:esbuild:build",
+        "type": "process",
+        "command": "npx",
+        "args": [
+          "--yes",
+          "esbuild",
+          "${workspaceFolder}/wwwroot/ts/common.ts",
+          "${workspaceFolder}/wwwroot/ts/stateManager.ts",
+          "${workspaceFolder}/wwwroot/ts/navbar.ts",
+          "${workspaceFolder}/wwwroot/ts/starfield.ts",
+          "${workspaceFolder}/wwwroot/ts/photoGallery.ts",
+          "${workspaceFolder}/wwwroot/ts/card.ts",
+          "${workspaceFolder}/wwwroot/ts/projects.ts",
+          "--bundle",
+          "--format=esm",
+          "--splitting",
+          "--outdir=${workspaceFolder}/wwwroot/js",
+          "--entry-names=[name]",
+          "--chunk-names=chunks/[name]-[hash]",
+          "--sourcemap=inline"
+        ],
+        "problemMatcher": [],
+        "dependsOn": "npm:install"
+      },
+      {
+        "label": "dev:prelaunch",
+        "type": "shell",
+        "command": "echo",
+        "args": [
+          "dev-prelaunch"
+        ],
+        "problemMatcher": [],
+        "dependsOn": [
+          "build",
+          "typecheck:once",
+          "typecheck:watch",
+          "frontend:esbuild:watch"
+        ]
+      },
+      {
+        "label": "wait:app-ready",
+        "type": "process",
+        "command": "npx",
+        "args": [
+          "--yes",
+          "wait-on",
+          "http://localhost:8081"
+        ],
+        "problemMatcher": [],
+        "dependsOn": "npm:install"
       }
     ]
 }
