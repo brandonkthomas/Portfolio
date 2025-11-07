@@ -46,6 +46,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body data-initial-state="loading">
+    <div class="loading-overlay" aria-hidden="true">
+        <img src="~/assets/svg/bt-logo-boxed.svg" alt="Brandon Thomas Logo" class="loading-logo" />
+        <img src="~/assets/svg/throbber-ring-indef.svg" alt="" class="loading-throbber" />
+    </div>
     @{ var hideNavbar = (ViewData["HideNavbar"] as bool?) ?? false; }
     @if (!hideNavbar)
     {

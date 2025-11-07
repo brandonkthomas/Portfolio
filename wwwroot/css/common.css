@@ -87,3 +87,49 @@ body[data-initial-state="loading"] .projects-container {
 .form-check-input:focus {
     box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
+
+/* Fullscreen loading overlay */
+.loading-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000; /* above navbar and other UI */
+    background-color: #1c1c1c;
+    display: block;
+    opacity: 1;
+    transform: scale(1);
+    filter: none;
+    transition:
+        opacity 0.33s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.33s cubic-bezier(0.4, 0, 0.2, 1),
+        filter 0.33s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.loading-overlay img {
+    width: 80px;
+    height: auto;
+    filter: invert(1);
+}
+
+.loading-overlay .loading-logo {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.loading-overlay img.loading-throbber {
+    position: absolute;
+    top: calc(55% + 64px);
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 28px;
+}
+
+/* Hide overlay when initial state switches to ready (same quick enter timing) */
+body[data-initial-state="ready"] .loading-overlay {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(1.08);
+    filter: blur(25px);
+    transition-duration: 0.15s;
+}
