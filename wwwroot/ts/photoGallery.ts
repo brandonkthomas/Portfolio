@@ -6,9 +6,20 @@
 
 import { isMobile } from './common';
 import { createGlassSurface } from './glassSurface';
+import type { GlassSurfaceInstance } from './glassSurface';
+
+type PhotoItem = { url: string; width: number; height: number; aspectRatio: number; index: number };
 
 class PhotoGallery {
-    [key: string]: any;
+    private container: HTMLElement | null;
+    private lightbox: HTMLElement | null;
+    private photos: PhotoItem[];
+    private currentPhotoIndex: number;
+    private isVisible: boolean;
+    private lightboxControls: { close?: GlassSurfaceInstance; prev?: GlassSurfaceInstance; next?: GlassSurfaceInstance };
+    private currentColumnCount: number;
+    private photosGenerated: boolean;
+    private handleSwipe?: () => void;
     constructor() {
         this.container = null;
         this.lightbox = null;
@@ -62,7 +73,7 @@ class PhotoGallery {
      */
     createGalleryHTML() {
         // Create gallery grid structure inside container
-        this.container.innerHTML = `
+        this.container!.innerHTML = `
             <div class="photo-gallery">
                 <div class="photo-grid"></div>
             </div>
@@ -81,20 +92,20 @@ class PhotoGallery {
         `;
 
         // Check if lightbox already exists (in case of re-initialization)
-        this.lightbox = document.querySelector('.photo-lightbox');
+        this.lightbox = document.querySelector('.photo-lightbox') as HTMLElement | null;
         if (!this.lightbox) {
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = lightboxHTML;
-            this.lightbox = tempDiv.firstElementChild;
-            document.body.appendChild(this.lightbox);
+            this.lightbox = tempDiv.firstElementChild as HTMLElement;
+            document.body.appendChild(this.lightbox as HTMLElement);
         }
 
         // Harden lightbox image against saving interactions
-        const lightboxImg = this.lightbox.querySelector('.lightbox-image');
+        const lightboxImg = this.lightbox.querySelector('.lightbox-image') as HTMLElement | null;
         if (lightboxImg) {
             lightboxImg.setAttribute('draggable', 'false');
-            lightboxImg.addEventListener('dragstart', (e: DragEvent) => e.preventDefault());
-            lightboxImg.addEventListener('contextmenu', (e: MouseEvent) => e.preventDefault());
+            (lightboxImg as HTMLElement).addEventListener('dragstart', (e) => e.preventDefault());
+            (lightboxImg as HTMLElement).addEventListener('contextmenu', (e) => e.preventDefault());
         }
         
         // Create glass surface controls
@@ -268,7 +279,7 @@ class PhotoGallery {
      * @returns {Promise<void>}
      */
     async retrievePhotos() {
-        const grid = this.container.querySelector('.photo-grid');
+        const grid = this.container!.querySelector('.photo-grid');
         if (!grid) return;
 
         try {
@@ -307,7 +318,7 @@ class PhotoGallery {
      * Render photo grid with column layout (round-robin distribution)
      */
     renderPhotoGrid() {
-        const grid = this.container.querySelector('.photo-grid');
+        const grid = this.container!.querySelector('.photo-grid') as HTMLElement | null;
         if (!grid) return;
 
         // Clear existing content
@@ -443,7 +454,7 @@ class PhotoGallery {
      * Setup event listeners
      */
     setupEventListeners() {
-        const grid = this.container.querySelector('.photo-grid');
+        const grid = this.container!.querySelector('.photo-grid');
         if (!grid) return;
 
         // Click on photo to open lightbox
@@ -457,7 +468,7 @@ class PhotoGallery {
         });
 
         // Block context menu and drag on images within gallery container (desktop)
-        this.container.addEventListener('contextmenu', (e: MouseEvent) => {
+        (this.container as HTMLElement).addEventListener('contextmenu', (e: MouseEvent) => {
             const target = e.target as any;
             if (target && target.tagName === 'IMG') {
                 const imgEl = target;
@@ -467,7 +478,7 @@ class PhotoGallery {
             }
         }, { capture: true });
 
-        this.container.addEventListener('dragstart', (e: DragEvent) => {
+        (this.container as HTMLElement).addEventListener('dragstart', (e: DragEvent) => {
             const target = e.target as any;
             if (target && target.tagName === 'IMG') {
                 e.preventDefault();
@@ -507,7 +518,7 @@ class PhotoGallery {
 
         // Keyboard navigation
         document.addEventListener('keydown', (e: KeyboardEvent) => {
-            if (!this.lightbox.classList.contains('active')) return;
+            if (!this.lightbox || !this.lightbox.classList.contains('active')) return;
 
             if (e.key === 'Escape') {
                 this.closeLightbox();
@@ -568,9 +579,9 @@ class PhotoGallery {
             touchStartX = e.changedTouches[0].screenX;
         });
 
-        this.lightbox.addEventListener('touchend', (e: TouchEvent) => {
+            this.lightbox.addEventListener('touchend', (e: TouchEvent) => {
             touchEndX = e.changedTouches[0].screenX;
-            this.handleSwipe();
+            this.handleSwipe?.();
         });
 
         const handleSwipe = () => {

@@ -5,10 +5,21 @@
  */
 
 import { createGlassSurface } from './glassSurface';
+import type { GlassSurfaceInstance } from './glassSurface';
 import { isMobile } from './common';
 import stateManager, { ViewState } from './stateManager';
 
 class Navbar {
+    private container: HTMLElement | null;
+    private glassSurface: GlassSurfaceInstance | null;
+    private burgerButton: HTMLElement | null;
+    private navLinks: HTMLElement | null;
+    private isMenuOpen: boolean;
+    private urlText: HTMLElement | null;
+    private mobilePhotosLinks: Element[];
+    private mobileProjectsLinks: Element[];
+    private readyPromise: Promise<void>;
+    private _resolveReady: (() => void) | null = null;
     [key: string]: any;
     constructor() {
         this.container = null;
@@ -225,7 +236,7 @@ class Navbar {
 
         // Close menu when clicking outside
         document.addEventListener('click', (e: MouseEvent) => {
-            if (this.isMenuOpen && !this.container.contains(e.target as Node)) {
+            if (this.isMenuOpen && !(this.container as HTMLElement).contains(e.target as Node)) {
                 this.closeMenu();
             }
         });
@@ -290,7 +301,7 @@ class Navbar {
      */
     openMenu() {
         this.isMenuOpen = true;
-        this.container.classList.add('menu-open');
+        (this.container as HTMLElement).classList.add('menu-open');
         if (this.burgerButton) {
             this.burgerButton.setAttribute('aria-expanded', 'true');
         }
@@ -302,7 +313,7 @@ class Navbar {
      */
     closeMenu() {
         this.isMenuOpen = false;
-        this.container.classList.remove('menu-open');
+        (this.container as HTMLElement).classList.remove('menu-open');
         if (this.burgerButton) {
             this.burgerButton.setAttribute('aria-expanded', 'false');
         }

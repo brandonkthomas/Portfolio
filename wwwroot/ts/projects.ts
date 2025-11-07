@@ -5,10 +5,21 @@
 
 import { isMobile, getOperatingSystem } from './common';
 import { createGlassSurface } from './glassSurface';
+import type { GlassSurfaceInstance } from './glassSurface';
 import { mountComponent } from './components/registry';
 
 class ProjectsGrid {
-    [key: string]: any;
+    private container: HTMLElement | null;
+    private projects: any[];
+    private isVisible: boolean;
+    private gridEl: HTMLElement | null;
+    private footerEl: HTMLElement | null;
+    private footerGlass: GlassSurfaceInstance | null;
+    private projectsGenerated: boolean;
+    private currentColumnCount: number;
+    private readyPromise: Promise<void>;
+    private _resolveReady: (() => void) | null = null;
+    private tileInstances: WeakMap<Element, any>;
     constructor() {
         this.container = null;
         this.projects = [];
@@ -57,14 +68,14 @@ class ProjectsGrid {
      * Create the projects HTML
      */
     createProjectsHTML() {
-        this.container.innerHTML = `
+        this.container!.innerHTML = `
             <div class="projects-gallery">
                 <div class="projects-grid"></div>
                 <div class="projects-footer" aria-hidden="false"></div>
             </div>
         `;
-        this.gridEl = this.container.querySelector('.projects-grid');
-        this.footerEl = this.container.querySelector('.projects-footer');
+        this.gridEl = this.container!.querySelector('.projects-grid') as HTMLElement | null;
+        this.footerEl = this.container!.querySelector('.projects-footer') as HTMLElement | null;
 
         // Build footer content
         this.createFooter();
@@ -124,13 +135,13 @@ class ProjectsGrid {
         text.textContent = 'github.com/brandonkthomas';
 
         // Space content nicely inside the glass content container
-        this.footerGlass.contentElement.style.gap = '8px';
-        this.footerGlass.contentElement.appendChild(icon);
-        this.footerGlass.contentElement.appendChild(text);
+        this.footerGlass!.contentElement.style.gap = '8px';
+        this.footerGlass!.contentElement.appendChild(icon);
+        this.footerGlass!.contentElement.appendChild(text);
 
         // Wrap glass surface inside the anchor, so entire element is clickable
-        link.appendChild(this.footerGlass.element);
-        this.footerEl.appendChild(link);
+        link.appendChild(this.footerGlass!.element);
+        this.footerEl!.appendChild(link);
     }
 
     //==============================================================================================
@@ -328,7 +339,7 @@ class ProjectsGrid {
             }
 
             link.appendChild(wrapper);
-            this.gridEl.appendChild(link);
+            (this.gridEl as HTMLElement).appendChild(link);
 
             // Size visuals to tile height using CSS var --stack-h
             this.sizeTileVisuals(link);
@@ -387,7 +398,7 @@ class ProjectsGrid {
 
     sizeAllTileVisuals() {
         if (!this.gridEl) return;
-        const tiles = this.gridEl.querySelectorAll('.bento-item');
+        const tiles = this.gridEl!.querySelectorAll('.bento-item');
         tiles.forEach((t: Element) => this.sizeTileVisuals(t as HTMLElement));
     }
 
@@ -416,7 +427,7 @@ class ProjectsGrid {
      */
     sizeAllComponents() {
         if (!this.gridEl) return;
-        const tiles = this.gridEl.querySelectorAll('.bento-item');
+        const tiles = this.gridEl!.querySelectorAll('.bento-item');
         tiles.forEach((t: Element) => {
             const inst = this.tileInstances.get(t);
             if (inst && typeof inst.setSize === 'function') {

@@ -60,7 +60,16 @@ export const ViewState = Object.freeze({
  * @property {Object} navbar - Reference to navbar module
  */
 class StateManager {
-    [key: string]: any;
+    private currentView: string;
+    private isTransitioning: boolean;
+    private listeners: Array<(view: string) => void>;
+    private initialRevealDone: boolean;
+    private initialRevealAbortController: AbortController | null;
+    private starfield: any;
+    private card: any;
+    private photoGallery: any;
+    private projects: any;
+    private navbar: any;
     constructor() {
         this.currentView = ViewState.CARD;
         this.isTransitioning = false;

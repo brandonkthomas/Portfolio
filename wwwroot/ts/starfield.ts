@@ -13,7 +13,58 @@ import { generateStarColor, triggerWarpPulse, setupKonamiCode } from './starfiel
 const DEBUG_GRADIENT = false;
 
 class Starfield {
-    [key: string]: any;
+    private scene: any;
+    private camera: any;
+    private renderer: any;
+
+    private stars: any[];
+    private starCount: number;
+    private starField: any;
+    private starSize: number;
+    private starDirection: number;
+    private cardContainer: HTMLElement | null;
+
+    // Rear-center core configuration
+    private coreBackZThreshold: number;
+    private coreCullZ: number;
+    private coreFadeRange: number;
+    private coreBackRadiusMax: number;
+
+    // Nebulae
+    private nebulae: any[];
+    private nebulaCount: number;
+
+    // Debug gradient
+    private debugGradientPlane: any;
+    private gradientTime: number;
+    private debugGradientCanvas: any;
+    private debugGradientTexture: any;
+
+    // Konami
+    private konamiCode: string[];
+    private konamiHandler: any;
+    private originalBackgroundColor: any;
+
+    // Error page glow
+    private isErrorPage: boolean;
+    private redGlowEffect: any;
+    private redGlowIntensity: number;
+    private glowStartTime: number;
+    private glowFadeDuration: number;
+
+    // Readiness and timing
+    private readyPromise: Promise<void>;
+    private _resolveReady: (() => void) | null = null;
+    private minFrameInterval: number;
+    private maxFrameInterval: number;
+    private lastFrameTime: number | undefined;
+
+    // Trails
+    private trailGeometry: any;
+    private trails: any;
+    private warpIntensity: number;
+    private starMaterial: any;
+    private trailMaterial: any;
 
     //==============================================================================================
     /**

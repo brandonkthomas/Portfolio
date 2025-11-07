@@ -10,7 +10,63 @@ import stateManager, { ViewState } from './stateManager';
 // import Stats from 'https://cdnjs.cloudflare.com/ajax/libs/stats.js/r17/Stats.min.js';
 
 class Card {
-    [key: string]: any;
+    // DOM
+    private container: HTMLElement | null;
+    private tapIndicator: HTMLElement | null;
+    private tapIndicatorMobile: HTMLElement | null;
+
+    // State flags
+    private isFlipped: boolean;
+    private isDragging: boolean;
+    private hasInteracted: boolean;
+
+    // Ready promise
+    private readyPromise: Promise<void>;
+    private _resolveReady: (() => void) | null = null;
+
+    // Pointer/motion state
+    private previousMousePosition: { x: number; y: number };
+    private dragStartTime: number;
+    private dragDistance: number;
+
+    // Rotation state
+    private rotation: { x: number; y: number };
+    private targetRotation: { x: number; y: number };
+    private dragTiltStrength: number;
+    private hoverTiltFollow: number;
+    private dragTiltFollow: number;
+
+    // Position/spring state
+    private position: { x: number; y: number };
+    private baseSpringStrength: number;
+    private baseSpringDamping: number;
+    private snapSpringStrength: number;
+    private snapSpringDamping: number;
+    private snapBoostDuration: number;
+    private snapBoostEndTime: number;
+    private releaseBoost: number;
+    private velocity: { x: number; y: number };
+    private positionLimits: { x: number; y: number };
+    private dragResistance: number;
+
+    // Flip state
+    private flipDuration: number;
+    private flipProgress: number;
+    private flipTarget: number;
+    private flipStartTime: number | null;
+
+    // Three.js
+    private scene: any;
+    private camera: any;
+    private renderer: any;
+    private raycaster: any;
+    private mouse: any;
+    private card: any;
+
+    // Animation helpers
+    private lastTimestamp: number | undefined;
+    private _showTapTimeout: any | null;
+    private _hideTapTimeout: any | null;
 
     //==============================================================================================
     /**
@@ -158,7 +214,7 @@ class Card {
         // Set renderer size to window dimensions
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.setPixelRatio(window.devicePixelRatio);
-        this.container.appendChild(this.renderer.domElement);
+        (this.container as HTMLElement).appendChild(this.renderer.domElement);
 
         // Create card
         this.createCard();
@@ -269,7 +325,7 @@ class Card {
      */
     setupEventListeners() {
         // Click to flip - now with drag detection
-        this.container.addEventListener('click', (e: MouseEvent) => {
+        (this.container as HTMLElement).addEventListener('click', (e: MouseEvent) => {
             const dragDuration = Date.now() - this.dragStartTime;
             const isDragGesture = this.dragDistance > 5 || dragDuration > 200;
 
@@ -308,9 +364,9 @@ class Card {
                     // Trigger snap-back on release when leaving the window bounds
                     this.onDragRelease();
                     this.isDragging = false;
-                    this.container.releasePointerCapture(e.pointerId);
+                (this.container as HTMLElement).releasePointerCapture(e.pointerId);
                 }
-                this.container.style.cursor = 'default';
+                (this.container as HTMLElement).style.cursor = 'default';
                 return;
             }
 
@@ -321,14 +377,14 @@ class Card {
             } else {
                 this.targetRotation.x = 0;
                 this.targetRotation.y = 0;
-                this.container.style.cursor = 'default';
+                (this.container as HTMLElement).style.cursor = 'default';
             }
         };
 
-        this.container.addEventListener('pointermove', handlePointerMove);
+        (this.container as HTMLElement).addEventListener('pointermove', handlePointerMove);
 
         // Mouse leave to reset rotation and cursor
-        this.container.addEventListener('mouseleave', () => {
+        (this.container as HTMLElement).addEventListener('mouseleave', () => {
             if (!this.isDragging) {
                 this.targetRotation.x = 0;
                 this.targetRotation.y = 0;
@@ -336,7 +392,7 @@ class Card {
         });
 
         // Pointer down for dragging
-        this.container.addEventListener('pointerdown', (e: PointerEvent) => {
+        (this.container as HTMLElement).addEventListener('pointerdown', (e: PointerEvent) => {
             if (this.isMouseOverCard(e)) {
                 this.isDragging = true;
                 this.dragStartTime = Date.now();
@@ -352,21 +408,21 @@ class Card {
                 // this.dragOffset = this.calculateDragOffset(e);
 
                 // Capture the pointer to track it even outside the window
-                this.container.setPointerCapture(e.pointerId);
+                (this.container as HTMLElement).setPointerCapture(e.pointerId);
             }
         });
 
         // Pointer up to stop dragging
-        this.container.addEventListener('pointerup', (e: PointerEvent) => {
+        (this.container as HTMLElement).addEventListener('pointerup', (e: PointerEvent) => {
             if (this.isDragging) {
                 this.isDragging = false;
-                this.container.releasePointerCapture(e.pointerId);
+                (this.container as HTMLElement).releasePointerCapture(e.pointerId);
                 this.onDragRelease();
             }
         });
 
         // Handle when pointer is lost (e.g., leaves window)
-        this.container.addEventListener('lostpointercapture', () => {
+        (this.container as HTMLElement).addEventListener('lostpointercapture', () => {
             const wasDragging = this.isDragging;
             this.isDragging = false;
             if (wasDragging) this.onDragRelease();
@@ -426,12 +482,12 @@ class Card {
         };
 
         // While dragging, tilt aggressively in the opposite direction of the pointer
-        const rect = this.container.getBoundingClientRect();
+        const rect = (this.container as HTMLElement).getBoundingClientRect();
         const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
         const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
         this.targetRotation.x = y * this.dragTiltStrength;   // invert hover's -y
         this.targetRotation.y = -x * this.dragTiltStrength;  // invert hover's +x
-        this.container.style.cursor = 'grabbing';
+        (this.container as HTMLElement).style.cursor = 'grabbing';
     }
 
     //==============================================================================================
@@ -457,7 +513,7 @@ class Card {
      * @param {PointerEvent} e - The pointer event
      */
     handleHover(e: PointerEvent) {
-        const rect = this.container.getBoundingClientRect();
+        const rect = (this.container as HTMLElement).getBoundingClientRect();
         const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
         const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 
@@ -466,7 +522,7 @@ class Card {
         this.targetRotation.y = x * 0.3;
 
         // Set cursor to pointer when hovering over card
-        this.container.style.cursor = 'pointer';
+        (this.container as HTMLElement).style.cursor = 'pointer';
     }
 
     //==============================================================================================
@@ -477,7 +533,7 @@ class Card {
      * @returns {boolean} True if mouse is over card
      */
     isMouseOverCard(event: PointerEvent): boolean {
-        const rect = this.container.getBoundingClientRect();
+        const rect = (this.container as HTMLElement).getBoundingClientRect();
         this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
@@ -700,7 +756,7 @@ class Card {
 
         this._showTapTimeout = setTimeout(() => {
             // If hidden by the time we fire, abort
-            if (this.container.classList.contains('hidden')) {
+            if ((this.container as HTMLElement).classList.contains('hidden')) {
                 return;
             }
 
