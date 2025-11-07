@@ -4,7 +4,7 @@
       "slug": "portfolio",
       "title": "Portfolio",
       "tag": "Web",
-      "footer": ".NET Core, Vanilla, Three.js",
+      "footer": ".NET Core, TypeScript (no framework), Three.js",
       "gradientAngle": 24,
       "gradientColor1": "#1f1f1f",
       "gradientColor2": "#2f2f2f",
