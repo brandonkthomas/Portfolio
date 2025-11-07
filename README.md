@@ -18,7 +18,7 @@
     <a href="https://dotnet.microsoft.com/en-us/apps/aspnet"><img alt=".NET Core" src="https://img.shields.io/badge/.NET%20Core-512BD4?logo=dotnet&logoColor=white"></a>
     <a href="https://threejs.org"><img alt="Three.js" src="https://img.shields.io/badge/Three.js-000000?logo=three.js&logoColor=white"></a>
     <a href="https://www.w3.org/html/"><img alt="HTML" src="https://shields.io/badge/HTML-f06529?logo=html5&logoColor=white&labelColor=f06529"></a>
-    <a href="https://ecma-international.org/publications-and-standards/standards/ecma-262/"><img alt="JavaScript" src="https://shields.io/badge/JavaScript-F7DF1E?logo=JavaScript&logoColor=000&style=flat-square"></a>
+    <a href="https://www.typescriptlang.org"><img alt="TypeScript" src="https://shields.io/badge/TypeScript-3178C6?logo=TypeScript&logoColor=FFF"></a>
     <a href="https://www.w3.org/Style/CSS/Overview.en.html"><img alt="CSS" src="https://shields.io/badge/CSS-009CFF?logo=css&logoColor=white&labelColor=009CFF"></a>
   </p>
 </div>
@@ -29,18 +29,3 @@
 This project began as a simple Three.js card experiment and has since evolved into a more comprehensive personal portfolio. 
 
 I plan to keep adding new features as I'm inspired.
-
-## Roadmap
-
-- [ ] Convert all JavaScript to TypeScript
-
-[threejs-shield]: https://img.shields.io/badge/Three.js-000000?logo=three.js&logoColor=white
-[threejs-url]: https://threejs.org
-[dotnetcore-shield]: https://img.shields.io/badge/.NET%20Core-512BD4?logo=dotnet&logoColor=white
-[dotnetcore-url]: https://dotnet.microsoft.com/en-us/apps/aspnet
-[html-shield]: https://shields.io/badge/HTML-f06529?logo=html5&logoColor=white&labelColor=f06529
-[html-url]: https://www.w3.org/html/
-[js-shield]: https://shields.io/badge/JavaScript-F7DF1E?logo=JavaScript&logoColor=000&style=flat-square
-[js-url]: https://ecma-international.org/publications-and-standards/standards/ecma-262/
-[css-shield]: https://shields.io/badge/CSS-009CFF?logo=css&logoColor=white&labelColor=009CFF
-[css-url]: https://www.w3.org/Style/CSS/Overview.en.html
