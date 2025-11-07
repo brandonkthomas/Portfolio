@@ -37,7 +37,8 @@ body {
 /* Initial state loading styles */
 body[data-initial-state="loading"] #starfield,
 body[data-initial-state="loading"] .card-container,
-body[data-initial-state="loading"] .photo-gallery-container {
+body[data-initial-state="loading"] .photo-gallery-container,
+body[data-initial-state="loading"] .projects-container {
     opacity: 0;
     filter: blur(20px);
     pointer-events: none;
@@ -51,7 +52,8 @@ body[data-initial-state="loading"] .card-container {
     transform: scale(0.85);
 }
 
-body[data-initial-state="loading"] .photo-gallery-container {
+body[data-initial-state="loading"] .photo-gallery-container,
+body[data-initial-state="loading"] .projects-container {
     transform: scale(1.08);
 }
 
