@@ -3,11 +3,11 @@
  * @fileoverview Contains functions for creating and updating nebulae in the starfield
  */
 
-import { createNebulaTexture } from './textures.js';
-import { isErrorPage } from './common.js';
+import { createNebulaTexture } from './textures';
+import { isErrorPage } from './common';
 
 // Store original opacity values for restoration
-const nebulaOriginalOpacities = new WeakMap();
+const nebulaOriginalOpacities = new WeakMap<any, number>();
 
 //==============================================================================================
 /**
@@ -16,12 +16,12 @@ const nebulaOriginalOpacities = new WeakMap();
  * @param {THREE.Scene} scene - The scene to add nebulae to
  * @returns {Array} Array of nebula objects
  */
-export function createNebulae(nebulaCount, scene) {
-    const nebulae = [];
+export function createNebulae(nebulaCount: number, scene: any): any[] {
+    const nebulae: any[] = [];
     const isError = isErrorPage();
     
     // Track distribution
-    const existingPositions = [];
+    const existingPositions: Array<{x: number; y: number; z: number}> = [];
     
     for (let i = 0; i < nebulaCount; i++) {
         // Create cloud-like sprite texture with irregular shape
@@ -42,12 +42,12 @@ export function createNebulae(nebulaCount, scene) {
         const color = new THREE.Color();
         
         color.setHSL(hue, 0.2 + Math.random() * 0.2, 0.7 + Math.random() * 0.2);
-        material.color = color;
+        (material as any).color = color;
         
         const sprite = new THREE.Sprite(material);
         
         // Position nebulae throughout scene
-        let x, y, z, isValidPosition = false;
+        let x: number, y: number, z: number, isValidPosition = false;
         let attempts = 0;
         
         // Try to find position not too close to existing nebulae
@@ -85,16 +85,16 @@ export function createNebulae(nebulaCount, scene) {
         const baseScale = 5 + Math.random() * 10;
         const xScale = baseScale * (0.7 + Math.random() * 0.6);
         const yScale = baseScale * (0.7 + Math.random() * 0.6);
-        sprite.scale.set(xScale, yScale, 1);
+        (sprite as any).scale.set(xScale, yScale, 1);
         
         // Random rotation for more varied appearance
-        sprite.rotation.z = Math.random() * Math.PI * 2;
+        (sprite as any).rotation.z = Math.random() * Math.PI * 2;
         
         // Random speed (even slower for background elements)
         const speed = 0.004 + Math.random() * 0.016;
         
         // Store original opacity in WeakMap for safe restoration
-        nebulaOriginalOpacities.set(sprite.material, sprite.material.opacity);
+        nebulaOriginalOpacities.set((sprite as any).material, (sprite as any).material.opacity);
         
         nebulae.push({
             mesh: sprite,
@@ -134,12 +134,12 @@ export function createNebulae(nebulaCount, scene) {
         const hue = 0.5 + (Math.random() * 0.3);
         const color = new THREE.Color();
         color.setHSL(hue, 0.2 + Math.random() * 0.1, 0.6 + Math.random() * 0.2);
-        material.color = color;
+        (material as any).color = color;
         
         const sprite = new THREE.Sprite(material);
         
         // Position with better spacing
-        let x, y, z, isValidPosition = false;
+        let x: number, y: number, z: number, isValidPosition = false;
         let attempts = 0;
         
         do {
@@ -169,22 +169,22 @@ export function createNebulae(nebulaCount, scene) {
         
         existingPositions.push({x, y, z});
         
-        sprite.position.set(x, y, z);
+        (sprite as any).position.set(x, y, z);
         
         // Non-uniform scaling for background elements too
         const baseScale = 15 + Math.random() * 20;
         const xScale = baseScale * (0.7 + Math.random() * 0.6);
         const yScale = baseScale * (0.7 + Math.random() * 0.6);
-        sprite.scale.set(xScale, yScale, 1);
+        (sprite as any).scale.set(xScale, yScale, 1);
         
         // Random rotation
-        sprite.rotation.z = Math.random() * Math.PI * 2;
+        (sprite as any).rotation.z = Math.random() * Math.PI * 2;
         
         // Very slow speed for background elements
         const speed = 0.001 + Math.random() * 0.005;
         
         // Store original opacity in WeakMap for safe restoration
-        nebulaOriginalOpacities.set(sprite.material, sprite.material.opacity);
+        nebulaOriginalOpacities.set((sprite as any).material, (sprite as any).material.opacity);
         
         nebulae.push({
             mesh: sprite,
@@ -214,13 +214,13 @@ export function createNebulae(nebulaCount, scene) {
  * @param {number} warpIntensity - Current warp effect intensity (0-1)
  * @param {number} starDirection - 1 for forward (toward camera), -1 for reverse (away from camera)
  */
-export function updateNebulae(nebulae, deltaTime, warpIntensity, starDirection = 1) {
+export function updateNebulae(nebulae: any[], deltaTime: number, warpIntensity: number, starDirection: number = 1) {
     const time = performance.now() * 0.001; // Current time in seconds for animation
     const absWarpIntensity = Math.abs(warpIntensity);
     const direction = starDirection >= 0 ? 1 : -1;
     
     for (let i = 0; i < nebulae.length; i++) {
-        const nebula = nebulae[i];
+        const nebula: any = nebulae[i];
         
         // Calculate warp speed for nebulae (increases during warp)
         const warpSpeed = nebula.originalSpeed * (1 + absWarpIntensity * 120);
@@ -329,8 +329,8 @@ export function updateNebulae(nebulae, deltaTime, warpIntensity, starDirection =
         }
         
         // Increase color saturation / lightness during warp
-        const material = nebula.mesh.material;
-        const hsl = {};
+        const material = nebula.mesh.material as any;
+        const hsl: any = {};
         material.color.getHSL(hsl);
         
         // Keep base saturation low but increase lightness to compensate for very low opacity
@@ -350,10 +350,10 @@ export function updateNebulae(nebulae, deltaTime, warpIntensity, starDirection =
  * @param {Array} nebulae - Array of nebula objects
  * @param {number} factor - Reduction factor (default 0.3)
  */
-export function reduceNebulaOpacity(nebulae, factor = 0.3) {
-    nebulae.forEach(nebula => {
+export function reduceNebulaOpacity(nebulae: any[], factor: number = 0.3) {
+    nebulae.forEach((nebula: any) => {
         if (nebula && nebula.mesh && nebula.mesh.material) {
-            const material = nebula.mesh.material;
+            const material = nebula.mesh.material as any;
             
             // Store current opacity as original if not already stored
             if (!nebulaOriginalOpacities.has(material)) {
@@ -361,7 +361,7 @@ export function reduceNebulaOpacity(nebulae, factor = 0.3) {
             }
             
             // Set to reduced opacity
-            const originalOpacity = nebulaOriginalOpacities.get(material);
+            const originalOpacity = nebulaOriginalOpacities.get(material) as number;
             material.opacity = originalOpacity * factor;
         }
     });
@@ -372,14 +372,14 @@ export function reduceNebulaOpacity(nebulae, factor = 0.3) {
  * Restore nebula opacity to original values -- for state changes (card view)
  * @param {Array} nebulae - Array of nebula objects
  */
-export function restoreNebulaOpacity(nebulae) {
-    nebulae.forEach(nebula => {
+export function restoreNebulaOpacity(nebulae: any[]) {
+    nebulae.forEach((nebula: any) => {
         if (nebula && nebula.mesh && nebula.mesh.material) {
-            const material = nebula.mesh.material;
+            const material = nebula.mesh.material as any;
             
             // Restore from stored original opacity
             if (nebulaOriginalOpacities.has(material)) {
-                material.opacity = nebulaOriginalOpacities.get(material);
+                material.opacity = nebulaOriginalOpacities.get(material) as number;
             }
         }
     });

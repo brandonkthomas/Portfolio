@@ -3,11 +3,12 @@
  * @fileoverview Bento grid of personal projects with hover/tap animations
  */
 
-import { isMobile, getOperatingSystem } from './common.js';
-import { createGlassSurface } from './glassSurface.js';
-import { mountComponent } from './components/registry.js';
+import { isMobile, getOperatingSystem } from './common';
+import { createGlassSurface } from './glassSurface';
+import { mountComponent } from './components/registry';
 
 class ProjectsGrid {
+    [key: string]: any;
     constructor() {
         this.container = null;
         this.projects = [];
@@ -139,7 +140,7 @@ class ProjectsGrid {
     setupEventListeners() {
         if (!this.container) return;
         // Recompute visual sizing on resize (throttled via rAF)
-        let raf = null;
+        let raf: number | null = null;
         const onResize = () => {
             if (raf) return;
             raf = requestAnimationFrame(() => {
@@ -180,8 +181,8 @@ class ProjectsGrid {
         if (!this.gridEl) return;
         this.gridEl.innerHTML = '';
 
-        const ensureUrl = (p) => p.url || `/projects/${encodeURIComponent(p.slug || p.title?.toLowerCase().replace(/\s+/g, '-') || 'project')}`;
-        const isExternalUrl = (u) => {
+        const ensureUrl = (p: any) => p.url || `/projects/${encodeURIComponent(p.slug || p.title?.toLowerCase().replace(/\s+/g, '-') || 'project')}`;
+        const isExternalUrl = (u: string) => {
             try {
                 const url = new URL(u, window.location.origin);
                 return url.origin !== window.location.origin;
@@ -189,13 +190,13 @@ class ProjectsGrid {
                 return false;
             }
         };
-        const ensureSpanClass = (p) => {
+        const ensureSpanClass = (p: any) => {
             const span = (p.span || '1x1').toLowerCase();
             const allowed = new Set(['1x1','2x1','1x2','2x2']);
             return allowed.has(span) ? `span-${span}` : 'span-1x1';
         };
 
-        const parseHex = (hex) => {
+        const parseHex = (hex: string) => {
             if (!hex) return { r: 28, g: 28, b: 28 };
             let h = hex.trim();
             if (h[0] === '#') h = h.slice(1);
@@ -211,14 +212,14 @@ class ProjectsGrid {
             return { r, g, b };
         };
 
-        const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-        const mix = (c1, c2, t) => ({
+        const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+        const mix = (c1: any, c2: any, t: number) => ({
             r: Math.round(c1.r + (c2.r - c1.r) * t),
             g: Math.round(c1.g + (c2.g - c1.g) * t),
             b: Math.round(c1.b + (c2.b - c1.b) * t)
         });
-        const toRgba = (c, a) => `rgba(${clamp(c.r,0,255)}, ${clamp(c.g,0,255)}, ${clamp(c.b,0,255)}, ${clamp(a, 0, 1)})`;
-        const computeGradient = (proj) => {
+        const toRgba = (c: any, a: number) => `rgba(${clamp(c.r,0,255)}, ${clamp(c.g,0,255)}, ${clamp(c.b,0,255)}, ${clamp(a, 0, 1)})`;
+        const computeGradient = (proj: any) => {
             const c1 = parseHex(proj.gradientColor1 || '#1b1b1b');
             const c2 = parseHex(proj.gradientColor2 || '#202020');
             const t = Math.random() * 0.4 + 0.3; // 0.3..0.7
@@ -229,14 +230,14 @@ class ProjectsGrid {
             return `linear-gradient(${angle}deg, ${toRgba(c1, a)} 0%, ${toRgba(mid, a + 0.03)} ${pos}%, ${toRgba(c2, a)} 100%)`;
         };
 
-        const parseCsv = (value) => {
+        const parseCsv = (value: any) => {
             if (Array.isArray(value)) return value;
             if (typeof value === 'string') {
                 return value.split(',').map(s => s.trim()).filter(Boolean);
             }
             return [];
         };
-        const shouldShowDownload = (proj) => {
+        const shouldShowDownload = (proj: any) => {
             const osList = parseCsv(proj.downloadOperatingSystem || proj.downloadOperatingSystems || '');
             if (!proj.downloadUrl || osList.length === 0) return false;
             
@@ -245,7 +246,7 @@ class ProjectsGrid {
         };
 
         // On mobile, force single column; spans are normalized via CSS
-        this.projects.forEach((proj, index) => {
+        this.projects.forEach((proj: any, index: number) => {
             const link = document.createElement('a');
             link.className = `bento-item ${ensureSpanClass(proj)}`;
             link.href = ensureUrl(proj);
@@ -346,11 +347,11 @@ class ProjectsGrid {
      * @param {Element} element
      * @param {Function} onDoubleTap - Optional action to invoke on double tap
      */
-    addDoubleTapGuard(element, onDoubleTap) {
+    addDoubleTapGuard(element: HTMLElement, onDoubleTap?: () => void) {
         if (!element) return;
         let lastTap = 0;
         const DOUBLE_TAP_MS = 300;
-        element.addEventListener('touchend', (e) => {
+        element.addEventListener('touchend', (e: TouchEvent) => {
             const now = Date.now();
             const delta = now - lastTap;
             if (delta > 0 && delta <= DOUBLE_TAP_MS) {
@@ -358,7 +359,7 @@ class ProjectsGrid {
                 if (typeof onDoubleTap === 'function') {
                     onDoubleTap();
                 } else {
-                    element.click();
+                    (element as HTMLElement).click();
                 }
             }
             lastTap = now;
@@ -369,7 +370,7 @@ class ProjectsGrid {
     /**
      * Compute and apply visual sizing CSS vars based on tile height
      */
-    sizeTileVisuals(tile) {
+    sizeTileVisuals(tile: HTMLElement) {
         if (!tile) return;
         const rect = tile.getBoundingClientRect();
         const height = rect.height || tile.clientHeight || 0;
@@ -387,7 +388,7 @@ class ProjectsGrid {
     sizeAllTileVisuals() {
         if (!this.gridEl) return;
         const tiles = this.gridEl.querySelectorAll('.bento-item');
-        tiles.forEach(t => this.sizeTileVisuals(t));
+        tiles.forEach((t: Element) => this.sizeTileVisuals(t as HTMLElement));
     }
 
     //==============================================================================================
@@ -398,7 +399,7 @@ class ProjectsGrid {
      * @param {Object} comp
      * @returns {Promise<void>}
      */
-    async attachComponentToTile(tileEl, contentEl, comp) {
+    async attachComponentToTile(tileEl: HTMLElement, contentEl: HTMLElement, comp: any) {
         try {
             const instance = await mountComponent(comp.type, contentEl, comp.props || {});
             this.tileInstances.set(tileEl, instance);
@@ -416,7 +417,7 @@ class ProjectsGrid {
     sizeAllComponents() {
         if (!this.gridEl) return;
         const tiles = this.gridEl.querySelectorAll('.bento-item');
-        tiles.forEach(t => {
+        tiles.forEach((t: Element) => {
             const inst = this.tileInstances.get(t);
             if (inst && typeof inst.setSize === 'function') {
                 const rect = t.getBoundingClientRect();

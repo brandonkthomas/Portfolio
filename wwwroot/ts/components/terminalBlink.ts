@@ -12,7 +12,7 @@ export const stylesHref = '/css/components/terminalBlink.css';
  * @param {Object} props
  * @returns {Promise<{setSize: () => void, update: (nextProps: Object) => void, destroy: () => void}>}
  */
-export async function mount(container, props = {}) {
+export async function mount(container: HTMLElement, props: { prompt?: string } = {}) {
     const root = document.createElement('div');
     root.className = 'comp-terminal';
 
@@ -30,7 +30,7 @@ export async function mount(container, props = {}) {
 
     return {
         setSize() { /* not required */ },
-        update(nextProps) { if (nextProps?.prompt) prompt.textContent = nextProps.prompt + ' '; },
+        update(nextProps: { prompt?: string }) { if (nextProps?.prompt) prompt.textContent = nextProps.prompt + ' '; },
         destroy() { root.remove(); }
     };
 }

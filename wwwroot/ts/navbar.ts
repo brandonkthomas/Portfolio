@@ -4,11 +4,12 @@
  * @description Handles the glass surface URL bar with responsive burger menu
  */
 
-import { createGlassSurface } from './glassSurface.js';
-import { isMobile } from './common.js';
-import stateManager, { ViewState } from './stateManager.js';
+import { createGlassSurface } from './glassSurface';
+import { isMobile } from './common';
+import stateManager, { ViewState } from './stateManager';
 
 class Navbar {
+    [key: string]: any;
     constructor() {
         this.container = null;
         this.glassSurface = null;
@@ -112,11 +113,12 @@ class Navbar {
 
         // On mobile, make the entire bar clickable
         if (this.glassSurface && this.glassSurface.element) {
-            this.glassSurface.element.addEventListener('click', (e) => {
+            this.glassSurface.element.addEventListener('click', (e: MouseEvent) => {
                 // Only trigger on mobile (when burger is visible)
                 if (window.innerWidth <= 768) {
                     // Don't toggle if clicking on a link
-                    if (!e.target.closest('.url-link')) {
+                    const target = e.target as Element | null;
+                    if (!target?.closest('.url-link')) {
                         e.stopPropagation();
                         this.toggleMenu();
                     }
@@ -128,11 +130,11 @@ class Navbar {
         const photoLinks = document.querySelectorAll('.url-link-photos');
         photoLinks.forEach(link => {
             // Store mobile links for later updates
-            if (link.closest('.url-nav-links.mobile')) {
+            if ((link as Element).closest('.url-nav-links.mobile')) {
                 this.mobilePhotosLinks.push(link);
             }
 
-            link.addEventListener('click', (e) => {
+            (link as HTMLElement).addEventListener('click', (e: MouseEvent) => {
                 e.preventDefault();
                 e.stopPropagation();
                 
@@ -165,11 +167,11 @@ class Navbar {
         // Intercept projects link clicks
         const projectLinks = document.querySelectorAll('.url-link-projects');
         projectLinks.forEach(link => {
-            if (link.closest('.url-nav-links.mobile')) {
+            if ((link as Element).closest('.url-nav-links.mobile')) {
                 this.mobileProjectsLinks.push(link);
             }
 
-            link.addEventListener('click', (e) => {
+            (link as HTMLElement).addEventListener('click', (e: MouseEvent) => {
                 e.preventDefault();
                 e.stopPropagation();
 
@@ -197,7 +199,7 @@ class Navbar {
 
         // Make URL text clickable to return home (desktop only)
         if (this.urlText) {
-            this.urlText.addEventListener('click', (e) => {
+            this.urlText.addEventListener('click', (e: MouseEvent) => {
                 // Only work on desktop
                 if (window.innerWidth > 768) {
                     e.preventDefault();
@@ -217,13 +219,13 @@ class Navbar {
         }
 
         // Listen for view changes to update mobile nav
-        stateManager.onViewChange((view) => {
+        stateManager.onViewChange((view: string) => {
             this.updateMobileNav(view);
         });
 
         // Close menu when clicking outside
-        document.addEventListener('click', (e) => {
-            if (this.isMenuOpen && !this.container.contains(e.target)) {
+        document.addEventListener('click', (e: MouseEvent) => {
+            if (this.isMenuOpen && !this.container.contains(e.target as Node)) {
                 this.closeMenu();
             }
         });
@@ -238,9 +240,9 @@ class Navbar {
      * TODO: dont hardcode this HTML
      * @param {ViewState} view - Current view state
      */
-    updateMobileNav(view) {
+    updateMobileNav(view: string) {
         // Update Photos link state
-        this.mobilePhotosLinks.forEach(link => {
+        this.mobilePhotosLinks.forEach((link: Element) => {
             if (view === ViewState.PHOTOS) {
                 link.innerHTML = `
                     <img src="/assets/svg/bt-logo-boxed.svg" alt="" width="20" height="20" />
@@ -255,7 +257,7 @@ class Navbar {
         });
 
         // Update Projects link state
-        this.mobileProjectsLinks.forEach(link => {
+        this.mobileProjectsLinks.forEach((link: Element) => {
             if (view === ViewState.PROJECTS) {
                 link.innerHTML = `
                     <img src="/assets/svg/bt-logo-boxed.svg" alt="" width="20" height="20" />
@@ -330,6 +332,6 @@ class Navbar {
 
 // Initialize when module loads
 const navbarManager = new Navbar();
-window.navbarManagerInstance = navbarManager;
+(window as any).navbarManagerInstance = navbarManager;
 
 export default navbarManager;

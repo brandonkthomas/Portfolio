@@ -12,7 +12,7 @@ export const stylesHref = '/css/components/lineGraph.css';
  * @param {Object} props
  * @returns {Promise<{setSize: () => void, update: (nextProps: Object) => void, destroy: () => void}>}
  */
-export async function mount(container, props = {}) {
+export async function mount(container: HTMLElement, props: { width?: number; height?: number } = {}) {
     const root = document.createElement('div');
     root.className = 'comp-line-graph';
 
@@ -38,7 +38,7 @@ export async function mount(container, props = {}) {
     drawFrame();
 
     // Animate only on hover of the tile
-    const tile = container.closest('.bento-item') || root;
+    const tile = (container.closest('.bento-item') as HTMLElement) || root;
     const onEnter = () => { if (!running) { running = true; requestAnimationFrame(loop); } };
     const onLeave = () => { running = false; drawFrame(); };
     tile.addEventListener('pointerenter', onEnter);
@@ -51,7 +51,7 @@ export async function mount(container, props = {}) {
      * @param {number} size.height
      * @returns {void}
      */
-    function resize({ width, height }) {
+    function resize({ width, height }: { width: number; height: number }) {
         lastW = Math.max(1, Math.floor(width));
         lastH = Math.max(1, Math.floor(height));
         
@@ -113,8 +113,8 @@ export async function mount(container, props = {}) {
     }
 
     return {
-        setSize({ width, height }) { resize({ width, height }); drawFrame(); },
-        update(nextProps) { /* future */ },
+        setSize({ width, height }: { width: number; height: number }) { resize({ width, height }); drawFrame(); },
+        update(nextProps: Record<string, unknown>) { /* future */ },
         destroy() { running = false; tile.removeEventListener('pointerenter', onEnter); tile.removeEventListener('pointerleave', onLeave); root.remove(); }
     };
 }
@@ -127,7 +127,7 @@ export async function mount(container, props = {}) {
  * @returns {Object}
  * @returns {Object<{canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, dpr: number}>}
  */
-function createCanvas(width, height) {
+function createCanvas(width: number, height: number): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D; dpr: number } {
     const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
 
     const canvas = document.createElement('canvas');
@@ -136,7 +136,7 @@ function createCanvas(width, height) {
     canvas.style.width = width + 'px';
     canvas.style.height = height + 'px';
     
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d')!;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     return { canvas, ctx, dpr };
@@ -148,13 +148,13 @@ function createCanvas(width, height) {
  * @param {number} seed
  * @returns {Function}
  */
-function genWaveFn(seed = Math.random() * 1000) {
+function genWaveFn(seed: number = Math.random() * 1000): (x: number, t: number) => number {
     // Smooth multi-sine blend
     const p1 = seed + Math.random() * 1000;
     const p2 = seed + Math.random() * 1000;
     const p3 = seed + Math.random() * 1000;
 
-    return (x, t) => {
+    return (x: number, t: number) => {
         const a = Math.sin(x * 1.5 + t * 0.9 + p1) * 0.5 + 0.5;
         const b = Math.sin(x * 0.7 + t * 0.6 + p2) * 0.5 + 0.5;
         const c = Math.sin(x * 2.2 + t * 0.3 + p3) * 0.5 + 0.5;

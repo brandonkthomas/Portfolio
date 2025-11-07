@@ -4,10 +4,11 @@
  * @description Handles photo grid display and image expansion
  */
 
-import { isMobile } from './common.js';
-import { createGlassSurface } from './glassSurface.js';
+import { isMobile } from './common';
+import { createGlassSurface } from './glassSurface';
 
 class PhotoGallery {
+    [key: string]: any;
     constructor() {
         this.container = null;
         this.lightbox = null;
@@ -92,8 +93,8 @@ class PhotoGallery {
         const lightboxImg = this.lightbox.querySelector('.lightbox-image');
         if (lightboxImg) {
             lightboxImg.setAttribute('draggable', 'false');
-            lightboxImg.addEventListener('dragstart', (e) => e.preventDefault());
-            lightboxImg.addEventListener('contextmenu', (e) => e.preventDefault());
+            lightboxImg.addEventListener('dragstart', (e: DragEvent) => e.preventDefault());
+            lightboxImg.addEventListener('contextmenu', (e: MouseEvent) => e.preventDefault());
         }
         
         // Create glass surface controls
@@ -228,12 +229,12 @@ class PhotoGallery {
      * @param {number} timeoutMs
      * @returns {Promise<{width:number,height:number}>}
      */
-    measureImage(url, timeoutMs = 8000) {
-        return new Promise((resolve) => {
+    measureImage(url: string, timeoutMs: number = 8000) {
+        return new Promise<{ width: number; height: number }>((resolve) => {
             const fallback = { width: 800, height: 1200 };
             let settled = false;
 
-            const done = (w, h) => {
+            const done = (w?: number, h?: number) => {
                 if (settled) return;
                 settled = true;
                 resolve({ width: Math.max(1, w || fallback.width), height: Math.max(1, h || fallback.height) });
@@ -274,14 +275,14 @@ class PhotoGallery {
             const response = await fetch('/assets/images/reel/manifest.json', { cache: 'no-cache' });
             if (!response.ok) throw new Error(`Failed to load manifest: ${response.status}`);
             const manifest = await response.json();
-            const images = Array.isArray(manifest.images) ? manifest.images : [];
+            const images: string[] = Array.isArray(manifest.images) ? (manifest.images as string[]) : [];
 
             // Pre-measure images to obtain accurate aspect ratios for balanced layout
             const measured = await Promise.allSettled(
-                images.map((url) => this.measureImage(url))
+                images.map((url: string) => this.measureImage(url))
             );
 
-            this.photos = images.map((url, index) => {
+            this.photos = images.map((url: string, index: number) => {
                 const result = measured[index];
                 const width = result?.status === 'fulfilled' ? result.value.width : 800;
                 const height = result?.status === 'fulfilled' ? result.value.height : 1200;
@@ -317,7 +318,7 @@ class PhotoGallery {
         this.currentColumnCount = columnCount;
 
         // Create columns
-        const columns = [];
+        const columns: HTMLElement[] = [];
         for (let i = 0; i < columnCount; i++) {
             const column = document.createElement('div');
             column.className = 'photo-column';
@@ -344,7 +345,7 @@ class PhotoGallery {
         // Track predicted heights to avoid bias from yet-to-load images
         const predictedHeights = columns.map(col => col.offsetHeight + paddingTop + paddingBottom);
 
-        this.photos.forEach((photo) => {
+        this.photos.forEach((photo: any) => {
             // Create photo item with skeleton
             const photoItem = document.createElement('div');
             photoItem.className = 'photo-item photo-item--loading';
@@ -396,7 +397,7 @@ class PhotoGallery {
                     targetIndex = i;
                 }
             }
-            const targetColumn = columns[targetIndex];
+            const targetColumn = columns[targetIndex]!;
             targetColumn.appendChild(photoItem);
 
             // Update prediction by adding this item's estimated rendered height
@@ -446,17 +447,18 @@ class PhotoGallery {
         if (!grid) return;
 
         // Click on photo to open lightbox
-        grid.addEventListener('click', (e) => {
-            const photoItem = e.target.closest('.photo-item');
+        (grid as HTMLElement).addEventListener('click', (e: MouseEvent) => {
+            const target = e.target as Element | null;
+            const photoItem = target?.closest('.photo-item') as HTMLElement | null;
             if (photoItem) {
-                const index = parseInt(photoItem.dataset.index);
+                const index = parseInt(photoItem.dataset.index as string);
                 this.openLightbox(index);
             }
         });
 
         // Block context menu and drag on images within gallery container (desktop)
-        this.container.addEventListener('contextmenu', (e) => {
-            const target = e.target;
+        this.container.addEventListener('contextmenu', (e: MouseEvent) => {
+            const target = e.target as any;
             if (target && target.tagName === 'IMG') {
                 const imgEl = target;
                 if (imgEl.classList.contains('lightbox-image') || imgEl.closest('.photo-item')) {
@@ -465,17 +467,17 @@ class PhotoGallery {
             }
         }, { capture: true });
 
-        this.container.addEventListener('dragstart', (e) => {
-            const target = e.target;
+        this.container.addEventListener('dragstart', (e: DragEvent) => {
+            const target = e.target as any;
             if (target && target.tagName === 'IMG') {
                 e.preventDefault();
             }
         }, { capture: true });
 
         // Lightbox controls
-        const closeBtn = this.lightbox?.querySelector('.lightbox-close');
-        const prevBtn = this.lightbox?.querySelector('.lightbox-prev');
-        const nextBtn = this.lightbox?.querySelector('.lightbox-next');
+        const closeBtn = this.lightbox?.querySelector('.lightbox-close') as HTMLElement | null;
+        const prevBtn = this.lightbox?.querySelector('.lightbox-prev') as HTMLElement | null;
+        const nextBtn = this.lightbox?.querySelector('.lightbox-next') as HTMLElement | null;
 
         if (closeBtn) {
             closeBtn.addEventListener('click', () => this.closeLightbox());
@@ -484,26 +486,27 @@ class PhotoGallery {
         if (prevBtn) {
             prevBtn.addEventListener('click', () => this.showPreviousPhoto());
             // Prevent double-tap zoom on mobile for prev button only
-            this.addDoubleTapGuard(prevBtn, () => this.showPreviousPhoto());
+            this.addDoubleTapGuard(prevBtn as HTMLElement, () => this.showPreviousPhoto());
         }
 
         if (nextBtn) {
             nextBtn.addEventListener('click', () => this.showNextPhoto());
             // Prevent double-tap zoom on mobile for next button only
-            this.addDoubleTapGuard(nextBtn, () => this.showNextPhoto());
+            this.addDoubleTapGuard(nextBtn as HTMLElement, () => this.showNextPhoto());
         }
 
         // Close lightbox when clicking outside image
         if (this.lightbox) {
-            this.lightbox.addEventListener('click', (e) => {
-                if (e.target === this.lightbox || e.target.classList.contains('lightbox-content')) {
+            this.lightbox.addEventListener('click', (e: MouseEvent) => {
+                const target = e.target as HTMLElement;
+                if (target === this.lightbox || target.classList.contains('lightbox-content')) {
                     this.closeLightbox();
                 }
             });
         }
 
         // Keyboard navigation
-        document.addEventListener('keydown', (e) => {
+        document.addEventListener('keydown', (e: KeyboardEvent) => {
             if (!this.lightbox.classList.contains('active')) return;
 
             if (e.key === 'Escape') {
@@ -530,12 +533,12 @@ class PhotoGallery {
      * @param {Element} element
      * @param {Function} onDoubleTap - Optional action to invoke on double tap
      */
-    addDoubleTapGuard(element, onDoubleTap) {
+    addDoubleTapGuard(element: HTMLElement, onDoubleTap?: () => void) {
         if (!element) return;
         let lastTap = 0;
         const DOUBLE_TAP_MS = 300;
 
-        element.addEventListener('touchend', (e) => {
+        element.addEventListener('touchend', (e: TouchEvent) => {
             const now = Date.now();
             const delta = now - lastTap;
             if (delta > 0 && delta <= DOUBLE_TAP_MS) {
@@ -561,11 +564,11 @@ class PhotoGallery {
         let touchStartX = 0;
         let touchEndX = 0;
 
-        this.lightbox.addEventListener('touchstart', (e) => {
+        this.lightbox.addEventListener('touchstart', (e: TouchEvent) => {
             touchStartX = e.changedTouches[0].screenX;
         });
 
-        this.lightbox.addEventListener('touchend', (e) => {
+        this.lightbox.addEventListener('touchend', (e: TouchEvent) => {
             touchEndX = e.changedTouches[0].screenX;
             this.handleSwipe();
         });
@@ -593,14 +596,14 @@ class PhotoGallery {
      * Open lightbox with specific photo
      * @param {number} index - Photo index
      */
-    openLightbox(index) {
+    openLightbox(index: number) {
         if (!this.lightbox || index < 0 || index >= this.photos.length) return;
 
         this.currentPhotoIndex = index;
         const photo = this.photos[index];
 
         // Set image
-        const img = this.lightbox.querySelector('.lightbox-image');
+        const img = this.lightbox.querySelector('.lightbox-image') as HTMLImageElement | null;
         if (img) {
             img.src = photo.url;
             img.alt = `Photo ${index + 1}`;

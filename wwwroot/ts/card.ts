@@ -4,12 +4,13 @@
  * @description Handles 3D card rendering, flip animations, and drag interactions
  */
 
-import { isMobile } from './common.js';
-import stateManager, { ViewState } from './stateManager.js';
+import { isMobile } from './common';
+import stateManager, { ViewState } from './stateManager';
 
 // import Stats from 'https://cdnjs.cloudflare.com/ajax/libs/stats.js/r17/Stats.min.js';
 
 class Card {
+    [key: string]: any;
 
     //==============================================================================================
     /**
@@ -127,7 +128,7 @@ class Card {
 
         // Ensure CTA timer aligns with actual active view state
         // Start when card view becomes active; clear when leaving
-        stateManager.onViewChange((view) => {
+        stateManager.onViewChange((view: string) => {
             if (view === ViewState.CARD) {
                 this._startCtaTimer();
             } else {
@@ -186,7 +187,7 @@ class Card {
 
         // Create materials for front and back with proper texture settings
         const textureLoader = new THREE.TextureLoader();
-        const loadTexture = (url) => {
+        const loadTexture = (url: string) => {
             const texture = textureLoader.load(url);
             texture.minFilter = THREE.LinearFilter;
             texture.magFilter = THREE.LinearFilter;
@@ -234,7 +235,7 @@ class Card {
      */
     calculateCardDimensions() {
         const aspect = window.innerWidth / window.innerHeight;
-        let cardWidth, cardHeight;
+        let cardWidth: number, cardHeight: number;
 
         if (isMobile()) {
             // On mobile, directly use 90% of viewport width
@@ -268,11 +269,11 @@ class Card {
      */
     setupEventListeners() {
         // Click to flip - now with drag detection
-        this.container.addEventListener('click', (e) => {
+        this.container.addEventListener('click', (e: MouseEvent) => {
             const dragDuration = Date.now() - this.dragStartTime;
             const isDragGesture = this.dragDistance > 5 || dragDuration > 200;
 
-            if (!isDragGesture && this.isMouseOverCard(e)) {
+            if (!isDragGesture && this.isMouseOverCard(e as unknown as PointerEvent)) {
                 this.flipCard();
                 this.hasInteracted = true;
                 // Remove the tap indicator immediately
@@ -299,7 +300,7 @@ class Card {
         });
 
         // Pointer move for rotation and dragging
-        const handlePointerMove = (e) => {
+        const handlePointerMove = (e: PointerEvent) => {
             // Check if pointer has left the window
             if (e.clientX <= 0 || e.clientX >= window.innerWidth ||
                 e.clientY <= 0 || e.clientY >= window.innerHeight) {
@@ -335,7 +336,7 @@ class Card {
         });
 
         // Pointer down for dragging
-        this.container.addEventListener('pointerdown', (e) => {
+        this.container.addEventListener('pointerdown', (e: PointerEvent) => {
             if (this.isMouseOverCard(e)) {
                 this.isDragging = true;
                 this.dragStartTime = Date.now();
@@ -356,7 +357,7 @@ class Card {
         });
 
         // Pointer up to stop dragging
-        this.container.addEventListener('pointerup', (e) => {
+        this.container.addEventListener('pointerup', (e: PointerEvent) => {
             if (this.isDragging) {
                 this.isDragging = false;
                 this.container.releasePointerCapture(e.pointerId);
@@ -387,7 +388,7 @@ class Card {
      * @description Updates card position based on drag movement
      * @param {PointerEvent} e - pointer event
      */
-    handleDrag(e) {
+    handleDrag(e: PointerEvent) {
         // Calculate drag movement in screen coordinates
         const movementX = e.clientX - this.previousMousePosition.x;
         const movementY = e.clientY - this.previousMousePosition.y;
@@ -455,7 +456,7 @@ class Card {
      * @description Updates card rotation based on mouse position
      * @param {PointerEvent} e - The pointer event
      */
-    handleHover(e) {
+    handleHover(e: PointerEvent) {
         const rect = this.container.getBoundingClientRect();
         const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
         const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -475,7 +476,7 @@ class Card {
      * @param {PointerEvent} event - pointer event
      * @returns {boolean} True if mouse is over card
      */
-    isMouseOverCard(event) {
+    isMouseOverCard(event: PointerEvent): boolean {
         const rect = this.container.getBoundingClientRect();
         this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -537,7 +538,7 @@ class Card {
      * @description Updates card position, rotation, and flip state
      * @param {number} timestamp - Current animation timestamp
      */
-    animate(timestamp) {
+    animate(timestamp: number) {
         // Begin stats monitoring for this frame
         // this.stats.begin();
 
@@ -645,7 +646,7 @@ class Card {
         if (!this.card) return;
 
         // Get the card's bottom right corner in world space
-        const cardSize = this.card.geometry.parameters;
+        const cardSize = (this.card.geometry as any).parameters;
         const bottomRight = new THREE.Vector3(
             cardSize.width / 2,
             -cardSize.height / 2,
@@ -663,15 +664,19 @@ class Card {
         const y = (-screenPosition.y * 0.5 + 0.5) * window.innerHeight;
 
         // Position the indicator
-        this.tapIndicator.style.left = `${x}px`;
-        this.tapIndicator.style.top = `${y}px`;
-        this.tapIndicator.style.right = 'auto';
-        this.tapIndicator.style.bottom = 'auto';
+        if (this.tapIndicator) {
+            this.tapIndicator.style.left = `${x}px`;
+            this.tapIndicator.style.top = `${y}px`;
+            this.tapIndicator.style.right = 'auto';
+            this.tapIndicator.style.bottom = 'auto';
+        }
 
-        this.tapIndicatorMobile.style.left = `${x}px`;
-        this.tapIndicatorMobile.style.top = `${y}px`;
-        this.tapIndicatorMobile.style.right = 'auto';
-        this.tapIndicatorMobile.style.bottom = 'auto';
+        if (this.tapIndicatorMobile) {
+            this.tapIndicatorMobile.style.left = `${x}px`;
+            this.tapIndicatorMobile.style.top = `${y}px`;
+            this.tapIndicatorMobile.style.right = 'auto';
+            this.tapIndicatorMobile.style.bottom = 'auto';
+        }
     }
 
     //==============================================================================================
@@ -700,16 +705,16 @@ class Card {
             }
 
             if (isMobile()) {
-                this.tapIndicatorMobile.classList.add('visible');
+                this.tapIndicatorMobile?.classList.add('visible');
             } else {
-                this.tapIndicator.classList.add('visible');
+                this.tapIndicator?.classList.add('visible');
             }
 
             this._hideTapTimeout = setTimeout(() => {
                 if (isMobile()) {
-                    this.tapIndicatorMobile.classList.remove('visible');
+                    this.tapIndicatorMobile?.classList.remove('visible');
                 } else {
-                    this.tapIndicator.classList.remove('visible');
+                    this.tapIndicator?.classList.remove('visible');
                 }
             }, 14200);
         }, 2250);
@@ -772,7 +777,7 @@ class Card {
 }
 
 // Initialize when DOM is loaded and expose to state manager
-let card3DInstance = null;
+let card3DInstance: any = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     card3DInstance = new Card();
@@ -780,5 +785,5 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('resize', () => card3DInstance.onWindowResize());
     
     // Expose to window for state manager
-    window.card3DInstance = card3DInstance;
+    (window as any).card3DInstance = card3DInstance;
 });

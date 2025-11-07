@@ -3,17 +3,17 @@
  * @fileoverview Component registry with dynamic imports and per-component stylesheet loader
  */
 
-const loadedStyles = new Set();
+const loadedStyles = new Set<string>();
 
 //==============================================================================================
 /**
  * Component registry with dynamic imports and per-component stylesheet loader
  * @type {Object<string, () => Promise<{stylesHref: string, mount: (container: Element, props: Object) => Promise<{setSize: () => void, update: (nextProps: Object) => void, destroy: () => void}>}>>}
  */
-const registry = {
-    cardStack: () => import('./cardStack.js'),
-    lineGraph: () => import('./lineGraph.js'),
-    terminalBlink: () => import('./terminalBlink.js'),
+const registry: Record<string, () => Promise<any>> = {
+    cardStack: () => import('./cardStack'),
+    lineGraph: () => import('./lineGraph'),
+    terminalBlink: () => import('./terminalBlink'),
 };
 
 //==============================================================================================
@@ -22,7 +22,7 @@ const registry = {
  * @param {string} href
  * @returns {void}
  */
-function ensureStyles(href) {
+function ensureStyles(href: string): void {
     if (!href || loadedStyles.has(href)) return;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
@@ -39,10 +39,10 @@ function ensureStyles(href) {
  * @param {Object} props
  * @returns {Promise<{setSize: () => void, update: (nextProps: Object) => void, destroy: () => void}>}
  */
-export async function mountComponent(type, container, props) {
+export async function mountComponent(type: string, container: HTMLElement, props?: Record<string, unknown>): Promise<any> {
     const load = registry[type];
     if (!load) throw new Error(`Unknown component type: ${type}`);
     const mod = await load();
-    if (mod.stylesHref) ensureStyles(mod.stylesHref);
+    if (mod.stylesHref) ensureStyles(mod.stylesHref as string);
     return mod.mount(container, props || {});
 }

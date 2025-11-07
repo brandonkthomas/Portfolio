@@ -1,9 +1,9 @@
 /**
  * textures.js
- * @fileoverview Contains texture generation functions for the starfield
+ * @fileoverview Texture generation utilities for starfield and nebulae
  */
 
-import { isMobile, isErrorPage } from './common.js';
+import { isMobile, isErrorPage } from './common';
 
 //==============================================================================================
 /**
@@ -16,7 +16,7 @@ export function createCircleTexture() {
     canvas.width = 32;
     canvas.height = 32;
 
-    const context = canvas.getContext('2d', { willReadFrequently: true });
+    const context = canvas.getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D;
     const gradient = context.createRadialGradient(16, 16, 0, 16, 16, 16);
     gradient.addColorStop(0, 'rgba(255,255,255,1)');
     gradient.addColorStop(0.5, 'rgba(255,255,255,0.5)');
@@ -38,11 +38,11 @@ export function createCircleTexture() {
  * @param {number} shapeType - Integer 0-4 determining the shape variation
  * @returns {THREE.Texture} The created texture
  */
-export function createNebulaTexture(isBackground = false, shapeType = 0) {
+export function createNebulaTexture(isBackground: boolean = false, shapeType: number = 0) {
     const canvas = document.createElement('canvas');
     canvas.width = 256;
     canvas.height = 256;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const ctx = canvas.getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D;
     
     // Fill with transparent background
     ctx.clearRect(0, 0, 256, 256);
@@ -59,7 +59,7 @@ export function createNebulaTexture(isBackground = false, shapeType = 0) {
     
     ctx.putImageData(imageData, 0, 0);
     
-    const supportsFilter = 'filter' in ctx;
+    const supportsFilter = typeof (ctx as any).filter !== 'undefined';
     
     // Apply multiple blur passes for smoother / watercolor-like effect
     const blurPasses = isBackground ? 5 : 3;
@@ -79,7 +79,7 @@ export function createNebulaTexture(isBackground = false, shapeType = 0) {
         tmpCanvas.width = canvas.width;
         tmpCanvas.height = canvas.height;
 
-        const tmpCtx = tmpCanvas.getContext('2d', { willReadFrequently: true });
+        const tmpCtx = tmpCanvas.getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D;
         const scaleFactor = isBackground ? 0.5 : 0.75;
         for (let pass = 0; pass < blurPasses; pass++) {
             // draw downscaled copy
@@ -138,7 +138,7 @@ export function createNebulaTexture(isBackground = false, shapeType = 0) {
  * @param {CanvasRenderingContext2D} ctx - Canvas context
  * @param {number} shapeType - Type of shape to draw (0-4)
  */
-function drawIrregularBase(ctx, shapeType) {
+function drawIrregularBase(ctx: CanvasRenderingContext2D, shapeType: number) {
     const width = 256;
     const height = 256;
     const centerX = width / 2;
@@ -179,7 +179,7 @@ function drawIrregularBase(ctx, shapeType) {
             ctx.beginPath();
             
             // Create random bezier curve path
-            const curvePoints = [];
+            const curvePoints: Array<{x: number; y: number}> = [];
             const numPoints = 5 + Math.floor(Math.random() * 3);
             
             for (let i = 0; i < numPoints; i++) {
@@ -217,7 +217,7 @@ function drawIrregularBase(ctx, shapeType) {
             break;
             
         case 2: // Spiral/swirl pattern
-            const spiralPoints = [];
+            const spiralPoints: Array<{x: number; y: number; alpha: number}> = [];
             const spiralArms = 1 + Math.floor(Math.random() * 3);
             
             for (let arm = 0; arm < spiralArms; arm++) {
@@ -297,7 +297,7 @@ function drawIrregularBase(ctx, shapeType) {
                 const tempCanvas = document.createElement('canvas');
                 tempCanvas.width = width;
                 tempCanvas.height = height;
-                const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
+                const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D;
                 
                 // Draw noise pattern
                 const imageData = tempCtx.getImageData(0, 0, width, height);
@@ -363,7 +363,7 @@ function drawIrregularBase(ctx, shapeType) {
  * @param {Uint8ClampedArray} data - Image data array
  * @param {number} size - Canvas size
  */
-function applyTextureNoise(data, size) {
+function applyTextureNoise(data: Uint8ClampedArray, size: number) {
     const brightnessMultiplier = isErrorPage() ? 0.3 : 1.0;
     const alphaMultiplier = isErrorPage() ? 0.4 : 1.0;
     
@@ -374,14 +374,14 @@ function applyTextureNoise(data, size) {
             const noise = (Math.random() - 0.5) * noiseAmount;
             
             // Alpha noise - keep low but visible values
-            data[i + 3] = Math.max(0, Math.min(140, data[i + 3] * alphaMultiplier + noise * 15));
+            (data as any)[i + 3] = Math.max(0, Math.min(140, data[i + 3] * alphaMultiplier + noise * 15));
             
             // Boost RGB channels for better visibility while keeping alpha low
             if (Math.random() > 0.5) {
                 const boost = isErrorPage() ? 1.2 : 1.7;
-                data[i] = Math.min(255, data[i] * boost * brightnessMultiplier + noise * 20);
-                data[i + 1] = Math.min(255, data[i + 1] * boost * brightnessMultiplier + noise * 20);
-                data[i + 2] = Math.min(255, data[i + 2] * boost * brightnessMultiplier + noise * 20);
+                (data as any)[i] = Math.min(255, data[i] * boost * brightnessMultiplier + noise * 20);
+                (data as any)[i + 1] = Math.min(255, data[i + 1] * boost * brightnessMultiplier + noise * 20);
+                (data as any)[i + 2] = Math.min(255, data[i + 2] * boost * brightnessMultiplier + noise * 20);
             }
             
             // Apply distortion near edges
@@ -400,7 +400,7 @@ function applyTextureNoise(data, size) {
                 
                 // Apply falloff with noise
                 const edgeFalloff = Math.max(0, 1 - ((distFromCenter - 0.7) / (0.3 + edgeNoise)));
-                data[i + 3] = Math.floor(data[i + 3] * edgeFalloff * edgeFalloff);
+                (data as any)[i + 3] = Math.floor(data[i + 3] * edgeFalloff * edgeFalloff);
             }
         }
     }
@@ -412,9 +412,9 @@ function applyTextureNoise(data, size) {
  * @param {Uint8ClampedArray} data - Image data array
  * @param {number} size - Canvas size
  */
-function applyIrregularEdges(finalData, size) {
+function applyIrregularEdges(finalData: Uint8ClampedArray, size: number) {
     // Generate noise values for the edge irregularity
-    const edgeNoise = [];
+    const edgeNoise: number[] = [];
     for (let i = 0; i < 360; i++) {
         // Create varying edge distances (0.8-1.0 radius)
         edgeNoise.push(0.8 + (Math.cos(i * 0.1) * Math.sin(i * 0.2) + 1) * 0.1);
@@ -462,7 +462,7 @@ function applyIrregularEdges(finalData, size) {
  * @param {number} seed - Random seed
  * @returns {number} Noise value from -1 to 1
  */
-function simplexLikeNoise(x, y, seed = 0) {
+function simplexLikeNoise(x: number, y: number, seed: number = 0): number {
     // Simple deterministic noise function
     const n = Math.sin(x + y * 113 + seed * 157) * 43758.5453;
     return (n - Math.floor(n)) * 2 - 1;

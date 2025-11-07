@@ -12,7 +12,7 @@ export const stylesHref = '/css/components/cardStack.css';
  * @param {Object} props
  * @returns {Promise<{setSize: () => void, update: (nextProps: Object) => void, destroy: () => void}>}
  */
-export async function mount(container, props = {}) {
+export async function mount(container: HTMLElement, props: Record<string, unknown> = {}) {
     const root = document.createElement('div');
     root.className = 'card-stack';
 
@@ -24,7 +24,7 @@ export async function mount(container, props = {}) {
     container.appendChild(root);
 
     // Pointer-driven subtle parallax
-    const handlePointer = (e) => {
+    const handlePointer = (e: PointerEvent) => {
         const rect = container.getBoundingClientRect();
         const cx = rect.left + rect.width / 2;
         const cy = rect.top + rect.height / 2;
@@ -50,10 +50,10 @@ export async function mount(container, props = {}) {
     root.addEventListener('touchend', resetPointer, { passive: true });
 
     return {
-        setSize({ width, height }) {
+        setSize({ width, height }: { width: number; height: number }) {
             // Parent already sets --stack-h; nothing extra required, but hook remains for future
         },
-        update(nextProps) {
+        update(nextProps: Record<string, unknown>) {
             // No-op for now; would update based on props
         },
         destroy() {

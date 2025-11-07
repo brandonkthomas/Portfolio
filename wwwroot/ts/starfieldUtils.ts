@@ -8,7 +8,7 @@
  * Generate a random star color
  * @returns {THREE.Color} The generated color
  */
-export function generateStarColor() {
+export function generateStarColor(): any {
     const hue = Math.random() * 360; // Full hue range for rainbow
     const saturation = 0.08 + Math.random() * 0.05; // Low saturation (8-15%)
     const lightness = 0.5 + Math.random() * 0.2; // Medium-high lightness (50-70%)
@@ -25,7 +25,7 @@ export function generateStarColor() {
  * @param {boolean} reverse - If true, warp direction is reversed (default: false)
  * @description Initiates a warp pulse that fades out over 0.5 seconds
  */
-export function triggerWarpPulse(setWarpIntensity, reverse = false) {
+export function triggerWarpPulse(setWarpIntensity: (value: number) => void, reverse: boolean = false): void {
     // Set warp intensity to 1 immediately with direction
     setWarpIntensity(reverse ? -1 : 1);
 
@@ -56,11 +56,15 @@ export function triggerWarpPulse(setWarpIntensity, reverse = false) {
  * @param {function} triggerWarpCallback - Function to call when Konami code is detected
  * @returns {object} Konami code handler object with methods
  */
-export function setupKonamiCode(konamiCode, triggerWarpCallback) {
+export function setupKonamiCode(konamiCode: string[], triggerWarpCallback: () => void): {
+    setKonamiWarpActive: (active: boolean) => void;
+    getKonamiWarpActive: () => boolean;
+    resetKonamiIndex: () => void;
+} {
     let konamiIndex = 0;
     let isKonamiWarpActive = false;
 
-    const keydownHandler = (event) => {
+    const keydownHandler = (event: KeyboardEvent) => {
         if (isKonamiWarpActive) return; // Ignore inputs during Konami warp
 
         // Check if the pressed key matches the next key in the sequence
@@ -85,7 +89,7 @@ export function setupKonamiCode(konamiCode, triggerWarpCallback) {
     document.addEventListener('keydown', keydownHandler);
 
     return {
-        setKonamiWarpActive: (active) => {
+        setKonamiWarpActive: (active: boolean) => {
             isKonamiWarpActive = active;
         },
         getKonamiWarpActive: () => isKonamiWarpActive,

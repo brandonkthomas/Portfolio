@@ -4,9 +4,43 @@
  * @description Creates glass surface material with real-time distortion and lighting
  */
 
-import { supportsSVGFilters } from './common.js';
+import { supportsSVGFilters } from './common';
 
 let uniqueIdCounter = 0;
+
+//==============================================================================================
+// Types
+
+export type DisplacementChannel = 'R' | 'G' | 'B' | 'A';
+
+export interface GlassSurfaceOptions {
+    width?: number | string;
+    height?: number | string;
+    borderRadius?: number;
+    borderWidth?: number;
+    brightness?: number;
+    opacity?: number;
+    blur?: number;
+    displace?: number;
+    backgroundOpacity?: number | string;
+    saturation?: number | string;
+    distortionScale?: number;
+    redOffset?: number;
+    greenOffset?: number;
+    blueOffset?: number;
+    xChannel?: DisplacementChannel;
+    yChannel?: DisplacementChannel;
+    mixBlendMode?: string;
+    className?: string;
+    style?: Partial<Record<string, string>>;
+}
+
+export interface GlassSurfaceInstance {
+    element: HTMLDivElement;
+    contentElement: HTMLDivElement;
+    updateDisplacementMap: () => void;
+    destroy: () => void;
+}
 
 //==============================================================================================
 /**
@@ -14,7 +48,7 @@ let uniqueIdCounter = 0;
  * @param {Object} options - Configuration options
  * @returns {Object} Glass surface instance with methods and element reference
  */
-export function createGlassSurface(options) {
+export function createGlassSurface(options: GlassSurfaceOptions = {}): GlassSurfaceInstance {
 
     // Set defaults (using ternary rather than nullish coalescing for NUglify compatibility)
     if (!options) options = {};
@@ -36,7 +70,7 @@ export function createGlassSurface(options) {
     const yChannel = options.yChannel !== undefined ? options.yChannel : 'G';
     const mixBlendMode = options.mixBlendMode !== undefined ? options.mixBlendMode : 'difference';
     const className = options.className !== undefined ? options.className : '';
-    const style = options.style !== undefined ? options.style : {};
+    const style: Partial<Record<string, string>> = options.style !== undefined ? options.style : {};
 
     // Generate unique ID
     const uniqueId = `glass-${Date.now()}-${uniqueIdCounter++}`;
@@ -45,7 +79,7 @@ export function createGlassSurface(options) {
     const blueGradId = `blue-grad-${uniqueId}`;
 
     // Create container element
-    const container = document.createElement('div');
+    const container: HTMLDivElement = document.createElement('div');
     const isSVGSupported = supportsSVGFilters(filterId);
 
     // glass-surface--svg is SVG-based "clear glass" (not supported by WebKit)
@@ -64,8 +98,8 @@ export function createGlassSurface(options) {
     });
     
     // Set CSS custom properties
-    container.style.setProperty('--glass-frost', backgroundOpacity);
-    container.style.setProperty('--glass-saturation', saturation);
+    container.style.setProperty('--glass-frost', String(backgroundOpacity));
+    container.style.setProperty('--glass-saturation', String(saturation));
     container.style.setProperty('--filter-id', `url(#${filterId})`);
 
     // Create SVG filter

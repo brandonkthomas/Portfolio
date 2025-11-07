@@ -7,6 +7,9 @@ obj/
 publish/
 appsettings.Development.json
 
-# Cursor support for .NET Core debugging
-.vscode/dotnet.out
-.vscode/dotnet.pid
+# Node / TypeScript
+node_modules/
+.npm-cache/
+wwwroot/js/**/*.js
+wwwroot/js/**/*.map
+wwwroot/dist/**/*.map

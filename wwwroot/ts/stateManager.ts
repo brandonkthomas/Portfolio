@@ -4,7 +4,7 @@
  * @description Handles view transitions between card and photo gallery views
  */
 
-import { isMobile, wait } from './common.js';
+import { isMobile, wait } from './common';
 
 //==============================================================================================
 // Early init: Hide card immediately if we're loading /photos
@@ -15,19 +15,19 @@ import { isMobile, wait } from './common.js';
         const cardContainer = document.querySelector('.card-container');
         const photoContainer = document.querySelector('.photo-gallery-container');
         if (cardContainer) {
-            cardContainer.classList.add('hidden');
+            (cardContainer as HTMLElement).classList.add('hidden');
         }
         if (photoContainer) {
-            photoContainer.classList.add('visible');
+            (photoContainer as HTMLElement).classList.add('visible');
         }
     } else if (path === '/projects' || path === '/Projects') {
         const cardContainer = document.querySelector('.card-container');
         const projectsContainer = document.querySelector('.projects-container');
         if (cardContainer) {
-            cardContainer.classList.add('hidden');
+            (cardContainer as HTMLElement).classList.add('hidden');
         }
         if (projectsContainer) {
-            projectsContainer.classList.add('visible');
+            (projectsContainer as HTMLElement).classList.add('visible');
         }
     }
 })();
@@ -60,6 +60,7 @@ export const ViewState = Object.freeze({
  * @property {Object} navbar - Reference to navbar module
  */
 class StateManager {
+    [key: string]: any;
     constructor() {
         this.currentView = ViewState.CARD;
         this.isTransitioning = false;
@@ -86,13 +87,13 @@ class StateManager {
      */
     init() {
         // Handle browser back/forward buttons
-        window.addEventListener('popstate', (e) => {
-            const state = e.state || {};
-            const viewString = state.view || ViewState.CARD;
+        window.addEventListener('popstate', (e: PopStateEvent) => {
+            const state = (e.state || {}) as { view?: string };
+            const viewString = state.view || (ViewState as any).CARD;
             // Map string to enum (for backward compatibility)
-            const view = viewString === ViewState.PHOTOS
-                ? ViewState.PHOTOS
-                : (viewString === ViewState.PROJECTS ? ViewState.PROJECTS : ViewState.CARD);
+            const view = viewString === (ViewState as any).PHOTOS
+                ? (ViewState as any).PHOTOS
+                : (viewString === (ViewState as any).PROJECTS ? (ViewState as any).PROJECTS : (ViewState as any).CARD);
             this.navigateToView(
                 /* view */ view, 
                 /* pushHistory */ false, 
@@ -121,8 +122,8 @@ class StateManager {
         
         if (path === '/photos' || path === '/Photos') {
             // Set current view immediately (DOM already updated by early init)
-            this.currentView = ViewState.PHOTOS;
-            history.replaceState({ view: ViewState.PHOTOS }, '', '/photos');
+            this.currentView = (ViewState as any).PHOTOS;
+            history.replaceState({ view: (ViewState as any).PHOTOS }, '', '/photos');
             
             // Notify listeners immediately so navbar updates
             this.notifyListeners();
@@ -141,8 +142,8 @@ class StateManager {
             });
         } else if (path === '/projects' || path === '/Projects') {
             // Set current view immediately (DOM already updated by early init)
-            this.currentView = ViewState.PROJECTS;
-            history.replaceState({ view: ViewState.PROJECTS }, '', '/projects');
+            this.currentView = (ViewState as any).PROJECTS;
+            history.replaceState({ view: (ViewState as any).PROJECTS }, '', '/projects');
 
             // Notify listeners immediately so navbar updates
             this.notifyListeners();
@@ -161,10 +162,10 @@ class StateManager {
             });
         } else {
             // Default to card view; do not rewrite URL for non-SPA routes (e.g., /projects/slug)
-            this.currentView = ViewState.CARD;
+            this.currentView = (ViewState as any).CARD;
             
             if (path === '/' || path === '') {
-                history.replaceState({ view: ViewState.CARD }, '', '/');
+                history.replaceState({ view: (ViewState as any).CARD }, '', '/');
 
                 // Ensure modules are connected, then trigger card.show() so CTA scheduling starts on initial load
                 this.waitForModules(() => {
@@ -181,7 +182,7 @@ class StateManager {
      * Wait for all modules to be ready, then call callback
      * @param {function} callback - Function to call when all modules are ready
      */
-    waitForModules(callback) {
+    waitForModules(callback: () => void) {
         const checkModules = () => {
             this.connectModules();
             
@@ -203,7 +204,7 @@ class StateManager {
      * @param {function} callback - Function to call when projects module is ready
      * @returns {void}
      */
-    waitForProjects(callback) {
+    waitForProjects(callback: () => void) {
         const check = () => {
             this.connectModules();
             if (this.projects) {
@@ -243,7 +244,7 @@ class StateManager {
      * Register a listener for view changes
      * @param {function} callback - Function to call when view changes
      */
-    onViewChange(callback) {
+    onViewChange(callback: (view: string) => void) {
         this.listeners.push(callback);
     }
 
@@ -252,7 +253,7 @@ class StateManager {
      * Notify all listeners of view change
      */
     notifyListeners() {
-        this.listeners.forEach(listener => listener(this.currentView));
+        this.listeners.forEach((listener: (view: string) => void) => listener(this.currentView));
     }
 
     //==============================================================================================
@@ -277,7 +278,7 @@ class StateManager {
         });
 
         // Collect module ready promises
-        const moduleReadyPromises = [];
+        const moduleReadyPromises: Promise<any>[] = [];
         
         const collectModules = () => {
             this.connectModules();
@@ -342,7 +343,7 @@ class StateManager {
         }
 
         this.initialRevealDone = true;
-        document.body.dataset.initialState = 'ready';
+        (document.body as any).dataset.initialState = 'ready';
 
         const mainElements = this.getInitialRevealElements();
         mainElements.forEach(({ element, className }) => {
@@ -371,16 +372,16 @@ class StateManager {
      * Retrieve initial reveal elements
      * @returns {Array} Array of elements to reveal
      */
-    getInitialRevealElements() {
+    getInitialRevealElements(): Array<{ element: HTMLElement | null; className: string }> {
         const path = window.location.pathname;
         const elements = [
-            { element: document.querySelector('.card-container'), className: 'card-initial' },
-            { element: document.getElementById('starfield'), className: 'starfield-initial' },
-            { element: document.querySelector('.photo-gallery-container'), className: 'photo-gallery-initial' }
+            { element: document.querySelector('.card-container') as HTMLElement | null, className: 'card-initial' },
+            { element: document.getElementById('starfield') as HTMLElement | null, className: 'starfield-initial' },
+            { element: document.querySelector('.photo-gallery-container') as HTMLElement | null, className: 'photo-gallery-initial' }
         ];
         // Only include projects container in initial reveal when landing directly on /projects
         if (path === '/projects' || path === '/Projects') {
-            elements.push({ element: document.querySelector('.projects-container'), className: 'projects-initial' });
+            elements.push({ element: document.querySelector('.projects-container') as HTMLElement | null, className: 'projects-initial' });
         }
         return elements;
     }
@@ -392,16 +393,16 @@ class StateManager {
      * @param {boolean} pushHistory - Whether to push to browser history
      * @param {boolean} skipAnimations - Whether to skip animations (for initial load)
      */
-    async navigateToView(view, pushHistory = true, skipAnimations = false) {
+    async navigateToView(view: string, pushHistory: boolean = true, skipAnimations: boolean = false) {
         if (this.isTransitioning || view === this.currentView) {
             return;
         }
 
         // Ensure modules are connected
-        if (!this.starfield || !this.card || !this.photoGallery || (view === ViewState.PROJECTS && !this.projects)) {
+        if (!this.starfield || !this.card || !this.photoGallery || (view === (ViewState as any).PROJECTS && !this.projects)) {
             console.warn('Waiting for modules to be ready...');
             this.waitForModules(() => {
-                if (view === ViewState.PROJECTS) {
+                if (view === (ViewState as any).PROJECTS) {
                     this.waitForProjects(() => {
                         this.navigateToView(
                             /* view */ view, 
@@ -425,15 +426,15 @@ class StateManager {
         // Update browser history
         if (pushHistory) {
             let path = '/';
-            if (view === ViewState.PHOTOS) path = '/photos';
-            else if (view === ViewState.PROJECTS) path = '/projects';
+            if (view === (ViewState as any).PHOTOS) path = '/photos';
+            else if (view === (ViewState as any).PROJECTS) path = '/projects';
             history.pushState({ view }, '', path);
         }
 
         // Perform transition
-        if (view === ViewState.PHOTOS) {
+        if (view === (ViewState as any).PHOTOS) {
             await this.transitionToPhotos(skipAnimations);
-        } else if (view === ViewState.PROJECTS) {
+        } else if (view === (ViewState as any).PROJECTS) {
             await this.transitionToProjects(skipAnimations);
         } else {
             await this.transitionToCard(skipAnimations);
@@ -449,7 +450,7 @@ class StateManager {
      * Transition to photo gallery view
      * @param {boolean} skipAnimations - Whether to skip animations
      */
-    async transitionToPhotos(skipAnimations = false) {
+    async transitionToPhotos(skipAnimations: boolean = false) {
         
         // Set star direction to reverse (away from camera)
         if (this.starfield) {
@@ -475,7 +476,7 @@ class StateManager {
         
         // Start both animations simultaneously for 3D effect
         // Only warp when transitioning from CARD
-        if (window.triggerStarfieldWarp && this.currentView === ViewState.CARD) {
+        if (window.triggerStarfieldWarp && this.currentView === (ViewState as any).CARD) {
             window.triggerStarfieldWarp(true); // true = reverse
         }
 
@@ -514,7 +515,7 @@ class StateManager {
      * Transition to projects view
      * @param {boolean} skipAnimations - Whether to skip animations
      */
-    async transitionToProjects(skipAnimations = false) {
+    async transitionToProjects(skipAnimations: boolean = false) {
 
         // Set star direction to reverse (away from camera)
         if (this.starfield) {
@@ -531,7 +532,7 @@ class StateManager {
         }
 
         // Only warp when transitioning from CARD
-        if (window.triggerStarfieldWarp && this.currentView === ViewState.CARD) {
+        if (window.triggerStarfieldWarp && this.currentView === (ViewState as any).CARD) {
             window.triggerStarfieldWarp(true);
         }
 
@@ -556,7 +557,7 @@ class StateManager {
      * Transition to card view
      * @param {boolean} skipAnimations - Whether to skip animations
      */
-    async transitionToCard(skipAnimations = false) {
+    async transitionToCard(skipAnimations: boolean = false) {
         
         // Set star direction to forward (toward camera)
         if (this.starfield) {

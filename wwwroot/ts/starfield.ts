@@ -4,15 +4,16 @@
  * @description Creates an interactive starfield background with a triggerable warp effect using Three.js
  */
 
-import { isMobile, isErrorPage } from './common.js';
-import { createCircleTexture } from './textures.js';
-import { createNebulae, updateNebulae, reduceNebulaOpacity, restoreNebulaOpacity } from './nebulae.js';
-import { generateStarColor, triggerWarpPulse, setupKonamiCode } from './starfieldUtils.js';
+import { isMobile, isErrorPage } from './common';
+import { createCircleTexture } from './textures';
+import { createNebulae, updateNebulae, reduceNebulaOpacity, restoreNebulaOpacity } from './nebulae';
+import { generateStarColor, triggerWarpPulse, setupKonamiCode } from './starfieldUtils';
 
 // DEBUG FLAG: if true, show animated gradient instead of starfield (for testing glass material behavior/interactions)
 const DEBUG_GRADIENT = false;
 
 class Starfield {
+    [key: string]: any;
 
     //==============================================================================================
     /**
@@ -41,7 +42,7 @@ class Starfield {
         this.scene.background = DEBUG_GRADIENT ? new THREE.Color('#000000') : new THREE.Color('#1C1C1C');
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         this.renderer = new THREE.WebGLRenderer({
-            canvas: document.getElementById('starfield'),
+            canvas: document.getElementById('starfield') as HTMLCanvasElement | undefined,
             antialias: true
         });
 
@@ -72,7 +73,7 @@ class Starfield {
         // Konami code setup
         this.konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
         this.konamiHandler = setupKonamiCode(this.konamiCode, () => this.triggerKonamiWarp());
-        this.originalBackgroundColor = this.scene.background.clone();
+        this.originalBackgroundColor = (this.scene.background as any).clone();
         
         // Check if this is an error page and setup red glow effect
         this.isErrorPage = isErrorPage();
@@ -187,7 +188,7 @@ class Starfield {
         
         // Hide nebulae in debug mode for clearer gradient visualization
         if (DEBUG_GRADIENT) {
-            this.nebulae.forEach(nebula => {
+            this.nebulae.forEach((nebula: any) => {
                 if (nebula) {
                     nebula.visible = false;
                 }
@@ -196,7 +197,7 @@ class Starfield {
         
         // If error page, reduce nebulae opacity
         if (this.isErrorPage) {
-            this.nebulae.forEach(nebula => {
+            this.nebulae.forEach((nebula: any) => {
                 if (nebula && nebula.material) {
                     const originalOpacity = nebula.material.opacity || 1.0;
                     nebula.material.opacity = originalOpacity * 0.01;
@@ -250,8 +251,8 @@ class Starfield {
      * @param {number} direction - 1 for forward (toward camera), -1 for reverse (away from camera)
      * @description Changes the direction stars move
      */
-    setStarDirection(direction) {
-        this.starDirection = direction;
+    setStarDirection(direction: number) {
+        this.starDirection = direction >= 0 ? 1 : -1;
     }
 
     //==============================================================================================
@@ -318,7 +319,7 @@ class Starfield {
         const canvas = document.createElement('canvas');
         canvas.width = 512;
         canvas.height = 512;
-        const context = canvas.getContext('2d');
+        const context = canvas.getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D;
         
         // Create radial gradient
         const gradient = context.createRadialGradient(
@@ -396,7 +397,7 @@ class Starfield {
     updateDebugGradient() {
         if (!this.debugGradientCanvas) return;
         
-        const context = this.debugGradientCanvas.getContext('2d');
+        const context = this.debugGradientCanvas.getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D;
         const width = this.debugGradientCanvas.width;
         const height = this.debugGradientCanvas.height;
         
@@ -628,11 +629,11 @@ class Starfield {
 }
 
 // Initialize starfield when the page loads and expose to state manager
-let starfieldInstance = null;
+let starfieldInstance: any = null;
 
 window.addEventListener('load', () => {
     starfieldInstance = new Starfield();
 
     // Expose to window for stateManager
-    window.starfieldInstance = starfieldInstance;
+    (window as any).starfieldInstance = starfieldInstance;
 });
