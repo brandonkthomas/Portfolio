@@ -169,9 +169,9 @@ export async function mount(container: HTMLElement, props: Record<string, unknow
     };
 
     // Add event listeners for pointer movement, leave, and cancel
-    root.addEventListener('pointermove', handlePointer);
-    root.addEventListener('pointerleave', resetPointer);
-    root.addEventListener('pointercancel', resetPointer);
+    container.addEventListener('pointermove', handlePointer);
+    container.addEventListener('pointerleave', resetPointer);
+    container.addEventListener('pointercancel', resetPointer);
     root.addEventListener('touchstart', () => {
         // Gentle nudge on middle layer for mobile tap
         const mid = layers[1];
@@ -190,9 +190,9 @@ export async function mount(container: HTMLElement, props: Record<string, unknow
             // No-op for now; would update based on props
         },
         destroy() {
-            root.removeEventListener('pointermove', handlePointer);
-            root.removeEventListener('pointerleave', resetPointer);
-            root.removeEventListener('pointercancel', resetPointer);
+            container.removeEventListener('pointermove', handlePointer);
+            container.removeEventListener('pointerleave', resetPointer);
+            container.removeEventListener('pointercancel', resetPointer);
             destroyed = true;
             if (rafId != null) cancelAnimationFrame(rafId);
             root.remove();
