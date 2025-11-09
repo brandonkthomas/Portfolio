@@ -477,7 +477,8 @@ class StateManager {
             if (this.photoGallery) {
                 this.photoGallery.show();
             }
-            if (this.starfield) {
+            // Only reduce stars when coming from CARD
+            if (this.starfield && this.currentView === (ViewState as any).CARD) {
                 this.starfield.reduceStars();
             }
             return;
@@ -510,8 +511,8 @@ class StateManager {
         // Wait for animations to complete
         await wait(250);
 
-        // Reduce star count during transition
-        if (this.starfield) {
+        // Reduce star count during card exit transition
+        if (this.starfield && this.currentView === (ViewState as any).CARD) {
             this.starfield.reduceStars();
         } else {
             console.warn('Starfield instance not available');
@@ -536,7 +537,10 @@ class StateManager {
             if (this.card) this.card.hide();
             if (this.photoGallery) this.photoGallery.hide();
             if (this.projects) this.projects.show();
-            if (this.starfield) this.starfield.reduceStars();
+            // Only reduce stars when coming from CARD
+            if (this.starfield && this.currentView === (ViewState as any).CARD) {
+                this.starfield.reduceStars();
+            }
             return;
         }
 
@@ -558,7 +562,9 @@ class StateManager {
         await wait(250);
 
         // Reduce star count
-        if (this.starfield) this.starfield.reduceStars();
+        if (this.starfield && this.currentView === (ViewState as any).CARD) {
+            this.starfield.reduceStars();
+        }
     }
 
     //==============================================================================================
