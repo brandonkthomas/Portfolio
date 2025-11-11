@@ -7,6 +7,7 @@
 import { isMobile } from './common';
 import stateManager, { ViewState } from './stateManager';
 import perf from './perfMonitor';
+import { triggerStarfieldWarp } from './starfield';
 
 class Card {
     // DOM
@@ -336,9 +337,7 @@ class Card {
                     clearTimeout(this._hideTapTimeout);
                 }
                 // Only trigger warp effect if we actually clicked the card
-                if (window.triggerStarfieldWarp) {
-                    window.triggerStarfieldWarp();
-                }
+                triggerStarfieldWarp();
             }
 
             // Reset drag tracking

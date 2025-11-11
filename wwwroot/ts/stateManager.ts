@@ -5,6 +5,7 @@
  */
 
 import { isMobile, wait } from './common';
+import { triggerStarfieldWarp } from './starfield';
 
 //==============================================================================================
 // Early init: Hide card immediately if we're loading /photos
@@ -486,8 +487,8 @@ class StateManager {
         
         // Start both animations simultaneously for 3D effect
         // Only warp when transitioning from CARD
-        if (window.triggerStarfieldWarp && this.currentView === (ViewState as any).CARD) {
-            window.triggerStarfieldWarp(true); // true = reverse
+        if (this.currentView === (ViewState as any).CARD) {
+            triggerStarfieldWarp(true); // true = reverse
         }
 
         // Hide card (scale down, fade, blur)
@@ -545,8 +546,8 @@ class StateManager {
         }
 
         // Only warp when transitioning from CARD
-        if (window.triggerStarfieldWarp && this.currentView === (ViewState as any).CARD) {
-            window.triggerStarfieldWarp(true);
+        if (this.currentView === (ViewState as any).CARD) {
+            triggerStarfieldWarp(true);
         }
 
         // Hide card
@@ -601,9 +602,7 @@ class StateManager {
         }
 
         // Trigger starfield warp (forward direction)
-        if (window.triggerStarfieldWarp) {
-            window.triggerStarfieldWarp(false); // false = forward
-        }
+        triggerStarfieldWarp(false); // false = forward
 
         // Wait for animations to complete
         await wait(250);

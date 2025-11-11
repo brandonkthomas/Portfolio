@@ -10,7 +10,6 @@ declare global {
         photoGalleryInstance?: any;
         projectsInstance?: any;
         navbarManagerInstance?: any;
-        triggerStarfieldWarp?: (active?: boolean) => void;
         // Debug/diagnostics
         __dotnetDebuggerAttached?: boolean;
         __debugOverrideFlag?: boolean;

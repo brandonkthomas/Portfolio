@@ -271,9 +271,6 @@ class Starfield {
         this.scene.add(this.trails);
         this.trailMaterial = trailMaterial;
 
-        // Add card click detection
-        this.setupClickDetection();
-
         // Handle window resize
         window.addEventListener('resize', () => {
             this.camera.aspect = window.innerWidth / window.innerHeight;
@@ -285,16 +282,13 @@ class Starfield {
 
     //==============================================================================================
     /**
-     * Set up click detection for warp effect
-     * @description Exposes a global function to trigger the warp effect
+     * Trigger the warp pulse effect
+     * @param {boolean} reverse - When true, warp direction is reversed (away from camera)
      */
-    setupClickDetection() {
-        // Allow card to trigger warp pulse
-        window.triggerStarfieldWarp = (reverse = false) => {
-            triggerWarpPulse((intensity) => {
-                this.warpIntensity = intensity;
-            }, reverse);
-        };
+    triggerWarp(reverse: boolean = false) {
+        triggerWarpPulse((intensity) => {
+            this.warpIntensity = intensity;
+        }, reverse);
     }
 
     //==============================================================================================
@@ -707,3 +701,14 @@ window.addEventListener('load', () => {
     // Expose to window for stateManager
     (window as any).starfieldInstance = starfieldInstance;
 });
+
+//==============================================================================================
+/**
+ * Exported function to trigger the starfield warp effect
+ * @param {boolean} reverse - When true, warp direction is reversed (away from camera)
+ */
+export function triggerStarfieldWarp(reverse: boolean = false) {
+    if (starfieldInstance && typeof (starfieldInstance as any).triggerWarp === 'function') {
+        (starfieldInstance as any).triggerWarp(reverse);
+    }
+}
