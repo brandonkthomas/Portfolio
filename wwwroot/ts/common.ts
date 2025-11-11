@@ -110,6 +110,35 @@ export function wait(ms: number): Promise<void> {
 }
 
 //==============================================================================================
+/**
+ * Determine if Kestrel debugger is attached (from server-injected flag)
+ * @returns {boolean} True if a debugger is attached
+ */
+export function isKestrelDebuggerAttached(): boolean {
+    return !!(window as any).__dotnetDebuggerAttached;
+}
+
+/**
+ * Global debug status flag
+ * @returns {boolean} True if Kestrel debugger is attached (or if overridden via devtools)
+ */
+export function isDebug(): boolean {
+    return isKestrelDebuggerAttached() || !!(window as any).__debugOverrideFlag;
+}
+
+// DevTools helper to toggle client-side debug without query params
+if (!(window as any).setDebugOverride) {
+    (window as any).setDebugOverride = (value: boolean) => {
+        (window as any).__debugOverrideFlag = !!value;
+        // Inform global perf monitor if present
+        const perf = (window as any).perf;
+        if (perf && typeof perf.setEnabled === 'function') {
+            perf.setEnabled(!!value || isKestrelDebuggerAttached());
+        }
+    };
+}
+
+//==============================================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
     

@@ -145,6 +145,10 @@
         <script src="@AssetManifest.GetAssetPath("photoGallery.js")" type="module"></script>
         <script src="@AssetManifest.GetAssetPath("projects.js")" type="module"></script>
     </environment>
+    <script>
+        // Expose whether Kestrel debugger is attached (debug-only flag consumed by common.ts)
+        window.__dotnetDebuggerAttached = @((System.Diagnostics.Debugger.IsAttached).ToString().ToLower());
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
     @await RenderSectionAsync("Styles", required: false)
 </body>
