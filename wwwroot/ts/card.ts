@@ -6,8 +6,7 @@
 
 import { isMobile } from './common';
 import stateManager, { ViewState } from './stateManager';
-
-// import Stats from 'https://cdnjs.cloudflare.com/ajax/libs/stats.js/r17/Stats.min.js';
+import perf from './perfMonitor';
 
 class Card {
     // DOM
@@ -95,15 +94,6 @@ class Card {
         this.container = document.querySelector('.card-container');
         this.tapIndicator = document.querySelector('.tap-indicator.desktop');
         this.tapIndicatorMobile = document.querySelector('.tap-indicator.mobile');
-
-        // // Performance monitoring
-        // this.stats = new Stats();
-        // this.stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
-        // document.body.appendChild(this.stats.dom);
-        // this.stats.dom.style.position = 'fixed';
-        // this.stats.dom.style.right = '0px';
-        // this.stats.dom.style.left = 'auto';
-        // this.stats.dom.style.top = '0px';
 
         // State flags
         this.isFlipped = false;
@@ -595,14 +585,15 @@ class Card {
      * @param {number} timestamp - Current animation timestamp
      */
     animate(timestamp: number) {
-        // Begin stats monitoring for this frame
-        // this.stats.begin();
-
         // first frame: seed lastTimestamp so it's never undefined
         if (this.lastTimestamp === undefined) {
             this.lastTimestamp = timestamp;
         }
+        // Performance monitor: frame start
+        perf.loopFrameStart('card');
 
+        // Perf: update segment
+        const segUpdate = perf.segmentStart('card', 'update');
         // spring return animation
         this.updateSpringAnimation();
 
@@ -640,18 +631,21 @@ class Card {
 
         // Update tap indicator position
         this.updateTapIndicatorPosition();
+        perf.segmentEnd(segUpdate);
 
         // render & queue next frame
+        const segRender = perf.segmentStart('card', 'render');
         this.renderer.render(this.scene, this.camera);
-
-        // End stats monitoring for this frame
-        // this.stats.end();
+        perf.segmentEnd(segRender);
 
         // Signal to subscribers that the card is ready
         if (this._resolveReady) {
             this._resolveReady();
             this._resolveReady = null;
         }
+
+        // Perf: frame end
+        perf.loopFrameEnd('card');
 
         requestAnimationFrame(this.animate.bind(this));
     }

@@ -8,6 +8,7 @@ import { isMobile, isErrorPage } from './common';
 import { createCircleTexture } from './textures';
 import { createNebulae, updateNebulae, reduceNebulaOpacity, restoreNebulaOpacity } from './nebulae';
 import { generateStarColor, triggerWarpPulse, setupKonamiCode } from './starfieldUtils';
+import perf from './perfMonitor';
 
 // DEBUG FLAG: if true, show animated gradient instead of starfield (for testing glass material behavior/interactions)
 const DEBUG_GRADIENT = false;
@@ -484,20 +485,27 @@ class Starfield {
     animate() {
         requestAnimationFrame(() => this.animate());
         const now = performance.now();
+
         // On first frame or after long background, initialize lastFrameTime
         if (this.lastFrameTime === undefined) {
             this.lastFrameTime = now;
             return;
         }
+        
         const elapsed = now - this.lastFrameTime;
+
         // Skip frames too soon (capped at 120fps)
         if (elapsed < this.minFrameInterval) {
             return;
         }
+
         // Clamp huge elapsed times to avoid pushing all stars to the back
         const deltaMs = Math.min(elapsed, this.maxFrameInterval);
         const deltaTime = deltaMs / 1000;
         this.lastFrameTime = now;
+
+        // Performance monitor: frame start
+        perf.loopFrameStart('starfield');
 
         // Update debug gradient if enabled (background animation)
         if (DEBUG_GRADIENT) {
@@ -526,6 +534,8 @@ class Starfield {
         const colors = this.starField.geometry.attributes.color;
         const coreBack = this.starField.geometry.attributes.coreBack;
 
+        // Stars update loop segment start
+        const segStars = perf.segmentStart('starfield', 'update-stars');
         for (let i = 0; i < positions.count; i++) {
             // Calculate warp speed (up to 50x faster when warping)
             const absWarpIntensity = Math.abs(this.warpIntensity);
@@ -633,15 +643,19 @@ class Starfield {
                 colors.array[i * 4 + 3] = Math.min(1, colors.array[i * 4 + 3] + 0.4 * deltaTime); // 0.4 units per second
             }
         }
+        perf.segmentEnd(segStars);
 
         positions.needsUpdate = true;
         speeds.needsUpdate = true;
         colors.needsUpdate = true;
 
         // Update nebulae positions
+        const segNebulae = perf.segmentStart('starfield', 'update-nebulae');
         updateNebulae(this.nebulae, deltaTime, this.warpIntensity, this.starDirection);
+        perf.segmentEnd(segNebulae);
 
         // Update subtle trails during warp pulse
+        const segTrails = perf.segmentStart('starfield', 'update-trails');
         const trailPositions = this.trailGeometry.attributes.position.array;
         for (let i = 0; i < positions.count; i++) {
             const base3 = i * 3;
@@ -662,6 +676,7 @@ class Starfield {
             trailPositions[base6 + 5] = z - (trailLen * this.starDirection);
         }
         this.trailGeometry.attributes.position.needsUpdate = true;
+        perf.segmentEnd(segTrails);
 
         // Subtle glow effect: scale star size and trail opacity during warp
         const absWarpIntensity = Math.abs(this.warpIntensity);
@@ -669,13 +684,17 @@ class Starfield {
         this.trailMaterial.opacity = (isMobile() ? 0.225 : 0.1) + absWarpIntensity * 0.05;
 
         this.camera.position.z = 5;
+        const segRender = perf.segmentStart('starfield', 'render');
         this.renderer.render(this.scene, this.camera);
+        perf.segmentEnd(segRender);
 
         // Signal to subscribers that the starfield is ready
         if (this._resolveReady) {
             this._resolveReady();
             this._resolveReady = null;
         }
+        // Perf: frame end
+        perf.loopFrameEnd('starfield');
     }
 }
 

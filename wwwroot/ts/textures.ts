@@ -134,6 +134,22 @@ export function createNebulaTexture(isBackground: boolean = false, shapeType: nu
 
 //==============================================================================================
 /**
+ * Returns a cached nebula texture for the given variant
+ * BT 2025-11-11: regenerating canvas textures live was causing huge stutters
+ */
+const nebulaTextureCache = new Map<string, any>();
+export function getNebulaTexture(isBackground: boolean = false, shapeType: number = 0) {
+    const key = `${isBackground ? 1 : 0}:${shapeType|0}`;
+    let tex = nebulaTextureCache.get(key);
+    if (!tex) {
+        tex = createNebulaTexture(isBackground, shapeType|0);
+        nebulaTextureCache.set(key, tex);
+    }
+    return tex;
+}
+
+//==============================================================================================
+/**
  * Draws an irregular base shape for nebulae
  * @param {CanvasRenderingContext2D} ctx - Canvas context
  * @param {number} shapeType - Type of shape to draw (0-4)

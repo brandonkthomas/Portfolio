@@ -3,7 +3,7 @@
  * @fileoverview Contains functions for creating and updating nebulae in the starfield
  */
 
-import { createNebulaTexture } from './textures';
+import { getNebulaTexture } from './textures';
 import { isErrorPage } from './common';
 
 // Store original opacity values for restoration
@@ -25,7 +25,7 @@ export function createNebulae(nebulaCount: number, scene: any): any[] {
     
     for (let i = 0; i < nebulaCount; i++) {
         // Create cloud-like sprite texture with irregular shape
-        const texture = createNebulaTexture(false, i % 5); // Pass type parameter for shape variation
+        const texture = getNebulaTexture(false, i % 5); // Cached texture for shape variation
         
         // Create sprite with properly configured material for visibility without blocking stars
         const material = new THREE.SpriteMaterial({
@@ -119,7 +119,7 @@ export function createNebulae(nebulaCount: number, scene: any): any[] {
     
     // Add a few larger, more distant nebula clouds for depth
     for (let i = 0; i < nebulaCount/2; i++) {
-        const texture = createNebulaTexture(true, i % 5); // Pass shape type
+        const texture = getNebulaTexture(true, i % 5); // Cached texture for shape variation
         
         const material = new THREE.SpriteMaterial({
             map: texture,
@@ -273,9 +273,9 @@ export function updateNebulae(nebulae: any[], deltaTime: number, warpIntensity: 
                 nebula.mesh.material.opacity = baseOpacity + Math.random() * 0.02;
                 
                 // Create new texture with different shape
-                nebula.mesh.material.map = createNebulaTexture(
+                nebula.mesh.material.map = getNebulaTexture(
                     i >= nebulae.length/1.5, // background flag
-                    Math.floor(Math.random() * 5) // random shape type
+                    Math.floor(Math.random() * 5) // random shape type (cached)
                 );
                 nebula.mesh.material.map.needsUpdate = true;
                 
@@ -310,9 +310,9 @@ export function updateNebulae(nebulae: any[], deltaTime: number, warpIntensity: 
                 nebula.mesh.material.opacity = baseOpacity + Math.random() * 0.02;
                 
                 // Create new texture with different shape
-                nebula.mesh.material.map = createNebulaTexture(
+                nebula.mesh.material.map = getNebulaTexture(
                     i >= nebulae.length/1.5, // background flag
-                    Math.floor(Math.random() * 5) // random shape type
+                    Math.floor(Math.random() * 5) // random shape type (cached)
                 );
                 nebula.mesh.material.map.needsUpdate = true;
                 
