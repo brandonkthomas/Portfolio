@@ -513,10 +513,12 @@ class StateManager {
         await wait(250);
 
         // Reduce star count during card exit transition
-        if (this.starfield && this.currentView === (ViewState as any).CARD) {
-            this.starfield.reduceStars();
-        } else {
-            console.warn('Starfield instance not available');
+        if (this.currentView === (ViewState as any).CARD) {
+            if (this.starfield) {
+                this.starfield.reduceStars();
+            } else {
+                console.warn('Starfield instance not available');
+            }
         }
         
     }
