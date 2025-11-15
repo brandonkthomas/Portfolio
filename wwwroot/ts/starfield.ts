@@ -265,7 +265,9 @@ class Starfield {
             color: 0xffffff,
             transparent: true,
             opacity: 0.1,
-            blending: THREE.AdditiveBlending
+            blending: THREE.AdditiveBlending,
+            // Match line width to star diameter
+            linewidth: this.starSize
         });
         this.trails = new THREE.LineSegments(this.trailGeometry, trailMaterial);
         this.scene.add(this.trails);
@@ -676,6 +678,10 @@ class Starfield {
         const absWarpIntensity = Math.abs(this.warpIntensity);
         this.starField.material.size = this.starSize + absWarpIntensity * 0.05;
         this.trailMaterial.opacity = (isMobile() ? 0.225 : 0.1) + absWarpIntensity * 0.05;
+        
+        // Keep trail thickness matched to current star diameter
+        this.trailMaterial.linewidth = this.starField.material.size;
+        this.trailMaterial.needsUpdate = true;
 
         this.camera.position.z = 5;
         const segRender = perf.segmentStart('starfield', 'render');
