@@ -6,5 +6,5 @@ public class ErrorViewModel
 {
     public string? RequestId { get; set; }
 
-    public bool ShowRequestId => !string.IsNullOrEmpty(RequestId) && Debugger.IsAttached;
+    public bool ShowRequestId => false; // !string.IsNullOrEmpty(RequestId) && Debugger.IsAttached;
 }

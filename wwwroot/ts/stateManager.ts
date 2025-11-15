@@ -4,7 +4,7 @@
  * @description Handles view transitions between card and photo gallery views
  */
 
-import { isMobile } from './common';
+import { isMobile, isErrorPage } from './common';
 import { triggerStarfieldWarp } from './starfield';
 
 //==============================================================================================
@@ -305,6 +305,13 @@ class StateManager {
                 moduleReadyPromises.push(this.navbar.readyPromise);
             }
 
+            // Dont block initial reveal on pages without the card container (e.g., error page)
+            const hasCardContainer = !!document.querySelector('.card-container');
+            if (!hasCardContainer || isErrorPage()) {
+                return true;
+            }
+
+            // On pages with card, wait for both card and starfield
             return this.card && this.starfield;
         };
 

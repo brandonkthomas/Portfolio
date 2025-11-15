@@ -53,7 +53,10 @@ class PhotoGallery {
     setup() {
         this.container = document.querySelector('.photo-gallery-container');
         if (!this.container) {
-            console.warn('Photo gallery container not found');
+            const path = (window.location.pathname || '').toLowerCase();
+            if (path === '/photos' || path === '/photos/') {
+                console.warn('Photo gallery container not found');
+            }
             return;
         }
 
@@ -668,10 +671,7 @@ class PhotoGallery {
      * Show the photo gallery
      */
     show() {
-        if (!this.container) {
-            console.warn('Photo gallery container not found for show()');
-            return;
-        }
+        if (!this.container) { return; }
                 
         // Generate photos on first show (lazy initialization)
         if (!this.photosGenerated) {
@@ -701,10 +701,7 @@ class PhotoGallery {
      * Hide the photo gallery
      */
     hide() {
-        if (!this.container) {
-            console.warn('Photo gallery container not found for hide()');
-            return;
-        }
+        if (!this.container) { return; }
         
         this.container.classList.remove('visible');
         this.isVisible = false;

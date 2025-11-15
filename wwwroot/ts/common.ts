@@ -202,6 +202,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Update initially and when the path changes
     updateUrlPath();
     window.addEventListener('popstate', updateUrlPath);
+
+    // Lazy-load error page
+    if (isErrorPage()) {
+        import('./pages/error').then(mod => {
+            const init = (mod as any).default as (() => void) | undefined;
+            if (typeof init === 'function') {
+                init();
+            }
+        }).catch(() => { /* swallow */ });
+    }
 });
-
-
