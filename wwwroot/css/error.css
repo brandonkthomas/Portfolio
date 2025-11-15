@@ -4,11 +4,11 @@
 
 html,
 body {
-    background-color: #1d0e0d !important;
+    background-color: #1d0e0d !important; /* attempt to override Safari 26's theme color calculation */
 }
 
 .loading-overlay {
-    background-color: #1d0e0d !important;
+    background-color: #1d0e0d !important; /* attempt to override Safari 26's theme color calculation */
 }
 
 .error-message {
