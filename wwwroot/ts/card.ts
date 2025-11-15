@@ -493,6 +493,10 @@ class Card {
             this.velocity.x += (-this.position.x) * this.releaseBoost;
             this.velocity.y += (-this.position.y) * this.releaseBoost;
         }
+
+        // BT 2025-11-15: mobile gets stuck without "hover" event; manually relax back to neutral
+        this.targetRotation.x = 0;
+        this.targetRotation.y = 0;
     }
 
     //==============================================================================================
