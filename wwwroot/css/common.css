@@ -15,12 +15,12 @@ html {
 }
 
 head {
-    color: #1A1A1A;
+    color: #1c1c1c;
 }
 
 body {
     margin-bottom: 60px;
-    color: #1A1A1A;
+    color: #1c1c1c;
 }
 
 html,
@@ -30,7 +30,7 @@ body {
     width: 100%;
     height: 100%;
     overflow: hidden;
-    color: #1A1A1A;
+    color: #1c1c1c;
     background-color: #1c1c1c;
 }
 

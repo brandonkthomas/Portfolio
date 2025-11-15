@@ -518,7 +518,7 @@ class Starfield {
             
             // Apply final values smoothly without a separate end state
             this.redGlowEffect.material.opacity = 0.7 * eased;
-            const startColor = new THREE.Color('#1A1A1A');
+            const startColor = new THREE.Color('#1c1c1c');
             const endColor = new THREE.Color('#220000');
             this.scene.background = startColor.lerp(endColor, 0.5 * eased);
             this.redGlowEffect.scale.set(90, 90, 1);

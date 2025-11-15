@@ -45,13 +45,20 @@ export default function initErrorPage(): void {
 	// Apply fuzzy text effect to header
 	const header = document.querySelector('.error-message h3') as HTMLElement | null;
 	if (header) {
+		const prefersNoHover =
+			typeof window !== 'undefined' &&
+			typeof window.matchMedia === 'function' &&
+			window.matchMedia('(hover: none)').matches;
+
 		attachFuzzyTextToElement(header, {
 			fontSize: 'clamp(2rem, 2vw, 6rem)',
 			fontWeight: 900,
 			fontFamily: 'inherit',
 			color: '#fff',
-			enableHover: true,
-			baseIntensity: 0.18,
+			// On touch / no-hover devices (e.g., mobile Safari), run at a stronger always-on
+			// intensity so the effect is clearly visible without relying on hover.
+			enableHover: !prefersNoHover,
+			baseIntensity: prefersNoHover ? 0.4 : 0.18,
 			hoverIntensity: 0.5
 		});
 	}

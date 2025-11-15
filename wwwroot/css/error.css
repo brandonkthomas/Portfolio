@@ -2,6 +2,15 @@
     error.css
 */
 
+html,
+body {
+    background-color: #1d0e0d !important;
+}
+
+.loading-overlay {
+    background-color: #1d0e0d !important;
+}
+
 .error-message {
     position: relative;
     z-index: 10;
