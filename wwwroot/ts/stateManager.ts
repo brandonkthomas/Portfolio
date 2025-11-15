@@ -4,7 +4,7 @@
  * @description Handles view transitions between card and photo gallery views
  */
 
-import { isMobile, wait } from './common';
+import { isMobile } from './common';
 import { triggerStarfieldWarp } from './starfield';
 
 //==============================================================================================
@@ -510,7 +510,7 @@ class StateManager {
         }
 
         // Wait for animations to complete
-        await wait(250);
+        await new Promise(resolve => setTimeout(resolve, 250));
 
         // Reduce star count during card exit transition
         if (this.currentView === (ViewState as any).CARD) {
@@ -562,7 +562,7 @@ class StateManager {
         if (this.projects) this.projects.show();
 
         // Wait for CSS animations to complete
-        await wait(250);
+        await new Promise(resolve => setTimeout(resolve, 250));
 
         // Reduce star count
         if (this.starfield && this.currentView === (ViewState as any).CARD) {
@@ -607,7 +607,7 @@ class StateManager {
         triggerStarfieldWarp(false); // false = forward
 
         // Wait for animations to complete
-        await wait(250);
+        await new Promise(resolve => setTimeout(resolve, 250));
 
         // Restore star count during transition
         if (this.starfield) {

@@ -101,16 +101,6 @@ export function getOperatingSystem(): 'Windows' | 'macOS' | 'Linux' | 'Android' 
 
 //==============================================================================================
 /**
- * wait for a given number of milliseconds
- * @param {number} ms - Milliseconds to wait
- * @returns {Promise} Promise that resolves after the given number of milliseconds
- */
-export function wait(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-//==============================================================================================
-/**
  * Determine if Kestrel debugger is attached (from server-injected flag)
  * @returns {boolean} True if a debugger is attached
  */
