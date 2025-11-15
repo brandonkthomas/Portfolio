@@ -410,7 +410,7 @@ class Card {
             }
         });
 
-        // Handle when pointer is lost (e.g., leaves window)
+        // Handle when pointer is lost (i.e. leaving window)
         (this.container as HTMLElement).addEventListener('lostpointercapture', () => {
             const wasDragging = this.isDragging;
             this.isDragging = false;

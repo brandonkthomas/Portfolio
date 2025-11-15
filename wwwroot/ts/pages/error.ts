@@ -55,8 +55,7 @@ export default function initErrorPage(): void {
 			fontWeight: 900,
 			fontFamily: 'inherit',
 			color: '#fff',
-			// On touch / no-hover devices (e.g., mobile Safari), keep the subtle base effect
-			// and disable hover interaction.
+			// On touch/no-hover devices (mobile), keep base effect & disable hover interaction
 			enableHover: !prefersNoHover,
 			baseIntensity: 0.18,
 			hoverIntensity: 0.5

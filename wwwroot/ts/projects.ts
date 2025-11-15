@@ -311,7 +311,7 @@ class ProjectsGrid {
                 wrapper.appendChild(footer);
             }
 
-            // Optional per-project Download button (e.g., Spectrometer on Windows desktop)
+            // Optional per-project Download button (currently only Spectrometer on Windows desktop)
             if (shouldShowDownload(proj)) {
                 const dlBtn = document.createElement('button');
                 dlBtn.type = 'button';

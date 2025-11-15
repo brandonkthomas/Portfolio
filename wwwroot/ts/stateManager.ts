@@ -171,7 +171,7 @@ class StateManager {
                 });
             });
         } else {
-            // Default to card view; do not rewrite URL for non-SPA routes (e.g., /projects/slug)
+            // Default to card view; do not rewrite URL for non-SPA routes (i.e. /projects/slug)
             this.currentView = (ViewState as any).CARD;
             
             if (path === '/' || path === '') {
@@ -305,7 +305,7 @@ class StateManager {
                 moduleReadyPromises.push(this.navbar.readyPromise);
             }
 
-            // Dont block initial reveal on pages without the card container (e.g., error page)
+            // Dont block initial reveal on pages without the card container (error page)
             const hasCardContainer = !!document.querySelector('.card-container');
             if (!hasCardContainer || isErrorPage()) {
                 return true;
