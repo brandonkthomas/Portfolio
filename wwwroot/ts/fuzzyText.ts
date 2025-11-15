@@ -118,6 +118,12 @@ class FuzzyTextAnimator {
 			return { canvas: this.canvas, destroy: () => this.destroy() };
 		}
 
+		// Persist original text so re-inits still have a source string
+		// BT 2025-11-15: added because resizing window was breaking animation
+		if (!element.getAttribute('data-text')) {
+			element.setAttribute('data-text', text);
+		}
+
 		// a11y: preserve text for assistive tech
 		element.setAttribute('aria-label', text);
 		element.textContent = '';
@@ -148,7 +154,7 @@ class FuzzyTextAnimator {
 			: this.options.fontWeight;
 		const color = this.options.color || computed.color || '#fff';
 
-		// Resolve CSS functions/relative units (e.g. clamp, vw, rem) to an explicit pixel 
+		// Resolve CSS functions/relative units (i.e. clamp, vw, rem) to an explicit pixel 
 		// value before using with canvas -- Safari cant parse ctx.font
 		const numericFontSize = computeNumericFontSize(this.options.fontSize);
 		const fontSizeStr = `${numericFontSize}px`;
