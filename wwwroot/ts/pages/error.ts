@@ -46,7 +46,7 @@ export default function initErrorPage(): void {
 	const header = document.querySelector('.error-message h3') as HTMLElement | null;
 	if (header) {
 		attachFuzzyTextToElement(header, {
-			fontSize: 'clamp(2rem, 12vw, 8rem)',
+			fontSize: 'clamp(2rem, 2vw, 6rem)',
 			fontWeight: 900,
 			fontFamily: 'inherit',
 			color: '#fff',

@@ -147,10 +147,11 @@ class FuzzyTextAnimator {
 			? (computed.fontWeight || 'normal')
 			: this.options.fontWeight;
 		const color = this.options.color || computed.color || '#fff';
-		const fontSizeStr = typeof this.options.fontSize === 'number'
-			? `${this.options.fontSize}px`
-			: this.options.fontSize;
+
+		// Resolve CSS functions/relative units (e.g. clamp, vw, rem) to an explicit pixel 
+		// value before using with canvas -- Safari cant parse ctx.font
 		const numericFontSize = computeNumericFontSize(this.options.fontSize);
+		const fontSizeStr = `${numericFontSize}px`;
 
 		// Measure using offscreen
 		this.offCtx.font = toFontString(fontWeight, fontSizeStr, fontFamily);
