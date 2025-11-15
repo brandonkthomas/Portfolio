@@ -55,10 +55,10 @@ export default function initErrorPage(): void {
 			fontWeight: 900,
 			fontFamily: 'inherit',
 			color: '#fff',
-			// On touch / no-hover devices (e.g., mobile Safari), run at a stronger always-on
-			// intensity so the effect is clearly visible without relying on hover.
+			// On touch / no-hover devices (e.g., mobile Safari), keep the subtle base effect
+			// and disable hover interaction.
 			enableHover: !prefersNoHover,
-			baseIntensity: prefersNoHover ? 0.4 : 0.18,
+			baseIntensity: 0.18,
 			hoverIntensity: 0.5
 		});
 	}
