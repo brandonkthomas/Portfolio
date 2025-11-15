@@ -53,7 +53,7 @@ export default function initErrorPage(): void {
 		attachFuzzyTextToElement(header, {
 			fontSize: 'clamp(2rem, 2vw, 6rem)',
 			fontWeight: 900,
-			fontFamily: 'inherit',
+			fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", monospace',
 			color: '#fff',
 			// On touch/no-hover devices (mobile), keep base effect & disable hover interaction
 			enableHover: !prefersNoHover,
