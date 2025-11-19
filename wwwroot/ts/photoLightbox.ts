@@ -503,7 +503,7 @@ export default class PhotoLightbox {
         const closeButton = this.createIconButton('Close', 'lightbox-close', `
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
-        `, true);
+        `, false);
         closeButton.button.addEventListener('click', () => this.close());
 
         const prevButton = this.createIconButton('Prev', 'lightbox-prev', `<polyline points="15 18 9 12 15 6"></polyline>`, false);
