@@ -38,7 +38,7 @@ export interface PhotoLightboxOptions {
 // Private types
 //==============================================================================================
 interface SlideRecord {
-    anchor: HTMLAnchorElement;
+    trigger: HTMLElement;
     src: string;
     width: number;
     height: number;
@@ -57,7 +57,7 @@ interface InternalOptions extends Required<Omit<PhotoLightboxOptions, 'gallery'>
 // Private constants
 //==============================================================================================
 const DEFAULT_OPTIONS: Omit<InternalOptions, 'gallery'> = {
-    children: 'a[data-pswp-width]',
+    children: '[data-pswp-width]',
     loop: true,
     dragThreshold: 85,
     closeOnBackdrop: true,
@@ -402,22 +402,17 @@ export default class PhotoLightbox {
     private extractSlides(gallery: HTMLElement): SlideRecord[] {
         const selector = this.options.children;
         const nodes = selector
-            ? Array.from(gallery.querySelectorAll(selector))
-            : Array.from(gallery.children);
+            ? Array.from(gallery.querySelectorAll<HTMLElement>(selector))
+            : Array.from(gallery.children).filter((node): node is HTMLElement => node instanceof HTMLElement);
 
         const withOrder = nodes
             .map((node, idx) => {
-                const anchor = node instanceof HTMLAnchorElement ? node : node.closest('a');
-                if (!anchor) {
-                    return null;
-                }
-
-                const orderAttr = parseFloat(anchor.dataset.pswpOrder ?? '');
+                const orderAttr = parseFloat(node.dataset.pswpOrder ?? '');
                 const order = Number.isFinite(orderAttr) ? orderAttr : idx;
 
-                return { anchor, fallbackIndex: idx, order };
+                return { trigger: node, fallbackIndex: idx, order };
             })
-            .filter((entry): entry is { anchor: HTMLAnchorElement; fallbackIndex: number; order: number } => Boolean(entry));
+            .filter((entry): entry is { trigger: HTMLElement; fallbackIndex: number; order: number } => Boolean(entry));
 
         withOrder.sort((a, b) => {
             if (a.order === b.order) {
@@ -428,16 +423,20 @@ export default class PhotoLightbox {
 
         const slides: SlideRecord[] = [];
 
-        withOrder.forEach(({ anchor }) => {
-            const width = parseInt(anchor.dataset.pswpWidth ?? '', 10);
-            const height = parseInt(anchor.dataset.pswpHeight ?? '', 10);
+        withOrder.forEach(({ trigger }) => {
+            const width = parseInt(trigger.dataset.pswpWidth ?? '', 10);
+            const height = parseInt(trigger.dataset.pswpHeight ?? '', 10);
 
-            const img = anchor.querySelector('img') ?? undefined;
-            const alt = img?.getAttribute('alt') ?? anchor.getAttribute('aria-label') ?? 'Photo';
-            const src = anchor.dataset.pswpSrc || anchor.href;
+            const img = trigger.querySelector('img') ?? undefined;
+            const alt = img?.getAttribute('alt') ?? trigger.getAttribute('aria-label') ?? 'Photo';
+            const src = trigger.dataset.pswpSrc || img?.currentSrc || img?.src || '';
+
+            if (!src) {
+                return;
+            }
 
             slides.push({
-                anchor,
+                trigger,
                 src,
                 width: Number.isFinite(width) ? width : 1600,
                 height: Number.isFinite(height) ? height : 900,
@@ -465,7 +464,8 @@ export default class PhotoLightbox {
             return;
         }
 
-        const clickable = selector ? target.closest(selector) : target.closest('a');
+        const resolvedSelector = selector ?? '[data-pswp-width]';
+        const clickable = target.closest(resolvedSelector) as HTMLElement | null;
         if (!clickable) {
             return;
         }
@@ -475,7 +475,7 @@ export default class PhotoLightbox {
             return;
         }
 
-        const index = slides.findIndex((slide) => slide.anchor === clickable);
+        const index = slides.findIndex((slide) => slide.trigger === clickable);
         if (index === -1) {
             return;
         }
@@ -603,6 +603,9 @@ export default class PhotoLightbox {
             img.alt = slide.alt;
             img.decoding = 'async';
             img.loading = 'eager';
+            img.setAttribute('draggable', 'false');
+            img.addEventListener('dragstart', (event) => event.preventDefault());
+            img.addEventListener('contextmenu', (event) => event.preventDefault());
 
             slide.element = slideEl;
             slide.image = img;

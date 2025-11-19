@@ -235,15 +235,15 @@ class PhotoGallery {
             img.addEventListener('dragstart', (e) => e.preventDefault());
             img.addEventListener('contextmenu', (e) => e.preventDefault());
 
-            const anchor = document.createElement('a');
-            anchor.href = photo.url;
-            anchor.dataset.pswpSrc = photo.url;
-            anchor.dataset.pswpWidth = `${photo.width}`;
-            anchor.dataset.pswpHeight = `${photo.height}`;
-            anchor.dataset.pswpOrder = `${photo.index}`;
-            anchor.rel = 'noreferrer noopener';
-            anchor.target = '_blank';
-            anchor.className = 'photo-item-link';
+            const trigger = document.createElement('button');
+            trigger.type = 'button';
+            trigger.dataset.pswpSrc = photo.url;
+            trigger.dataset.pswpWidth = `${photo.width}`;
+            trigger.dataset.pswpHeight = `${photo.height}`;
+            trigger.dataset.pswpOrder = `${photo.index}`;
+            trigger.className = 'photo-item-link';
+            trigger.setAttribute('aria-label', `View photo ${photo.index + 1}`);
+            trigger.addEventListener('contextmenu', (event) => event.preventDefault());
 
             // After load, update actual aspect ratio for better layout stability
             img.addEventListener('load', () => {
@@ -263,9 +263,9 @@ class PhotoGallery {
                 photoItem.classList.add('photo-item--error');
             });
 
-            anchor.appendChild(skeleton);
-            anchor.appendChild(img);
-            photoItem.appendChild(anchor);
+            trigger.appendChild(skeleton);
+            trigger.appendChild(img);
+            photoItem.appendChild(trigger);
 
             // Find the current shortest column using predicted heights
             let targetIndex = 0;
@@ -312,7 +312,7 @@ class PhotoGallery {
 
         this.lightboxInstance = new PhotoLightbox({
             gallery: grid as HTMLElement,
-            children: 'a[data-pswp-width]',
+            children: '[data-pswp-width]',
             loop: true,
             closeOnBackdrop: true,
             showCounter: false
