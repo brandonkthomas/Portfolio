@@ -55,7 +55,8 @@ class PerfMonitor {
         this.overlayEl = null;
         this.overlayLastUpdateTs = 0;
         this.segIdCounter = 0;
-        // Thresholds tuned for visible jank on 60Hz displays; still useful at 120Hz
+
+        // Thresholds tuned for visible stutter on 60Hz displays; still useful at 120Hz
         this.longFrameThresholdMs = 16.7 * 1.25; // ~21ms
         this.longDeltaThresholdMs = 16.7 * 1.75; // ~29ms
 
@@ -167,7 +168,7 @@ class PerfMonitor {
             const top = segments.slice(0, 3);
             // Console diagnostic
             // eslint-disable-next-line no-console
-            console.warn(`[perf] ${loopName} jank: frame=${frameMs.toFixed(2)}ms delta=${delta.toFixed(2)}ms`,
+            console.warn(`[perf] ${loopName} stutter: frame=${frameMs.toFixed(2)}ms delta=${delta.toFixed(2)}ms`,
                 top.map(s => `${s.name}:${s.duration.toFixed(2)}ms`).join(' | '));
         }
 
