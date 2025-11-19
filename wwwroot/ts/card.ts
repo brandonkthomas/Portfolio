@@ -738,15 +738,15 @@ class Card {
 
         // Position the indicator
         if (this.tapIndicator) {
-            this.tapIndicator.style.left = `${x}px`;
-            this.tapIndicator.style.top = `${y}px`;
+            this.tapIndicator.style.left = `calc(${x}px - 12px)`;
+            this.tapIndicator.style.top = `calc(${y}px - 12px)`;
             this.tapIndicator.style.right = 'auto';
             this.tapIndicator.style.bottom = 'auto';
         }
 
         if (this.tapIndicatorMobile) {
-            this.tapIndicatorMobile.style.left = `${x}px`;
-            this.tapIndicatorMobile.style.top = `${y}px`;
+            this.tapIndicatorMobile.style.left = `calc(${x}px - 12px)`;
+            this.tapIndicatorMobile.style.top = `calc(${y}px - 12px)`;
             this.tapIndicatorMobile.style.right = 'auto';
             this.tapIndicatorMobile.style.bottom = 'auto';
         }
