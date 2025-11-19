@@ -9,6 +9,7 @@ import { createCircleTexture } from './textures';
 import { createNebulae, updateNebulae, reduceNebulaOpacity, restoreNebulaOpacity } from './nebulae';
 import { generateStarColor, triggerWarpPulse, setupKonamiCode } from './starfieldUtils';
 import perf from './perfMonitor';
+import { onPhotoLightboxStateChange } from './photoLightbox';
 
 // DEBUG FLAG: if true, show animated gradient instead of starfield (for testing glass material behavior/interactions)
 const DEBUG_GRADIENT = false;
@@ -57,6 +58,7 @@ class Starfield {
     private readyPromise: Promise<void>;
     private _resolveReady: (() => void) | null = null;
     private minFrameInterval: number;
+    private defaultFrameInterval: number;
     private maxFrameInterval: number;
     private lastFrameTime: number | undefined;
 
@@ -137,7 +139,8 @@ class Starfield {
         this.init();
 
         // Cap FPS to 120 without affecting motion timing
-        this.minFrameInterval = 1000 / 120; // 1000ms / 120fps = ~8.33ms per frame max
+        this.defaultFrameInterval = 1000 / 120;
+        this.minFrameInterval = this.defaultFrameInterval; // cap at 120fps by default
         this.maxFrameInterval = 100;    // clamp large resume gaps to 100ms to prevent resets
         
         // Start background glow for error pages after a delay (skip in debug mode)
@@ -696,13 +699,25 @@ class Starfield {
         // Perf: frame end
         perf.loopFrameEnd('starfield');
     }
+
+    setFrameCap(fps: number | null) {
+        if (fps && fps > 0) {
+            this.minFrameInterval = 1000 / fps;
+        } else {
+            this.minFrameInterval = this.defaultFrameInterval;
+        }
+    }
 }
 
 // Initialize starfield when the page loads and expose to state manager
 let starfieldInstance: any = null;
+let pendingFrameCap: number | null = null;
 
 window.addEventListener('load', () => {
     starfieldInstance = new Starfield();
+    if (pendingFrameCap !== null) {
+        starfieldInstance.setFrameCap(pendingFrameCap);
+    }
 
     // Expose to window for stateManager
     (window as any).starfieldInstance = starfieldInstance;
@@ -718,3 +733,14 @@ export function triggerStarfieldWarp(reverse: boolean = false) {
         (starfieldInstance as any).triggerWarp(reverse);
     }
 }
+
+export function setStarfieldFrameCap(fps: number | null) {
+    pendingFrameCap = fps;
+    if (starfieldInstance && typeof starfieldInstance.setFrameCap === 'function') {
+        starfieldInstance.setFrameCap(fps);
+    }
+}
+
+onPhotoLightboxStateChange(state => {
+    setStarfieldFrameCap(state === 'open' ? 30 : null);
+});

@@ -8,6 +8,7 @@ import { isMobile } from './common';
 import stateManager, { ViewState } from './stateManager';
 import perf from './perfMonitor';
 import { triggerStarfieldWarp } from './starfield';
+import { onPhotoLightboxStateChange } from './photoLightbox';
 
 class Card {
     // DOM
@@ -65,6 +66,7 @@ class Card {
 
     // Animation helpers
     private lastTimestamp: number | undefined;
+    private minFrameIntervalMs: number;
     private _showTapTimeout: any | null;
     private _hideTapTimeout: any | null;
 
@@ -170,6 +172,8 @@ class Card {
         this.flipProgress = 0;
         this.flipTarget = 0;
         this.flipStartTime = null; // only start timing on user click
+
+        this.minFrameIntervalMs = 0; // uncapped by default
 
         this.init();
 
@@ -592,6 +596,14 @@ class Card {
         if (this.lastTimestamp === undefined) {
             this.lastTimestamp = timestamp;
         }
+
+        const elapsed = timestamp - this.lastTimestamp;
+        if (this.minFrameIntervalMs > 0 && elapsed < this.minFrameIntervalMs) {
+            requestAnimationFrame(this.animate.bind(this));
+            return;
+        }
+        this.lastTimestamp = timestamp;
+
         // Performance monitor: frame start
         perf.loopFrameStart('card');
 
@@ -651,6 +663,14 @@ class Card {
         perf.loopFrameEnd('card');
 
         requestAnimationFrame(this.animate.bind(this));
+    }
+
+    setFrameCap(fps: number | null) {
+        if (fps && fps > 0) {
+            this.minFrameIntervalMs = 1000 / fps;
+        } else {
+            this.minFrameIntervalMs = 0;
+        }
     }
 
     //==============================================================================================
@@ -831,12 +851,27 @@ class Card {
 
 // Initialize when DOM is loaded and expose to state manager
 let card3DInstance: any = null;
+let pendingCardFrameCap: number | null = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     card3DInstance = new Card();
     card3DInstance.ready = card3DInstance.readyPromise;
     window.addEventListener('resize', () => card3DInstance.onWindowResize());
+    if (pendingCardFrameCap !== null) {
+        card3DInstance.setFrameCap(pendingCardFrameCap);
+    }
     
     // Expose to window for state manager
     (window as any).card3DInstance = card3DInstance;
+});
+
+export function setCardFrameCap(fps: number | null) {
+    pendingCardFrameCap = fps;
+    if (card3DInstance && typeof card3DInstance.setFrameCap === 'function') {
+        card3DInstance.setFrameCap(fps);
+    }
+}
+
+onPhotoLightboxStateChange(state => {
+    setCardFrameCap(state === 'open' ? 30 : null);
 });
