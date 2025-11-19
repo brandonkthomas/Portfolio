@@ -4,31 +4,38 @@
  * @description Handles photo grid display and image expansion
  */
 
-import { isMobile } from './common';
-import { createGlassSurface } from './glassSurface';
-import type { GlassSurfaceInstance } from './glassSurface';
+import PhotoLightbox from './photoLightbox';
 
 type PhotoItem = { url: string; width: number; height: number; aspectRatio: number; index: number };
+type LightboxController = { init(): void; destroy(): void };
 
+//==============================================================================================
+/**
+ * PhotoGallery class
+ * @description Handles photo grid display and image expansion
+ */
 class PhotoGallery {
+
+    //==============================================================================================
+    // Private properties
+    //==============================================================================================
     private container: HTMLElement | null;
-    private lightbox: HTMLElement | null;
     private photos: PhotoItem[];
-    private currentPhotoIndex: number;
     private isVisible: boolean;
-    private lightboxControls: { close?: GlassSurfaceInstance; prev?: GlassSurfaceInstance; next?: GlassSurfaceInstance };
     private currentColumnCount: number;
     private photosGenerated: boolean;
-    private handleSwipe?: () => void;
+    private lightboxInstance: LightboxController | null;
+
+    //==============================================================================================
+    // Constructor
+    //==============================================================================================
     constructor() {
         this.container = null;
-        this.lightbox = null;
         this.photos = [];
-        this.currentPhotoIndex = -1;
         this.isVisible = false;
-        this.lightboxControls = {}; // Store glass surface controls
         this.currentColumnCount = 0; // Track current column count for resize handling
         this.photosGenerated = false; // Track if photos have been generated
+        this.lightboxInstance = null;
         
         this.init();
     }
@@ -81,160 +88,8 @@ class PhotoGallery {
                 <div class="photo-grid"></div>
             </div>
         `;
-
-        // Create lightbox directly in body so it's fixed to viewport
-        const lightboxHTML = `
-            <div class="photo-lightbox">
-                <div class="lightbox-control lightbox-close-wrapper"></div>
-                <div class="lightbox-control lightbox-prev-wrapper"></div>
-                <div class="lightbox-control lightbox-next-wrapper"></div>
-                <div class="lightbox-content">
-                    <img src="" alt="" class="lightbox-image">
-                </div>
-            </div>
-        `;
-
-        // Check if lightbox already exists (in case of re-initialization)
-        this.lightbox = document.querySelector('.photo-lightbox') as HTMLElement | null;
-        if (!this.lightbox) {
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = lightboxHTML;
-            this.lightbox = tempDiv.firstElementChild as HTMLElement;
-            document.body.appendChild(this.lightbox as HTMLElement);
-        }
-
-        // Harden lightbox image against saving interactions
-        const lightboxImg = this.lightbox.querySelector('.lightbox-image') as HTMLElement | null;
-        if (lightboxImg) {
-            lightboxImg.setAttribute('draggable', 'false');
-            (lightboxImg as HTMLElement).addEventListener('dragstart', (e) => e.preventDefault());
-            (lightboxImg as HTMLElement).addEventListener('contextmenu', (e) => e.preventDefault());
-        }
-        
-        // Create glass surface controls
-        this.createLightboxControls();
     }
 
-    //==============================================================================================
-    /**
-     * Create glass surface lightbox controls
-     */
-    createLightboxControls() {
-        // Close button
-        const closeWrapper = this.lightbox?.querySelector('.lightbox-close-wrapper');
-        const closeGlass = createGlassSurface({
-            width: 'auto',
-            height: '48px',
-            borderRadius: 24,
-            borderWidth: 0.07,
-            brightness: 50,
-            opacity: 0.93,
-            blur: 50,
-            displace: 0,
-            backgroundOpacity: 0.12,
-            saturation: 1.2,
-            distortionScale: -15,
-            redOffset: 8,
-            greenOffset: 8,
-            blueOffset: 8,
-            xChannel: 'R',
-            yChannel: 'G',
-            mixBlendMode: 'difference',
-            className: 'lightbox-button-glass',
-            style: {
-                cursor: 'pointer'
-            }
-        });
-        closeGlass.contentElement.innerHTML = `
-            <button class="lightbox-button lightbox-close" aria-label="Close lightbox">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-                <span>Close</span>
-            </button>
-        `;
-        if (closeWrapper) {
-            closeWrapper.appendChild(closeGlass.element);
-        }
-        this.lightboxControls.close = closeGlass;
-
-        // Previous button
-        const prevWrapper = this.lightbox?.querySelector('.lightbox-prev-wrapper');
-        const prevGlass = createGlassSurface({
-            width: 'auto',
-            height: '48px',
-            borderRadius: 24,
-            borderWidth: 0.07,
-            brightness: 50,
-            opacity: 0.93,
-            blur: 50,
-            displace: 0,
-            backgroundOpacity: 0.12,
-            saturation: 1.2,
-            distortionScale: -15,
-            redOffset: 8,
-            greenOffset: 8,
-            blueOffset: 8,
-            xChannel: 'R',
-            yChannel: 'G',
-            mixBlendMode: 'difference',
-            className: 'lightbox-button-glass',
-            style: {
-                cursor: 'pointer'
-            }
-        });
-        prevGlass.contentElement.innerHTML = `
-            <button class="lightbox-button lightbox-prev" aria-label="Previous photo">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
-                <span>Prev</span>
-            </button>
-        `;
-        if (prevWrapper) {
-            prevWrapper.appendChild(prevGlass.element);
-        }
-        this.lightboxControls.prev = prevGlass;
-
-        // Next button
-        const nextWrapper = this.lightbox?.querySelector('.lightbox-next-wrapper');
-        const nextGlass = createGlassSurface({
-            width: 'auto',
-            height: '48px',
-            borderRadius: 24,
-            borderWidth: 0.07,
-            brightness: 50,
-            opacity: 0.93,
-            blur: 50,
-            displace: 0,
-            backgroundOpacity: 0.12,
-            saturation: 1.2,
-            distortionScale: -15,
-            redOffset: 8,
-            greenOffset: 8,
-            blueOffset: 8,
-            xChannel: 'R',
-            yChannel: 'G',
-            mixBlendMode: 'difference',
-            className: 'lightbox-button-glass',
-            style: {
-                cursor: 'pointer'
-            }
-        });
-        nextGlass.contentElement.innerHTML = `
-            <button class="lightbox-button lightbox-next" aria-label="Next photo">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-                <span>Next</span>
-            </button>
-        `;
-        if (nextWrapper) {
-            nextWrapper.appendChild(nextGlass.element);
-        }
-        this.lightboxControls.next = nextGlass;
-    }
 
     //==============================================================================================
     /**
@@ -359,12 +214,11 @@ class PhotoGallery {
         // Track predicted heights to avoid bias from yet-to-load images
         const predictedHeights = columns.map(col => col.offsetHeight + paddingTop + paddingBottom);
 
-        this.photos.forEach((photo: any) => {
+        this.photos.forEach((photo: PhotoItem) => {
             // Create photo item with skeleton
             const photoItem = document.createElement('div');
             photoItem.className = 'photo-item photo-item--loading';
             photoItem.style.aspectRatio = `${photo.width} / ${photo.height}`;
-            photoItem.dataset.index = photo.index;
 
             // Create skeleton loader
             const skeleton = document.createElement('div');
@@ -380,6 +234,16 @@ class PhotoGallery {
             img.setAttribute('draggable', 'false');
             img.addEventListener('dragstart', (e) => e.preventDefault());
             img.addEventListener('contextmenu', (e) => e.preventDefault());
+
+            const anchor = document.createElement('a');
+            anchor.href = photo.url;
+            anchor.dataset.pswpSrc = photo.url;
+            anchor.dataset.pswpWidth = `${photo.width}`;
+            anchor.dataset.pswpHeight = `${photo.height}`;
+            anchor.dataset.pswpOrder = `${photo.index}`;
+            anchor.rel = 'noreferrer noopener';
+            anchor.target = '_blank';
+            anchor.className = 'photo-item-link';
 
             // After load, update actual aspect ratio for better layout stability
             img.addEventListener('load', () => {
@@ -399,8 +263,9 @@ class PhotoGallery {
                 photoItem.classList.add('photo-item--error');
             });
 
-            photoItem.appendChild(skeleton);
-            photoItem.appendChild(img);
+            anchor.appendChild(skeleton);
+            anchor.appendChild(img);
+            photoItem.appendChild(anchor);
 
             // Find the current shortest column using predicted heights
             let targetIndex = 0;
@@ -426,6 +291,34 @@ class PhotoGallery {
             // When image actually loads and aspect ratio updates, no need to reflow everything;
             // we rely on CSS aspect-ratio to minimize jumps
         });
+
+        this.initPhotoLightbox();
+    }
+
+    //==============================================================================================
+    /**
+     * (Re)initialize PhotoLightbox after the grid renders
+     */
+    initPhotoLightbox() {
+        const grid = this.container?.querySelector('.photo-grid');
+        if (!grid) {
+            return;
+        }
+
+        if (this.lightboxInstance) {
+            this.lightboxInstance.destroy();
+            this.lightboxInstance = null;
+        }
+
+        this.lightboxInstance = new PhotoLightbox({
+            gallery: grid as HTMLElement,
+            children: 'a[data-pswp-width]',
+            loop: true,
+            closeOnBackdrop: true,
+            showCounter: false
+        });
+
+        this.lightboxInstance.init();
     }
 
     //==============================================================================================
@@ -457,214 +350,30 @@ class PhotoGallery {
      * Setup event listeners
      */
     setupEventListeners() {
-        const grid = this.container!.querySelector('.photo-grid');
-        if (!grid) return;
-
-        // Click on photo to open lightbox
-        (grid as HTMLElement).addEventListener('click', (e: MouseEvent) => {
-            const target = e.target as Element | null;
-            const photoItem = target?.closest('.photo-item') as HTMLElement | null;
-            if (photoItem) {
-                const index = parseInt(photoItem.dataset.index as string);
-                this.openLightbox(index);
-            }
-        });
+        if (!this.container) return;
 
         // Block context menu and drag on images within gallery container (desktop)
-        (this.container as HTMLElement).addEventListener('contextmenu', (e: MouseEvent) => {
+        this.container.addEventListener('contextmenu', (e: MouseEvent) => {
             const target = e.target as any;
             if (target && target.tagName === 'IMG') {
                 const imgEl = target;
-                if (imgEl.classList.contains('lightbox-image') || imgEl.closest('.photo-item')) {
+                if (imgEl.closest('.photo-item')) {
                     e.preventDefault();
                 }
             }
         }, { capture: true });
 
-        (this.container as HTMLElement).addEventListener('dragstart', (e: DragEvent) => {
+        this.container.addEventListener('dragstart', (e: DragEvent) => {
             const target = e.target as any;
             if (target && target.tagName === 'IMG') {
                 e.preventDefault();
             }
         }, { capture: true });
 
-        // Lightbox controls
-        const closeBtn = this.lightbox?.querySelector('.lightbox-close') as HTMLElement | null;
-        const prevBtn = this.lightbox?.querySelector('.lightbox-prev') as HTMLElement | null;
-        const nextBtn = this.lightbox?.querySelector('.lightbox-next') as HTMLElement | null;
-
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => this.closeLightbox());
-        }
-
-        if (prevBtn) {
-            prevBtn.addEventListener('click', () => this.showPreviousPhoto());
-            // Prevent double-tap zoom on mobile for prev button only
-            this.addDoubleTapGuard(prevBtn as HTMLElement, () => this.showPreviousPhoto());
-        }
-
-        if (nextBtn) {
-            nextBtn.addEventListener('click', () => this.showNextPhoto());
-            // Prevent double-tap zoom on mobile for next button only
-            this.addDoubleTapGuard(nextBtn as HTMLElement, () => this.showNextPhoto());
-        }
-
-        // Close lightbox when clicking outside image
-        if (this.lightbox) {
-            this.lightbox.addEventListener('click', (e: MouseEvent) => {
-                const target = e.target as HTMLElement;
-                if (target === this.lightbox || target.classList.contains('lightbox-content')) {
-                    this.closeLightbox();
-                }
-            });
-        }
-
-        // Keyboard navigation
-        document.addEventListener('keydown', (e: KeyboardEvent) => {
-            if (!this.lightbox || !this.lightbox.classList.contains('active')) return;
-
-            if (e.key === 'Escape') {
-                this.closeLightbox();
-            } else if (e.key === 'ArrowLeft') {
-                this.showPreviousPhoto();
-            } else if (e.key === 'ArrowRight') {
-                this.showNextPhoto();
-            }
-        });
-
-        // Touch swipe for mobile
-        this.setupTouchSwipe();
-
         // Handle window resize for responsive column layout
         window.addEventListener('resize', () => this.handleResize());
     }
 
-    //==============================================================================================
-    /**
-     * Add a targeted double-tap guard to a specific element
-     * - Blocks UA double-tap zoom without affecting the rest of the page
-     * - Synthesizes a click on second tap to keep fast navigation responsive
-     * @param {Element} element
-     * @param {Function} onDoubleTap - Optional action to invoke on double tap
-     */
-    addDoubleTapGuard(element: HTMLElement, onDoubleTap?: () => void) {
-        if (!element) return;
-        let lastTap = 0;
-        const DOUBLE_TAP_MS = 300;
-
-        element.addEventListener('touchend', (e: TouchEvent) => {
-            const now = Date.now();
-            const delta = now - lastTap;
-            if (delta > 0 && delta <= DOUBLE_TAP_MS) {
-                e.preventDefault();
-                // Prefer explicit handler if provided; otherwise synthesize click
-                if (typeof onDoubleTap === 'function') {
-                    onDoubleTap();
-                } else {
-                    element.click();
-                }
-            }
-            lastTap = now;
-        }, { passive: false });
-    }
-
-    //==============================================================================================
-    /**
-     * Setup touch swipe for mobile navigation
-     */
-    setupTouchSwipe() {
-        if (!this.lightbox) return;
-
-        let touchStartX = 0;
-        let touchEndX = 0;
-
-        this.lightbox.addEventListener('touchstart', (e: TouchEvent) => {
-            touchStartX = e.changedTouches[0].screenX;
-        });
-
-            this.lightbox.addEventListener('touchend', (e: TouchEvent) => {
-            touchEndX = e.changedTouches[0].screenX;
-            this.handleSwipe?.();
-        });
-
-        const handleSwipe = () => {
-            const swipeThreshold = 50;
-            const diff = touchStartX - touchEndX;
-
-            if (Math.abs(diff) > swipeThreshold) {
-                if (diff > 0) {
-                    // Swipe left - next photo
-                    this.showNextPhoto();
-                } else {
-                    // Swipe right - previous photo
-                    this.showPreviousPhoto();
-                }
-            }
-        };
-
-        this.handleSwipe = handleSwipe;
-    }
-
-    //==============================================================================================
-    /**
-     * Open lightbox with specific photo
-     * @param {number} index - Photo index
-     */
-    openLightbox(index: number) {
-        if (!this.lightbox || index < 0 || index >= this.photos.length) return;
-
-        this.currentPhotoIndex = index;
-        const photo = this.photos[index];
-
-        // Set image
-        const img = this.lightbox.querySelector('.lightbox-image') as HTMLImageElement | null;
-        if (img) {
-            img.src = photo.url;
-            img.alt = `Photo ${index + 1}`;
-        }
-
-        // Show lightbox
-        this.lightbox.classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-
-    //==============================================================================================
-    /**
-     * Close lightbox
-     */
-    closeLightbox() {
-        if (!this.lightbox) return;
-
-        this.lightbox.classList.remove('active');
-        document.body.style.overflow = '';
-        this.currentPhotoIndex = -1;
-    }
-
-    //==============================================================================================
-    /**
-     * Show previous photo in lightbox
-     */
-    showPreviousPhoto() {
-        if (this.currentPhotoIndex > 0) {
-            this.openLightbox(this.currentPhotoIndex - 1);
-        } else {
-            // Wrap around to last photo
-            this.openLightbox(this.photos.length - 1);
-        }
-    }
-
-    //==============================================================================================
-    /**
-     * Show next photo in lightbox
-     */
-    showNextPhoto() {
-        if (this.currentPhotoIndex < this.photos.length - 1) {
-            this.openLightbox(this.currentPhotoIndex + 1);
-        } else {
-            // Wrap around to first photo
-            this.openLightbox(0);
-        }
-    }
 
     //==============================================================================================
     /**
@@ -708,9 +417,8 @@ class PhotoGallery {
         
         // Disable scrolling
         document.body.style.overflow = 'hidden';
-        
-        // Close lightbox if open
-        this.closeLightbox();
+
+        // Lightbox UI (photoLightbox) manages its own visibility; we're done here
     }
 
     //==============================================================================================
