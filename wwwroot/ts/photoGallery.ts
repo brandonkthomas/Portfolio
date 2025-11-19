@@ -312,7 +312,7 @@ class PhotoGallery {
 
         this.lightboxInstance = new PhotoLightbox({
             gallery: grid as HTMLElement,
-            children: '[data-photolightbox-width]',
+            children: '[data-photo-lightbox-width]',
             loop: true,
             closeOnBackdrop: true,
             showCounter: false

@@ -57,7 +57,7 @@ interface InternalOptions extends Required<Omit<PhotoLightboxOptions, 'gallery'>
 // Private constants
 //==============================================================================================
 const DEFAULT_OPTIONS: Omit<InternalOptions, 'gallery'> = {
-    children: '[data-photolightbox-width]',
+    children: '[data-photo-lightbox-width]',
     loop: true,
     dragThreshold: 85,
     closeOnBackdrop: true,
@@ -464,7 +464,7 @@ export default class PhotoLightbox {
             return;
         }
 
-        const resolvedSelector = selector ?? '[data-photolightbox-width]';
+        const resolvedSelector = selector ?? '[data-photo-lightbox-width]';
         const clickable = target.closest(resolvedSelector) as HTMLElement | null;
         if (!clickable) {
             return;
