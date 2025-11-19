@@ -10,7 +10,7 @@
   <h3 align="center">Portfolio</h3>
 
   <p align="center">
-    Responsive portfolio site w/ interactive business card, project showcase, photo gallery & contact links.
+    Responsive portfolio site w/ interactive identity card, project showcase, photo gallery & contact links.
     <br />
     <a href="https://brandonthomas.net">View Demo</a>
     <br />
@@ -28,4 +28,14 @@
 
 This project began as a simple Three.js card experiment and has since evolved into a more comprehensive personal portfolio. 
 
-I plan to keep adding new features as I'm inspired.
+I intend to continuously add new features and improve framework code.
+
+### Feature Highlights
+- **Starfield**: Procedural starfield + nebula backdrop that changes direction, density, and FPS caps based on SPA state
+- **Card**: Three.js identity card with drag/tilt physics, flip functionality, tap/click CTA scheduling, and interactivity w/ starfield background
+- **Photo Gallery**: Lazy-load gallery that pre-measures all assets, renders skeleton columns, and opens a custom image viewer lightbox
+- **Projects Showcase**: Manifest-driven projects bento grid with gradient generation, dynamic micro-components, OS-aware download CTAs, and double-tap guards
+- **Glass Material**: Glass-surface UI module powering navbar and footer
+- **SPA State Manager**: Custom cross-view coordinator that lazy-loads modules, animates transitions, and keeps history in sync
+- **Performance Monitor**: Built-in perf/debug overlay with loop/segment tracking and long-frame "stutter" warnings
+- **Asset Management & Manifests**: ASP.NET Core middleware serving hashet assets + enforcing cache policy and dynamic JSON manifests for photos/projects across dev/prod
