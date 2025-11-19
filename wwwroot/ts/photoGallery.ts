@@ -237,10 +237,10 @@ class PhotoGallery {
 
             const trigger = document.createElement('button');
             trigger.type = 'button';
-            trigger.dataset.pswpSrc = photo.url;
-            trigger.dataset.pswpWidth = `${photo.width}`;
-            trigger.dataset.pswpHeight = `${photo.height}`;
-            trigger.dataset.pswpOrder = `${photo.index}`;
+            trigger.dataset.photoLightboxSrc = photo.url;
+            trigger.dataset.photoLightboxWidth = `${photo.width}`;
+            trigger.dataset.photoLightboxHeight = `${photo.height}`;
+            trigger.dataset.photoLightboxOrder = `${photo.index}`;
             trigger.className = 'photo-item-link';
             trigger.setAttribute('aria-label', `View photo ${photo.index + 1}`);
             trigger.addEventListener('contextmenu', (event) => event.preventDefault());
@@ -312,7 +312,7 @@ class PhotoGallery {
 
         this.lightboxInstance = new PhotoLightbox({
             gallery: grid as HTMLElement,
-            children: '[data-pswp-width]',
+            children: '[data-photolightbox-width]',
             loop: true,
             closeOnBackdrop: true,
             showCounter: false

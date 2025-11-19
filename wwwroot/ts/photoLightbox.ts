@@ -57,7 +57,7 @@ interface InternalOptions extends Required<Omit<PhotoLightboxOptions, 'gallery'>
 // Private constants
 //==============================================================================================
 const DEFAULT_OPTIONS: Omit<InternalOptions, 'gallery'> = {
-    children: '[data-pswp-width]',
+    children: '[data-photolightbox-width]',
     loop: true,
     dragThreshold: 85,
     closeOnBackdrop: true,
@@ -407,7 +407,7 @@ export default class PhotoLightbox {
 
         const withOrder = nodes
             .map((node, idx) => {
-                const orderAttr = parseFloat(node.dataset.pswpOrder ?? '');
+                const orderAttr = parseFloat(node.dataset.photoLightboxOrder ?? '');
                 const order = Number.isFinite(orderAttr) ? orderAttr : idx;
 
                 return { trigger: node, fallbackIndex: idx, order };
@@ -424,12 +424,12 @@ export default class PhotoLightbox {
         const slides: SlideRecord[] = [];
 
         withOrder.forEach(({ trigger }) => {
-            const width = parseInt(trigger.dataset.pswpWidth ?? '', 10);
-            const height = parseInt(trigger.dataset.pswpHeight ?? '', 10);
+            const width = parseInt(trigger.dataset.photoLightboxWidth ?? '', 10);
+            const height = parseInt(trigger.dataset.photoLightboxHeight ?? '', 10);
 
             const img = trigger.querySelector('img') ?? undefined;
             const alt = img?.getAttribute('alt') ?? trigger.getAttribute('aria-label') ?? 'Photo';
-            const src = trigger.dataset.pswpSrc || img?.currentSrc || img?.src || '';
+            const src = trigger.dataset.photoLightboxSrc || img?.currentSrc || img?.src || '';
 
             if (!src) {
                 return;
@@ -464,7 +464,7 @@ export default class PhotoLightbox {
             return;
         }
 
-        const resolvedSelector = selector ?? '[data-pswp-width]';
+        const resolvedSelector = selector ?? '[data-photolightbox-width]';
         const clickable = target.closest(resolvedSelector) as HTMLElement | null;
         if (!clickable) {
             return;
