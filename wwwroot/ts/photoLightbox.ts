@@ -74,6 +74,24 @@ const VERTICAL_VELOCITY_TRIGGER = 0.45;
 const BASE_BACKDROP_BLUR = 5;
 const BLUR_FADE_DISTANCE = 35;
 
+type LightboxState = 'open' | 'close';
+const stateListeners = new Set<(state: LightboxState) => void>();
+
+export function onPhotoLightboxStateChange(listener: (state: LightboxState) => void) {
+    stateListeners.add(listener);
+    return () => stateListeners.delete(listener);
+}
+
+function emitLightboxState(state: LightboxState) {
+    stateListeners.forEach(listener => {
+        try {
+            listener(state);
+        } catch (error) {
+            console.error('photoLightbox state listener error', error);
+        }
+    });
+}
+
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
 //==============================================================================================
@@ -274,14 +292,21 @@ export default class PhotoLightbox {
         this.measureViewport();
         this.attachGlobalListeners();
 
+        const wasOpen = this.isOpen;
         this.isOpen = true;
+
         this.overlay?.classList.add(ACTIVE_CLASS);
         this.overlay?.setAttribute('aria-hidden', 'false');
+
         this.updateTrackTransform(0, false);
         this.updateUIState();
         this.preloadNearbySlides();
         this.preventBodyScroll(true);
         this.focusOverlay();
+
+        if (!wasOpen) {
+            emitLightboxState('open');
+        }
     }
 
     //==============================================================================================
@@ -303,11 +328,18 @@ export default class PhotoLightbox {
             this.pointerVelocityY = 0;
         }
 
+        const wasOpen = this.isOpen;
         this.isOpen = false;
+
         this.overlay?.classList.remove(ACTIVE_CLASS);
         this.overlay?.setAttribute('aria-hidden', 'true');
+
         this.detachGlobalListeners();
         this.preventBodyScroll(false);
+        
+        if (wasOpen) {
+            emitLightboxState('close');
+        }
 
         if (restoreFocus && this.lastFocusedElement) {
             this.lastFocusedElement.focus();
