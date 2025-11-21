@@ -7,7 +7,11 @@
 import PhotoLightbox from './photoLightbox';
 
 type PhotoItem = { url: string; width: number; height: number; aspectRatio: number; index: number };
+type ManifestImageEntry = string | { url?: string; width?: number; height?: number };
 type LightboxController = { init(): void; destroy(): void };
+
+const DEFAULT_PHOTO_WIDTH = 1000;
+const DEFAULT_PHOTO_HEIGHT = 1500;
 
 //==============================================================================================
 /**
@@ -132,43 +136,119 @@ class PhotoGallery {
 
     //==============================================================================================
     /**
+     * Create PhotoItem from a manifest entry
+     * @param {ManifestImageEntry} entry
+     * @param {number} index
+     * @returns {{ photo: PhotoItem | null, hasDimensions: boolean }}
+     */
+    createPhotoFromManifestEntry(entry: ManifestImageEntry, index: number) {
+        let url: string | null = null;
+        let width = DEFAULT_PHOTO_WIDTH;
+        let height = DEFAULT_PHOTO_HEIGHT;
+        let hasDimensions = false;
+
+        if (typeof entry === 'string') {
+            url = entry;
+        } else if (entry && typeof entry.url === 'string') {
+            url = entry.url;
+            if (this.isValidDimension(entry.width) && this.isValidDimension(entry.height)) {
+                width = entry.width!;
+                height = entry.height!;
+                hasDimensions = true;
+            }
+        }
+
+        if (!url) {
+            return { photo: null, hasDimensions: false };
+        }
+
+        const photo: PhotoItem = {
+            url,
+            width,
+            height,
+            aspectRatio: width / height,
+            index
+        };
+
+        return { photo, hasDimensions };
+    }
+
+    //==============================================================================================
+    /**
+     * Validate manifest dimension value
+     * @param {number | null} value
+     * @returns {boolean}
+     */
+    isValidDimension(value?: number | null) {
+        return typeof value === 'number' && Number.isFinite(value) && value > 0;
+    }
+
+    //==============================================================================================
+    /**
+     * Backfill photo dimensions when manifest data is missing
+     * @param {PhotoItem} photo
+     */
+    backfillPhotoDimensions(photo: PhotoItem) {
+        this.measureImage(photo.url).then(({ width, height }) => {
+            photo.width = width;
+            photo.height = height;
+            photo.aspectRatio = width / height;
+
+            const selector = `.photo-item[data-photo-index="${photo.index}"]`;
+            const photoItem = this.container?.querySelector(selector) as HTMLElement | null;
+            if (photoItem) {
+                photoItem.style.aspectRatio = `${width} / ${height}`;
+                const trigger = photoItem.querySelector('.photo-item-link') as HTMLElement | null;
+                if (trigger) {
+                    trigger.setAttribute('data-photo-lightbox-width', `${width}`);
+                    trigger.setAttribute('data-photo-lightbox-height', `${height}`);
+                }
+            }
+        }).catch(() => {
+            // No-op: measurement already provides fallback defaults
+        });
+    }
+
+    //==============================================================================================
+    /**
      * Retrieve/read photos from manifest
      * This won't actually render yet - just reads manifest and calculates image data/mesaurements
-     * @returns {Promise<void>}
      */
     async retrievePhotos() {
         const grid = this.container!.querySelector('.photo-grid');
         if (!grid) return;
 
+        const measurementQueue: PhotoItem[] = [];
+
         try {
             const response = await fetch('/assets/images/reel/manifest.json', { cache: 'no-cache' });
             if (!response.ok) throw new Error(`Failed to load manifest: ${response.status}`);
             const manifest = await response.json();
-            const images: string[] = Array.isArray(manifest.images) ? (manifest.images as string[]) : [];
+            const entries: ManifestImageEntry[] = Array.isArray(manifest.images) ? manifest.images : [];
 
-            // Pre-measure images to obtain accurate aspect ratios for balanced layout
-            const measured = await Promise.allSettled(
-                images.map((url: string) => this.measureImage(url))
-            );
-
-            this.photos = images.map((url: string, index: number) => {
-                const result = measured[index];
-                const width = result?.status === 'fulfilled' ? result.value.width : 800;
-                const height = result?.status === 'fulfilled' ? result.value.height : 1200;
-                return {
-                    url,
-                    width,
-                    height,
-                    aspectRatio: width / height,
-                    index
-                };
+            const normalizedPhotos: PhotoItem[] = [];
+            entries.forEach((entry: ManifestImageEntry, index: number) => {
+                const { photo, hasDimensions } = this.createPhotoFromManifestEntry(entry, index);
+                if (!photo) {
+                    return;
+                }
+                normalizedPhotos.push(photo);
+                if (!hasDimensions) {
+                    measurementQueue.push(photo);
+                }
             });
+
+            this.photos = normalizedPhotos;
         } catch (err) {
             console.error('Error loading photo manifest', err);
             this.photos = [];
         }
 
         this.renderPhotoGrid();
+
+        if (measurementQueue.length) {
+            measurementQueue.forEach((photo: PhotoItem) => this.backfillPhotoDimensions(photo));
+        }
     }
 
     //==============================================================================================
@@ -219,6 +299,7 @@ class PhotoGallery {
             const photoItem = document.createElement('div');
             photoItem.className = 'photo-item photo-item--loading';
             photoItem.style.aspectRatio = `${photo.width} / ${photo.height}`;
+            photoItem.dataset.photoIndex = `${photo.index}`;
 
             // Create skeleton loader
             const skeleton = document.createElement('div');

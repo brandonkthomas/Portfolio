@@ -9,6 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddSingleton<IAssetManifest, AssetManifest>();
 
+const string PhotoReelRequestPrefix = "/assets/images/reel/";
+
 // Configure routing
 builder.Services.Configure<RouteOptions>(options =>
 {
@@ -103,11 +105,13 @@ app.UseStaticFiles(new StaticFileOptions
 if (app.Environment.IsDevelopment())
 {
     var devPhotoPath = app.Configuration["DevPhotoPath"];
-    if (Directory.Exists(devPhotoPath))
+    if (!string.IsNullOrWhiteSpace(devPhotoPath) && Directory.Exists(devPhotoPath))
     {
+        var devPhotoRoot = devPhotoPath;
+
         app.UseStaticFiles(new StaticFileOptions
         {
-            FileProvider = new PhysicalFileProvider(devPhotoPath),
+            FileProvider = new PhysicalFileProvider(devPhotoRoot),
             RequestPath = "/assets/images/reel",
             OnPrepareResponse = ctx =>
             {
@@ -117,38 +121,8 @@ if (app.Environment.IsDevelopment())
 
         app.MapGet("/assets/images/reel/manifest.json", () =>
         {
-            var exts = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
-            var files = Directory.EnumerateFiles(devPhotoPath, "*.*", SearchOption.AllDirectories)
-                                 .Where(p => exts.Contains(Path.GetExtension(p)))
-                                 .Select(p => "/assets/images/reel/" + Path.GetRelativePath(devPhotoPath, p).Replace("\\", "/"))
-                                 .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
-                                 .ToList();
-            // Natural sort using numeric segments
-            files.Sort((a, b) => StringComparer.OrdinalIgnoreCase.Compare(Normalize(a), Normalize(b)));
-            return Results.Json(new { images = files });
-
-            static string Normalize(string s)
-            {
-                var result = new System.Text.StringBuilder(s.Length * 2);
-                int i = 0;
-                while (i < s.Length)
-                {
-                    if (char.IsDigit(s[i]))
-                    {
-                        int j = i;
-                        while (j < s.Length && char.IsDigit(s[j])) j++;
-                        var segment = s.Substring(i, j - i);
-                        result.Append(segment.PadLeft(20, '0'));
-                        i = j;
-                    }
-                    else
-                    {
-                        result.Append(s[i]);
-                        i++;
-                    }
-                }
-                return result.ToString();
-            }
+            var images = PhotoManifestGenerator.BuildEntries(devPhotoRoot, PhotoReelRequestPrefix);
+            return Results.Json(new { images });
         });
     }
 }
@@ -160,41 +134,11 @@ if (!app.Environment.IsDevelopment())
     var reelPath = Path.Combine(webRoot, "assets", "images", "reel");
     if (Directory.Exists(reelPath))
     {
+        var packagedReelPath = reelPath;
         app.MapGet("/assets/images/reel/manifest.json", () =>
         {
-            var exts = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
-            var files = Directory.EnumerateFiles(reelPath, "*.*", SearchOption.AllDirectories)
-                                 .Where(p => exts.Contains(Path.GetExtension(p)))
-                                 .Select(p => "/assets/images/reel/" + Path.GetRelativePath(reelPath, p).Replace("\\", "/"))
-                                 .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
-                                 .ToList();
-
-            // Natural sort using numeric segments (same logic as dev mapping)
-            files.Sort((a, b) => StringComparer.OrdinalIgnoreCase.Compare(Normalize(a), Normalize(b)));
-            return Results.Json(new { images = files });
-
-            static string Normalize(string s)
-            {
-                var result = new System.Text.StringBuilder(s.Length * 2);
-                int i = 0;
-                while (i < s.Length)
-                {
-                    if (char.IsDigit(s[i]))
-                    {
-                        int j = i;
-                        while (j < s.Length && char.IsDigit(s[j])) j++;
-                        var segment = s.Substring(i, j - i);
-                        result.Append(segment.PadLeft(20, '0'));
-                        i = j;
-                    }
-                    else
-                    {
-                        result.Append(s[i]);
-                        i++;
-                    }
-                }
-                return result.ToString();
-            }
+            var images = PhotoManifestGenerator.BuildEntries(packagedReelPath, PhotoReelRequestPrefix);
+            return Results.Json(new { images });
         });
     }
 }
