@@ -24,7 +24,9 @@
 </div>
 
 ## About the Project
-<img width="3080" height="2270" alt="Portfolio site preview" src="https://github.com/user-attachments/assets/9181d459-4f75-47e8-a2f9-59a5617895b9" />
+<a href="https://brandonthomas.net">
+  <img width="3080" height="2270" alt="Portfolio site preview" src="https://github.com/user-attachments/assets/9181d459-4f75-47e8-a2f9-59a5617895b9" />
+</a>
 
 This project began as a simple Three.js card experiment and has since evolved into a more comprehensive personal portfolio. 
 
