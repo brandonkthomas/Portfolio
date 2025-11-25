@@ -143,6 +143,9 @@ if (!app.Environment.IsDevelopment())
     }
 }
 
+// Simple health check endpoint
+app.MapGet("/api/health", () => Results.Ok());
+
 app.UseRouting();
 
 // Cache control for HTML pages - set before response is sent
