@@ -321,7 +321,7 @@ class ProjectsGrid {
                 dlBtn.textContent = 'Download';
 
                 const icon = document.createElement('img');
-                icon.src = '/assets/svg/download.svg';
+                icon.src = '/assets/svg/download-filled.svg';
                 icon.alt = '';
                 icon.width = 20;
                 icon.height = 20;
