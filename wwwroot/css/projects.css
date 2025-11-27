@@ -267,6 +267,7 @@
     padding-bottom: 1rem;
     position: sticky;
     bottom: 16px;
+    z-index: 6;
 }
 
 .projects-footer-link {
