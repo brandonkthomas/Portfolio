@@ -7,7 +7,6 @@
 import { isMobile, isErrorPage } from './common';
 import { createCircleTexture } from './textures';
 import { createNebulae, updateNebulae, reduceNebulaOpacity, restoreNebulaOpacity } from './nebulae';
-import { generateStarColor, triggerWarpPulse, setupKonamiCode } from './starfieldUtils';
 import perf from './perfMonitor';
 import { onPhotoLightboxStateChange } from './photoLightbox';
 
@@ -126,7 +125,7 @@ class Starfield {
 
         // Konami code setup
         this.konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
-        this.konamiHandler = setupKonamiCode(this.konamiCode, () => this.triggerKonamiWarp());
+        this.konamiHandler = this.setupKonamiCode(this.konamiCode, () => this.triggerKonamiWarp());
         this.originalBackgroundColor = (this.scene.background as any).clone();
         
         // Check if this is an error page and setup red glow effect
@@ -145,7 +144,7 @@ class Starfield {
         
         // Start background glow for error pages after a delay (skip in debug mode)
         if (this.isErrorPage && !DEBUG_GRADIENT) {
-            this.createRedGlowEffect();
+            this.setRedBackgroundGlow();
             this.glowStartTime = performance.now(); // Remove delay to sync with CSS animation
         }
         
@@ -201,7 +200,7 @@ class Starfield {
             positions.push(x, y, z);
             coreBackFlags.push(isCoreBack ? 1 : 0);
 
-            const color = generateStarColor();
+            const color = this.generateStarColor();
             colors.push(color.r, color.g, color.b, 1.0); // Add alpha channel
 
             // Random speed between 0.01 and 0.05
@@ -291,9 +290,40 @@ class Starfield {
      * @param {boolean} reverse - When true, warp direction is reversed (away from camera)
      */
     triggerWarp(reverse: boolean = false) {
-        triggerWarpPulse((intensity) => {
+        this.triggerWarpPulse((intensity) => {
             this.warpIntensity = intensity;
         }, reverse);
+    }
+
+    //==============================================================================================
+    /**
+     * Trigger warp effect
+     * @param {function} setWarpIntensity - Function to set warp intensity
+     * @param {boolean} reverse - If true, warp direction is reversed (default: false)
+     * @description Initiates a warp pulse that fades out over 0.5 seconds
+     */
+    triggerWarpPulse(setWarpIntensity: (value: number) => void, reverse: boolean = false): void {
+        // Set warp intensity to 1 immediately with direction
+        setWarpIntensity(reverse ? -1 : 1);
+
+        // smooth fade out over 0.5 seconds
+        const startTime = Date.now();
+        const duration = 500;
+
+        const fadeOut = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+
+            // easeOutQuart for smoother deceleration at the end
+            const intensity = Math.pow(1 - progress, 4);
+            setWarpIntensity(reverse ? -intensity : intensity);
+
+            if (progress < 1) {
+                requestAnimationFrame(fadeOut);
+            }
+        };
+
+        requestAnimationFrame(fadeOut);
     }
 
     //==============================================================================================
@@ -362,10 +392,25 @@ class Starfield {
 
     //==============================================================================================
     /**
+     * Generate a random star color
+     * @returns {THREE.Color} The generated color
+     */
+    generateStarColor(): any {
+        const hue = Math.random() * 360; // Full hue range for rainbow
+        const saturation = 0.08 + Math.random() * 0.05; // Low saturation (8-15%)
+        const lightness = 0.5 + Math.random() * 0.2; // Medium-high lightness (50-70%)
+
+        const color = new THREE.Color();
+        color.setHSL(hue / 360, saturation, lightness);
+        return color;
+    }
+
+    //==============================================================================================
+    /**
      * Create red glow effect for error pages
      * @description Creates a red glow effect in the center of the screen resembling the PS2 error screen
      */
-    createRedGlowEffect() {
+    setRedBackgroundGlow() {
         // Create a circular gradient texture for the glow
         const canvas = document.createElement('canvas');
         canvas.width = 512;
@@ -700,6 +745,11 @@ class Starfield {
         perf.loopFrameEnd('starfield');
     }
 
+    //==============================================================================================
+    /**
+     * Set the frame cap for the starfield
+     * @param {number} fps - The frame rate to cap the starfield at
+     */
     setFrameCap(fps: number | null) {
         if (fps && fps > 0) {
             this.minFrameInterval = 1000 / fps;
@@ -707,12 +757,66 @@ class Starfield {
             this.minFrameInterval = this.defaultFrameInterval;
         }
     }
+
+    //==============================================================================================
+    /**
+     * Handle Konami code detection and warp effect
+     * @param {Array} konamiCode - Array of keys for the Konami code sequence
+     * @param {function} triggerWarpCallback - Function to call when Konami code is detected
+     * @returns {object} Konami code handler object with methods
+     */
+    setupKonamiCode(konamiCode: string[], triggerWarpCallback: () => void): {
+        setKonamiWarpActive: (active: boolean) => void;
+        getKonamiWarpActive: () => boolean;
+        resetKonamiIndex: () => void;
+    } {
+        let konamiIndex = 0;
+        let isKonamiWarpActive = false;
+
+        const keydownHandler = (event: KeyboardEvent) => {
+            if (isKonamiWarpActive) return; // Ignore inputs during Konami warp
+
+            // Check if the pressed key matches the next key in the sequence
+            if (event.key === konamiCode[konamiIndex]) {
+                konamiIndex++;
+
+                // If the full sequence is entered
+                if (konamiIndex === konamiCode.length) {
+                    triggerWarpCallback();
+                    konamiIndex = 0; // Reset the sequence
+                }
+            } else {
+                konamiIndex = 0; // Reset on wrong input
+                // If the new key is the start of the sequence
+                if (event.key === konamiCode[0]) {
+                    konamiIndex = 1;
+                }
+            }
+        };
+
+        // Add listener for Konami code
+        document.addEventListener('keydown', keydownHandler);
+
+        return {
+            setKonamiWarpActive: (active: boolean) => {
+                isKonamiWarpActive = active;
+            },
+            getKonamiWarpActive: () => isKonamiWarpActive,
+            resetKonamiIndex: () => {
+                konamiIndex = 0;
+            }
+        };
+    }
 }
 
 // Initialize starfield when the page loads and expose to state manager
 let starfieldInstance: any = null;
 let pendingFrameCap: number | null = null;
 
+//==============================================================================================
+/**
+ * Initialize starfield when page loads + expose to state manager
+ */
 window.addEventListener('load', () => {
     starfieldInstance = new Starfield();
     if (pendingFrameCap !== null) {
@@ -734,6 +838,11 @@ export function triggerStarfieldWarp(reverse: boolean = false) {
     }
 }
 
+//==============================================================================================
+/**
+ * Set the frame cap for the starfield
+ * @param {number} fps - The frame rate to cap the starfield at
+ */
 export function setStarfieldFrameCap(fps: number | null) {
     pendingFrameCap = fps;
     if (starfieldInstance && typeof starfieldInstance.setFrameCap === 'function') {
@@ -741,6 +850,11 @@ export function setStarfieldFrameCap(fps: number | null) {
     }
 }
 
+//==============================================================================================
+/**
+ * Handle photo lightbox state change
+ * @param {string} state - The state of the photo lightbox
+ */
 onPhotoLightboxStateChange(state => {
     setStarfieldFrameCap(state === 'open' ? 30 : null);
 });
