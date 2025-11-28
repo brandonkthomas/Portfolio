@@ -620,7 +620,7 @@ class Card {
         // only run ease-out flip when flipStartTime is set (i.e. after click)
         if (this.flipStartTime != null) {
             const elapsed = (timestamp - this.flipStartTime) / 1000; // seconds since flip began
-            const t = Math.min(elapsed / this.flipDuration, 1); // clamp 0→1
+            const t = Math.min(elapsed / this.flipDuration, 1); // clamp 0=>1
             let eased = Math.sqrt(1 - Math.pow(t - 1, 2)); // easeOutCirc
 
             // if we're flipping *back* (flipTarget===0), reverse the eased value

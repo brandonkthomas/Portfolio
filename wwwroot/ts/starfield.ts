@@ -560,7 +560,7 @@ class Starfield {
                     // Fade out as we approach the cull plane
                     if (z > (this.coreCullZ - this.coreFadeRange) && z < this.coreCullZ) {
                         if (absWarpIntensity < 0.05) {
-                            const t = (z - (this.coreCullZ - this.coreFadeRange)) / this.coreFadeRange; // 0→1
+                            const t = (z - (this.coreCullZ - this.coreFadeRange)) / this.coreFadeRange; // 0=>1
                             const fade = Math.max(0, 1 - t);
                             const baseIndex = i * 4 + 3;
                             colors.array[baseIndex] = Math.min(colors.array[baseIndex], fade);
@@ -586,7 +586,7 @@ class Starfield {
                     const fadeBackStart = this.coreBackZThreshold - this.coreFadeRange;
                     if (z < fadeBackStart) {
                         if (absWarpIntensity < 0.05) {
-                            const t = (fadeBackStart - z) / this.coreFadeRange; // 0→1
+                            const t = (fadeBackStart - z) / this.coreFadeRange; // 0=>1
                             const fade = Math.max(0, 1 - t);
                             const baseIndex = i * 4 + 3;
                             colors.array[baseIndex] = Math.min(colors.array[baseIndex], fade);
