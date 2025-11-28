@@ -186,6 +186,7 @@ export default class PhotoLightbox {
     private isVerticalDrag = false;
     private activeDataSource?: HTMLElement;
     private lastFocusedElement: HTMLElement | null = null;
+    private isAnimatingWrap = false;
     private overlayBaseBg = 'rgba(0, 0, 0, 0.95)';
     private baseBackdropBlur = BASE_BACKDROP_BLUR;
 
@@ -373,6 +374,24 @@ export default class PhotoLightbox {
      */
     goTo(index: number) {
         if (!this.slides.length) {
+            return;
+        }
+
+        const slideCount = this.slides.length;
+        const isLooping = this.options.loop && slideCount > 1;
+
+        if (isLooping && !this.isAnimatingWrap) {
+            const fromIndex = this.currentIndex;
+            const isWrapBackward = fromIndex === 0 && index < 0;
+            const isWrapForward = fromIndex === slideCount - 1 && index >= slideCount;
+
+            if (isWrapBackward || isWrapForward) {
+                this.animateBoundaryWrap(isWrapForward ? 'forward' : 'backward');
+                return;
+            }
+        }
+
+        if (this.isAnimatingWrap) {
             return;
         }
 
@@ -838,6 +857,78 @@ export default class PhotoLightbox {
 
     //==============================================================================================
     /**
+     * Animate wrap-around transition using existing track (insert "blank" region past ends of the strip)
+     * Used to fake padding between the first and last slides
+     * BT 2025-11-27: idk how to better do this so for now it'll work
+     */
+    private animateBoundaryWrap(direction: 'forward' | 'backward') {
+        if (!this.track || !this.slides.length) {
+            // Fallback to immediate jump if we can't animate
+            this.currentIndex = direction === 'forward' ? 0 : this.slides.length - 1;
+            this.updateTrackTransform(0, true);
+            this.updateUIState();
+            this.preloadNearbySlides();
+            this.options.onSlideChange(this.currentIndex);
+            return;
+        }
+
+        if (this.isAnimatingWrap) {
+            return;
+        }
+
+        const width = this.viewportWidth || (this.content?.clientWidth ?? 0);
+        if (!width) {
+            // If we can't determine a width, just snap without animation
+            this.currentIndex = direction === 'forward' ? 0 : this.slides.length - 1;
+            this.updateTrackTransform(0, true);
+            this.updateUIState();
+            this.preloadNearbySlides();
+            this.options.onSlideChange(this.currentIndex);
+            return;
+        }
+
+        this.isAnimatingWrap = true;
+
+        const slideCount = this.slides.length;
+        const targetIndex = direction === 'forward' ? 0 : slideCount - 1;
+
+        // Ensure neighboring slides are ready before we snap at the end
+        this.ensureSlideLoaded(targetIndex);
+
+        // Phase 1: move the current slide into the "blank" space beyond the edge
+        const leaveOffset = direction === 'forward' ? -width : width;
+        this.updateTrackTransform(leaveOffset, true);
+
+        window.setTimeout(() => {
+            // Phase 2: snap to target index starting off-screen on the opposite side,
+            // then animate back into the viewport.
+            this.currentIndex = targetIndex;
+
+            const enterOffset = direction === 'forward' ? width : -width;
+            this.updateTrackTransform(enterOffset, false);
+
+            this.updateUIState();
+            this.preloadNearbySlides();
+            this.options.onSlideChange(this.currentIndex);
+
+            // Force layout before starting the second leg of the animation
+            if (this.track) {
+                // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+                this.track.offsetHeight;
+            }
+
+            requestAnimationFrame(() => {
+                this.updateTrackTransform(0, true);
+            });
+
+            window.setTimeout(() => {
+                this.isAnimatingWrap = false;
+            }, ANIMATION_DURATION_MS - 120);
+        }, ANIMATION_DURATION_MS - 120);
+    }
+
+    //==============================================================================================
+    /**
      * Update the UI state
      * @returns {void}
      */
@@ -891,7 +982,7 @@ export default class PhotoLightbox {
      * @returns {void}
      */
     private beginPointerDrag(event: PointerEvent) {
-        if (!this.isOpen || event.button !== 0) return;
+        if (!this.isOpen || event.button !== 0 || this.isAnimatingWrap) return;
         if (this.pointerId !== null) return;
 
         this.pointerId = event.pointerId;
