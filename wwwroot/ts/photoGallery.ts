@@ -9,6 +9,13 @@ import PhotoLightbox from './photoLightbox';
 type PhotoItem = { url: string; width: number; height: number; aspectRatio: number; index: number };
 type ManifestImageEntry = string | { url?: string; width?: number; height?: number };
 type LightboxController = { init(): void; destroy(): void };
+type PhotoLoadRequest = {
+    img: HTMLImageElement;
+    url: string;
+    approximateTop: number;
+    columnIndex: number;
+    photoIndex: number;
+};
 
 const DEFAULT_PHOTO_WIDTH = 1000;
 const DEFAULT_PHOTO_HEIGHT = 1500;
@@ -29,6 +36,7 @@ class PhotoGallery {
     private currentColumnCount: number;
     private photosGenerated: boolean;
     private lightboxInstance: LightboxController | null;
+    private preloadHintNodes: HTMLLinkElement[];
 
     //==============================================================================================
     // Constructor
@@ -40,6 +48,7 @@ class PhotoGallery {
         this.currentColumnCount = 0; // Track current column count for resize handling
         this.photosGenerated = false; // Track if photos have been generated
         this.lightboxInstance = null;
+        this.preloadHintNodes = [];
         
         this.init();
     }
@@ -294,6 +303,9 @@ class PhotoGallery {
         // Track predicted heights to avoid bias from yet-to-load images
         const predictedHeights = columns.map(col => col.offsetHeight + paddingTop + paddingBottom);
 
+        // Track ordered queue of images to load (we want to load DOM from top down)
+        const loadQueue: PhotoLoadRequest[] = [];
+
         this.photos.forEach((photo: PhotoItem) => {
             // Create photo item with skeleton
             const photoItem = document.createElement('div');
@@ -307,7 +319,6 @@ class PhotoGallery {
 
             // Create image
             const img = document.createElement('img');
-            img.src = photo.url;
             img.alt = `Photo ${photo.index + 1}`;
             img.loading = 'lazy';
             img.decoding = 'async'; // Ensure async decoding
@@ -358,6 +369,7 @@ class PhotoGallery {
                 }
             }
             const targetColumn = columns[targetIndex]!;
+            const approximateTop = predictedHeights[targetIndex];
             targetColumn.appendChild(photoItem);
 
             // Update prediction by adding this item's estimated rendered height
@@ -369,11 +381,130 @@ class PhotoGallery {
             const addGap = predictedHeights[targetIndex] > 0 ? rowGap : 0;
             predictedHeights[targetIndex] += estimatedItemHeight + addGap;
 
+            // Add to load queue for later processing
+            loadQueue.push({
+                img,
+                url: photo.url,
+                approximateTop,
+                columnIndex: targetIndex,
+                photoIndex: photo.index
+            });
+
             // When image actually loads and aspect ratio updates, no need to reflow everything;
             // we rely on CSS aspect-ratio to minimize jumps
         });
 
+        this.prioritizeImageRequests(loadQueue);
         this.initPhotoLightbox();
+    }
+
+    //==============================================================================================
+    /**
+     * Remove any preload hints created for previous renders
+     */
+    clearPreloadHints() {
+        if (!this.preloadHintNodes.length) {
+            return;
+        }
+        this.preloadHintNodes.forEach(link => link.remove());
+        this.preloadHintNodes = [];
+    }
+
+    //==============================================================================================
+    /**
+     * Preload the highest-priority images (top-most rows)
+     * @param {PhotoLoadRequest[]} loadQueue
+     */
+    updatePreloadHints(loadQueue: PhotoLoadRequest[]) {
+        this.clearPreloadHints();
+        if (!loadQueue.length) {
+            return;
+        }
+
+        const headEl = document.head;
+        if (!headEl) {
+            return;
+        }
+
+        const itemsPerRow = Math.max(1, this.currentColumnCount || 1);
+        const preloadLimit = Math.min(loadQueue.length, itemsPerRow * 2);
+
+        for (let i = 0; i < preloadLimit; i++) {
+            const request = loadQueue[i];
+            const link = document.createElement('link');
+            link.rel = 'preload';
+            link.as = 'image';
+            link.href = request.url;
+            link.setAttribute('data-photo-preload', 'true');
+            headEl.appendChild(link);
+            this.preloadHintNodes.push(link);
+        }
+    }
+
+    //==============================================================================================
+    /**
+     * Schedule image requests based on approximate viewport order
+     * @param {PhotoLoadRequest[]} loadQueue
+     */
+    prioritizeImageRequests(loadQueue: PhotoLoadRequest[]) {
+        if (!loadQueue.length) {
+            return;
+        }
+
+        // Sort queue by approximate top position (closest to viewport first)
+        const sortedQueue = loadQueue.slice().sort((a, b) => {
+            if (a.approximateTop !== b.approximateTop) {
+                return a.approximateTop - b.approximateTop;
+            }
+            if (a.columnIndex !== b.columnIndex) {
+                return a.columnIndex - b.columnIndex;
+            }
+            return a.photoIndex - b.photoIndex;
+        });
+
+        // Update preload hints for the sorted queue
+        this.updatePreloadHints(sortedQueue);
+
+        // Determine thresholds for eager/lazy loading based on column count
+        const firstRowThreshold = Math.max(1, this.currentColumnCount || 1);
+        const secondRowThreshold = firstRowThreshold * 2;
+
+        // Schedule image assignment with idle callback or timeout
+        const scheduleAssignment = (callback: () => void, delayMs: number) => {
+            if ('requestIdleCallback' in window) {
+                requestIdleCallback(callback, { timeout: 100 + delayMs });
+            } else {
+                window.setTimeout(callback, delayMs);
+            }
+        };
+
+        // Assign images to the DOM with eager/lazy loading based on row index
+        sortedQueue.forEach((item, orderIndex) => {
+            item.img.dataset.photoLoadOrder = `${orderIndex}`;
+            const rowIndex = this.currentColumnCount > 0
+                ? Math.floor(orderIndex / this.currentColumnCount)
+                : 0;
+            const isFirstRow = rowIndex === 0;
+            const isSecondRow = rowIndex === 1;
+            item.img.loading = isFirstRow ? 'eager' : 'lazy';
+
+            const priority = orderIndex < firstRowThreshold
+                ? 'high'
+                : orderIndex < secondRowThreshold
+                    ? 'auto'
+                    : 'low';
+            item.img.setAttribute('fetchpriority', priority);
+
+            const assignSrc = () => {
+                if (item.img.dataset.photoSrcAssigned === 'true' || !item.img.isConnected) {
+                    return;
+                }
+                item.img.dataset.photoSrcAssigned = 'true';
+                item.img.src = item.url;
+            };
+
+            scheduleAssignment(assignSrc, orderIndex * 12);
+        });
     }
 
     //==============================================================================================
@@ -498,6 +629,9 @@ class PhotoGallery {
         
         // Disable scrolling
         document.body.style.overflow = 'hidden';
+
+        // Clear all image preload hints
+        this.clearPreloadHints();
 
         // Lightbox UI (photoLightbox) manages its own visibility; we're done here
     }
