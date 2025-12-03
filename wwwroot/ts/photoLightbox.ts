@@ -73,6 +73,8 @@ const VERTICAL_CLOSE_THRESHOLD = 120;
 const VERTICAL_VELOCITY_TRIGGER = 0.45;
 const BASE_BACKDROP_BLUR = 5;
 const BLUR_FADE_DISTANCE = 35;
+const HORIZONTAL_LOCK_THRESHOLD = 14;
+const HORIZONTAL_LOCK_BIAS = 6;
 
 type LightboxState = 'open' | 'close';
 const stateListeners = new Set<(state: LightboxState) => void>();
@@ -184,6 +186,7 @@ export default class PhotoLightbox {
     private pointerVelocityX = 0;
     private pointerVelocityY = 0;
     private isVerticalDrag = false;
+    private lockedDragAxis: 'horizontal' | 'vertical' | null = null;
     private activeDataSource?: HTMLElement;
     private lastFocusedElement: HTMLElement | null = null;
     private isAnimatingWrap = false;
@@ -991,10 +994,12 @@ export default class PhotoLightbox {
         this.lastPointerX = event.clientX;
         this.lastPointerY = event.clientY;
         this.lastPointerTime = event.timeStamp;
-        this.dragOffsetX = 0;
+
+        this.dragOffsetX = 0; // Reset drag offset
         this.dragOffsetY = 0;
-        this.pointerVelocityX = 0;
+        this.pointerVelocityX = 0; // Reset pointer velocity
         this.pointerVelocityY = 0;
+        this.lockedDragAxis = null; // Reset any locked drag axis
         this.isDragging = true;
         this.isVerticalDrag = false;
 
@@ -1014,26 +1019,39 @@ export default class PhotoLightbox {
         const deltaX = event.clientX - this.dragStartX;
         const deltaY = event.clientY - this.dragStartY;
 
-        if (!this.isVerticalDrag) {
-            const verticalDelta = Math.abs(deltaY);
-            const horizontalDelta = Math.abs(deltaX);
-            const nearNeutral = verticalDelta < 8 && horizontalDelta < 8;
+        // Check if the drag is near neutral
+        const verticalDelta = Math.abs(deltaY);
+        const horizontalDelta = Math.abs(deltaX);
+        const nearNeutral = verticalDelta < 8 && horizontalDelta < 8;
 
+        // If the drag is not vertical and not locked to horizontal, check if it should start vertical
+        if (!this.isVerticalDrag && this.lockedDragAxis !== 'horizontal') {
             if (nearNeutral) {
                 this.dragOffsetX = 0;
                 this.updateTrackTransform(0, false);
             }
 
             const shouldStartVertical = verticalDelta > horizontalDelta + 12 && verticalDelta > 30;
+
+            // If the drag should start vertical, lock it now
             if (shouldStartVertical) {
+                this.lockedDragAxis = 'vertical';
                 this.isVerticalDrag = true;
                 this.track?.classList.remove('is-dragging');
                 this.dragOffsetX = 0;
                 this.updateTrackTransform(0, false);
+            } else if (this.lockedDragAxis === null) {
+                const shouldLockHorizontal = horizontalDelta > verticalDelta + HORIZONTAL_LOCK_BIAS 
+                    && horizontalDelta > HORIZONTAL_LOCK_THRESHOLD;
+
+                if (shouldLockHorizontal) {
+                    this.lockedDragAxis = 'horizontal';
+                }
             }
         }
 
         const dt = event.timeStamp - this.lastPointerTime;
+
         if (dt > 0) {
             this.pointerVelocityX = (event.clientX - this.lastPointerX) / dt;
             this.pointerVelocityY = (event.clientY - this.lastPointerY) / dt;
@@ -1097,6 +1115,9 @@ export default class PhotoLightbox {
             this.isVerticalDrag = false;
             this.dragOffsetY = 0;
             this.pointerVelocityY = 0;
+
+            // Reset any locked drag axis
+            this.lockedDragAxis = null;
             return;
         }
 
@@ -1119,5 +1140,8 @@ export default class PhotoLightbox {
         this.pointerId = null;
         this.dragOffsetX = 0;
         this.pointerVelocityX = 0;
+
+        // Reset any locked drag axis
+        this.lockedDragAxis = null;
     }
 }
