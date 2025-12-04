@@ -3,7 +3,7 @@
  * @fileoverview Bento grid of personal projects with hover/tap animations
  */
 
-import { isMobile, getOperatingSystem } from './common';
+import { isMobile, getOperatingSystem, logEvent, LogData, LogLevel } from './common';
 import { createGlassSurface } from './glassSurface';
 import type { GlassSurfaceInstance } from './glassSurface';
 import { mountComponent } from './components/registry';
@@ -34,6 +34,10 @@ class ProjectsGrid {
         this.init();
     }
 
+    private log(event: string, data?: LogData, note?: string, level: LogLevel = 'info') {
+        logEvent('projects', event, data, note, level);
+    }
+
     //==============================================================================================
     /**
      * Initialize the projects grid
@@ -52,7 +56,11 @@ class ProjectsGrid {
      */
     setup() {
         this.container = document.querySelector('.projects-container');
-        if (!this.container) return;
+        if (!this.container) {
+            this.log('Container Missing', { selector: '.projects-container' }, undefined, 'warn');
+            return;
+        }
+        this.log('Container Ready');
 
         this.createProjectsHTML();
         this.setupEventListeners();
@@ -60,6 +68,7 @@ class ProjectsGrid {
         if (this._resolveReady) {
             this._resolveReady();
             this._resolveReady = null;
+            this.log('Ready Promise Resolved');
         }
     }
 
@@ -86,7 +95,10 @@ class ProjectsGrid {
      * Create bottom GitHub footer with glass surface
      */
     createFooter() {
-        if (!this.footerEl) return;
+        if (!this.footerEl) {
+            this.log('Footer Skipped', {}, 'Footer element missing', 'warn');
+            return;
+        }
 
         // Create glass surface for footer
         this.footerGlass = createGlassSurface({
@@ -149,7 +161,10 @@ class ProjectsGrid {
      * Setup event listeners
      */
     setupEventListeners() {
-        if (!this.container) return;
+        if (!this.container) {
+            this.log('Event Binding Skipped', {}, 'Container missing', 'warn');
+            return;
+        }
         // Recompute visual sizing on resize (throttled via rAF)
         let raf: number | null = null;
         const onResize = () => {
@@ -161,6 +176,7 @@ class ProjectsGrid {
             });
         };
         window.addEventListener('resize', onResize);
+        this.log('Event Listeners Bound');
     }
 
     //==============================================================================================
@@ -168,17 +184,28 @@ class ProjectsGrid {
      * Retrieve the projects from the manifest
      */
     async retrieveProjects() {
-        if (!this.gridEl) return;
+        if (!this.gridEl) {
+            this.log('Retrieve Skipped', {}, 'Grid missing', 'warn');
+            return;
+        }
         try {
             const response = await fetch('/assets/projects/manifest.json', { cache: 'no-cache' });
             if (response.ok) {
                 const manifest = await response.json();
                 this.projects = Array.isArray(manifest.projects) ? manifest.projects : [];
+                this.log('Projects Loaded', { count: this.projects.length });
             } else {
                 this.projects = [];
+                this.log('Projects Load Failed', { status: response.status }, response.statusText, 'warn');
             }
-        } catch (_) {
+        } catch (error) {
             this.projects = [];
+            this.log(
+                'Projects Load Failed',
+                {},
+                error instanceof Error ? error.message : String(error),
+                'error'
+            );
         }
 
         this.renderGrid();
@@ -189,7 +216,10 @@ class ProjectsGrid {
      * Render the projects grid
      */
     renderGrid() {
-        if (!this.gridEl) return;
+        if (!this.gridEl) {
+            this.log('Render Skipped', {}, 'Grid element missing', 'warn');
+            return;
+        }
         this.gridEl.innerHTML = '';
 
         const ensureUrl = (p: any) => p.url || `/projects/${encodeURIComponent(p.slug || p.title?.toLowerCase().replace(/\s+/g, '-') || 'project')}`;
@@ -350,6 +380,7 @@ class ProjectsGrid {
         // Ensure all tiles sized (for any late layout changes)
         this.sizeAllTileVisuals();
         this.sizeAllComponents();
+        this.log('Grid Rendered', { projects: this.projects.length });
     }
 
     //==============================================================================================
@@ -417,7 +448,12 @@ class ProjectsGrid {
             const rect = tileEl.getBoundingClientRect();
             instance.setSize?.({ width: rect.width, height: rect.height });
         } catch (err) {
-            console.warn('Failed to mount component', comp?.type, err);
+            this.log(
+                'Component Mount Failed',
+                { component: comp?.type || 'unknown' },
+                err instanceof Error ? err.message : String(err),
+                'warn'
+            );
         }
     }
 
@@ -442,18 +478,24 @@ class ProjectsGrid {
      * Show the projects grid
      */
     show() {
-        if (!this.container) return;
+        if (!this.container) {
+            this.log('Show Skipped', {}, 'Container missing', 'warn');
+            return;
+        }
         if (!this.projectsGenerated) {
             this.projectsGenerated = true;
             if ('requestIdleCallback' in window) {
                 requestIdleCallback(() => this.retrieveProjects(), { timeout: 100 });
+                this.log('Projects Load Scheduled', { strategy: 'idle' });
             } else {
                 setTimeout(() => this.retrieveProjects(), 0);
+                this.log('Projects Load Scheduled', { strategy: 'timeout' });
             }
         }
         this.container.classList.add('visible');
         this.isVisible = true;
         document.body.style.overflow = 'auto';
+        this.log('Projects Shown');
     }
 
     //==============================================================================================
@@ -461,10 +503,14 @@ class ProjectsGrid {
      * Hide the projects grid
      */
     hide() {
-        if (!this.container) return;
+        if (!this.container) {
+            this.log('Hide Skipped', {}, 'Container missing', 'warn');
+            return;
+        }
         this.container.classList.remove('visible');
         this.isVisible = false;
         document.body.style.overflow = 'hidden';
+        this.log('Projects Hidden');
     }
 
     //==============================================================================================

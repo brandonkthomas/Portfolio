@@ -4,7 +4,7 @@
  * @description Handles 3D card rendering, flip animations, and drag interactions
  */
 
-import { isMobile } from './common';
+import { isMobile, logEvent, LogData, LogLevel } from './common';
 import stateManager, { ViewState } from './stateManager';
 import perf from './perfMonitor';
 import { triggerStarfieldWarp } from './starfield';
@@ -97,6 +97,11 @@ class Card {
         this.container = document.querySelector('.card-container');
         this.tapIndicator = document.querySelector('.tap-indicator.desktop');
         this.tapIndicatorMobile = document.querySelector('.tap-indicator.mobile');
+        if (!this.container) {
+            this.log('Container Missing', { selector: '.card-container' }, undefined, 'error');
+        } else {
+            this.log('Container Ready');
+        }
 
         // State flags
         this.isFlipped = false;
@@ -188,12 +193,20 @@ class Card {
         });
     }
 
+    private log(event: string, data?: LogData, note?: string, level: LogLevel = 'info') {
+        logEvent('card', event, data, note, level);
+    }
+
     //==============================================================================================
     /**
      * Initialize the card
      * @description Sets up Three.js scene, creates card, and starts animation
      */
     init() {
+        if (!this.container) {
+            this.log('Init Skipped', {}, 'Card container missing', 'error');
+            return;
+        }
         // Scene setup
         this.scene = new THREE.Scene();
 
@@ -209,7 +222,7 @@ class Card {
         // Set renderer size to window dimensions
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.setPixelRatio(window.devicePixelRatio);
-        (this.container as HTMLElement).appendChild(this.renderer.domElement);
+        this.container.appendChild(this.renderer.domElement);
 
         // Create card
         this.createCard();
@@ -221,6 +234,7 @@ class Card {
 
         // Start animation
         requestAnimationFrame(this.animate.bind(this));
+        this.log('Initialized');
     }
 
     //==============================================================================================
@@ -319,8 +333,12 @@ class Card {
      * @description Handles click, drag, and hover events
      */
     setupEventListeners() {
+        if (!this.container) {
+            this.log('Event Binding Skipped', {}, 'Container missing', 'warn');
+            return;
+        }
         // Click to flip - now with drag detection
-        (this.container as HTMLElement).addEventListener('click', (e: MouseEvent) => {
+        this.container.addEventListener('click', (e: MouseEvent) => {
             const dragDuration = Date.now() - this.dragStartTime;
             const isDragGesture = this.dragDistance > 5 || dragDuration > 200;
 
@@ -357,7 +375,8 @@ class Card {
                     // Trigger snap-back on release when leaving the window bounds
                     this.onDragRelease();
                     this.isDragging = false;
-                (this.container as HTMLElement).releasePointerCapture(e.pointerId);
+                    (this.container as HTMLElement).releasePointerCapture(e.pointerId);
+                    this.log('Drag Cancelled', { reason: 'viewport-exit', pointerId: e.pointerId });
                 }
                 (this.container as HTMLElement).style.cursor = 'default';
                 return;
@@ -374,10 +393,10 @@ class Card {
             }
         };
 
-        (this.container as HTMLElement).addEventListener('pointermove', handlePointerMove);
+        this.container.addEventListener('pointermove', handlePointerMove);
 
         // Mouse leave to reset rotation and cursor
-        (this.container as HTMLElement).addEventListener('mouseleave', () => {
+        this.container.addEventListener('mouseleave', () => {
             if (!this.isDragging) {
                 this.targetRotation.x = 0;
                 this.targetRotation.y = 0;
@@ -385,7 +404,7 @@ class Card {
         });
 
         // Pointer down for dragging
-        (this.container as HTMLElement).addEventListener('pointerdown', (e: PointerEvent) => {
+        this.container.addEventListener('pointerdown', (e: PointerEvent) => {
             if (this.isMouseOverCard(e)) {
                 this.isDragging = true;
                 this.dragStartTime = Date.now();
@@ -402,23 +421,31 @@ class Card {
 
                 // Capture the pointer to track it even outside the window
                 (this.container as HTMLElement).setPointerCapture(e.pointerId);
+                this.log('Drag Started', { pointerId: e.pointerId });
             }
         });
 
         // Pointer up to stop dragging
-        (this.container as HTMLElement).addEventListener('pointerup', (e: PointerEvent) => {
+        this.container.addEventListener('pointerup', (e: PointerEvent) => {
             if (this.isDragging) {
                 this.isDragging = false;
                 (this.container as HTMLElement).releasePointerCapture(e.pointerId);
                 this.onDragRelease();
+                this.log('Drag Released', {
+                    pointerId: e.pointerId,
+                    distance: Number(this.dragDistance.toFixed(1))
+                });
             }
         });
 
         // Handle when pointer is lost (i.e. leaving window)
-        (this.container as HTMLElement).addEventListener('lostpointercapture', () => {
+        this.container.addEventListener('lostpointercapture', () => {
             const wasDragging = this.isDragging;
             this.isDragging = false;
             if (wasDragging) this.onDragRelease();
+            if (wasDragging) {
+                this.log('Drag Cancelled', { reason: 'lost-pointer' });
+            }
         });
 
         // Backup: also handle when window loses focus
@@ -429,6 +456,7 @@ class Card {
                 this.onDragRelease();
             }
         });
+        this.log('Event Listeners Bound');
     }
 
     //==============================================================================================
@@ -496,6 +524,9 @@ class Card {
             // Add an inward velocity impulse proportional to displacement
             this.velocity.x += (-this.position.x) * this.releaseBoost;
             this.velocity.y += (-this.position.y) * this.releaseBoost;
+            this.log('Drag Snap Boost', { distance: Number(dist.toFixed(3)) });
+        } else {
+            this.log('Drag Relax', { distance: Number(dist.toFixed(3)) });
         }
 
         // BT 2025-11-15: mobile gets stuck without "hover" event; manually relax back to neutral
@@ -549,6 +580,7 @@ class Card {
         this.isFlipped = !this.isFlipped;
         this.flipTarget = this.isFlipped ? 1 : 0;
         this.flipStartTime = performance.now(); // start timing flip now
+        this.log('Card Flipped', { flipped: Number(this.isFlipped) });
     }
 
     //==============================================================================================
@@ -665,12 +697,18 @@ class Card {
         requestAnimationFrame(this.animate.bind(this));
     }
 
+    //==============================================================================================
+    /**
+     * Set the frame cap for the card
+     * @param {number} fps - The frame rate to cap the card at
+     */
     setFrameCap(fps: number | null) {
         if (fps && fps > 0) {
             this.minFrameIntervalMs = 1000 / fps;
         } else {
             this.minFrameIntervalMs = 0;
         }
+        this.log('Frame Cap Updated', { fps: fps ?? 0 });
     }
 
     //==============================================================================================
@@ -763,34 +801,42 @@ class Card {
 
         // Do not schedule if the card is hidden
         if (!this.container || this.container.classList.contains('hidden')) {
+            this.log('CTA Skipped', { reason: 'hidden' });
             return;
         }
 
         // If user has already interacted, never show CTA again this session
         if (this.hasInteracted) {
+            this.log('CTA Skipped', { reason: 'already-interacted' });
             return;
         }
 
         this._showTapTimeout = setTimeout(() => {
             // If hidden by the time we fire, abort
             if ((this.container as HTMLElement).classList.contains('hidden')) {
+                this.log('CTA Skipped', { reason: 'became-hidden' });
                 return;
             }
 
             if (isMobile()) {
                 this.tapIndicatorMobile?.classList.add('visible');
+                this.log('CTA Shown', { variant: 'mobile' });
             } else {
                 this.tapIndicator?.classList.add('visible');
+                this.log('CTA Shown', { variant: 'desktop' });
             }
 
             this._hideTapTimeout = setTimeout(() => {
                 if (isMobile()) {
                     this.tapIndicatorMobile?.classList.remove('visible');
+                    this.log('CTA Hidden', { variant: 'mobile' });
                 } else {
                     this.tapIndicator?.classList.remove('visible');
+                    this.log('CTA Hidden', { variant: 'desktop' });
                 }
             }, 14200);
         }, 2250);
+        this.log('CTA Scheduled');
     }
 
     //==============================================================================================
@@ -798,6 +844,8 @@ class Card {
      * Clear CTA timers and hide indicators
      */
     _clearCtaTimers() {
+        const hadShow = Boolean(this._showTapTimeout);
+        const hadHide = Boolean(this._hideTapTimeout);
         if (this._showTapTimeout) {
             clearTimeout(this._showTapTimeout);
             this._showTapTimeout = null;
@@ -812,6 +860,12 @@ class Card {
         if (this.tapIndicatorMobile) {
             this.tapIndicatorMobile.classList.remove('visible');
         }
+        if (hadShow || hadHide) {
+            this.log('CTA Cleared', {
+                showTimerCleared: Number(hadShow),
+                hideTimerCleared: Number(hadHide)
+            });
+        }
     }
 
     //==============================================================================================
@@ -821,7 +875,7 @@ class Card {
      */
     hide() {
         if (!this.container) {
-            console.warn('Card container not found for hide()');
+            this.log('Hide Skipped', { reason: 'container-missing' }, undefined, 'warn');
             return;
         }
         
@@ -829,6 +883,7 @@ class Card {
 
         // Cancel CTA and hide indicators when leaving card view
         this._clearCtaTimers();
+        this.log('Card Hidden');
     }
 
     //==============================================================================================
@@ -838,7 +893,7 @@ class Card {
      */
     show() {
         if (!this.container) {
-            console.warn('Card container not found for show()');
+            this.log('Show Skipped', { reason: 'container-missing' }, undefined, 'warn');
             return;
         }
 
@@ -846,8 +901,32 @@ class Card {
 
         // Start CTA timer now that card view is active
         this._startCtaTimer();
+        this.log('Card Shown');
     }
 }
+
+//==============================================================================================
+/**
+ * Set frame render cap for card
+ * @param {number} fps - limit/sec
+ */
+export function setCardFrameCap(fps: number | null) {
+    pendingCardFrameCap = fps;
+    if (card3DInstance && typeof card3DInstance.setFrameCap === 'function') {
+        card3DInstance.setFrameCap(fps);
+    }
+}
+
+//==============================================================================================
+/**
+ * Handle photo lightbox state change
+ * @param {string} state - The state of the photo lightbox
+ */
+onPhotoLightboxStateChange(state => {
+    const fps = state === 'open' ? 30 : null;
+    logEvent('card', 'Lightbox Frame Cap Sync', { fps: fps ?? 0, lightboxState: state });
+    setCardFrameCap(fps);
+});
 
 // Initialize when DOM is loaded and expose to state manager
 let card3DInstance: any = null;
@@ -863,15 +942,5 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Expose to window for state manager
     (window as any).card3DInstance = card3DInstance;
-});
-
-export function setCardFrameCap(fps: number | null) {
-    pendingCardFrameCap = fps;
-    if (card3DInstance && typeof card3DInstance.setFrameCap === 'function') {
-        card3DInstance.setFrameCap(fps);
-    }
-}
-
-onPhotoLightboxStateChange(state => {
-    setCardFrameCap(state === 'open' ? 30 : null);
+    logEvent('card', 'Instance Mounted');
 });

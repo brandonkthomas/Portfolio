@@ -3,6 +3,11 @@
  * @fileoverview Line graph component with animated waves (for Projects view)
  */
 
+import { logEvent, LogData, LogLevel } from '../common';
+
+const logLineGraph = (event: string, data?: LogData, note?: string, level: LogLevel = 'info') => {
+	logEvent('lineGraph', event, data, note, level);
+};
 export const stylesHref = '/css/components/lineGraph.css';
 
 //==============================================================================================
@@ -27,6 +32,7 @@ export async function mount(container: HTMLElement, props: { width?: number; hei
     canvas.className = 'lg-canvas';
     root.appendChild(canvas);
     container.appendChild(root);
+    logLineGraph('Mounted', { width, height });
 
     // Animation state
     let running = false;
@@ -41,7 +47,10 @@ export async function mount(container: HTMLElement, props: { width?: number; hei
     const tile = (container.closest('.bento-item') as HTMLElement) || root;
     const onEnter = () => { if (!running) { running = true; requestAnimationFrame(loop); } };
     const onLeave = () => { running = false; drawFrame(); };
-    tile.addEventListener('pointerenter', onEnter);
+    const onEnterLogged = () => {
+        onEnter();
+    };
+    tile.addEventListener('pointerenter', onEnterLogged);
     tile.addEventListener('pointerleave', onLeave);
 
     /**
@@ -115,7 +124,7 @@ export async function mount(container: HTMLElement, props: { width?: number; hei
     return {
         setSize({ width, height }: { width: number; height: number }) { resize({ width, height }); drawFrame(); },
         update(nextProps: Record<string, unknown>) { /* future */ },
-        destroy() { running = false; tile.removeEventListener('pointerenter', onEnter); tile.removeEventListener('pointerleave', onLeave); root.remove(); }
+        destroy() { running = false; tile.removeEventListener('pointerenter', onEnterLogged); tile.removeEventListener('pointerleave', onLeave); root.remove(); logLineGraph('Destroyed'); }
     };
 }
 

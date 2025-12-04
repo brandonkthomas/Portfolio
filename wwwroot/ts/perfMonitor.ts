@@ -3,7 +3,7 @@
  * @fileoverview Performance monitoring and diagnostics for Three.js scenes
  */
 
-import { isDebug } from './common';
+import { isDebug, logEvent, LogData, LogLevel } from './common';
 
 type SegmentId = number;
 
@@ -67,6 +67,11 @@ class PerfMonitor {
         if (this.enabled) {
             this.startOverlay();
         }
+        this.log('PerfMonitor Active', { enabled: Number(this.enabled) });
+    }
+
+    private log(event: string, data?: LogData, note?: string, level: LogLevel = 'info') {
+        logEvent('perfMonitor', event, data, note, level);
     }
 
     //==============================================================================================
@@ -89,6 +94,7 @@ class PerfMonitor {
                 totalsBySegment: new Map()
             };
             this.loops.set(loopName, loop);
+            this.log('Loop Registered', { loop: loopName });
         }
         return loop;
     }
@@ -104,6 +110,7 @@ class PerfMonitor {
             this.stopOverlay();
             this.reset(); // keep state clean when disabled
         }
+        this.log('Enabled Toggled', { enabled: Number(this.enabled) });
     }
 
     //==============================================================================================
@@ -166,10 +173,16 @@ class PerfMonitor {
             // Identify top contributing segments this frame
             const segments = loop.currentFrameSegments.slice().sort((a, b) => b.duration - a.duration);
             const top = segments.slice(0, 3);
-            // Console diagnostic
-            // eslint-disable-next-line no-console
-            console.warn(`[perf] ${loopName} stutter: frame=${frameMs.toFixed(2)}ms delta=${delta.toFixed(2)}ms`,
-                top.map(s => `${s.name}:${s.duration.toFixed(2)}ms`).join(' | '));
+            this.log(
+                'Long Frame Detected',
+                {
+                    loop: loopName,
+                    frameMs: Number(frameMs.toFixed(2)),
+                    deltaMs: Number(delta.toFixed(2))
+                },
+                top.map(s => `${s.name}:${s.duration.toFixed(2)}ms`).join(' | '),
+                'warn'
+            );
         }
 
         this.updateOverlay(now);
@@ -236,6 +249,7 @@ class PerfMonitor {
         document.body.appendChild(el);
         this.overlayLastUpdateTs = 0;
         this.updateOverlay(performance.now());
+        this.log('Overlay Started');
     }
 
     //==============================================================================================
@@ -246,6 +260,7 @@ class PerfMonitor {
         if (this.overlayEl) {
             this.overlayEl.remove();
             this.overlayEl = null;
+            this.log('Overlay Stopped');
         }
     }
 
@@ -261,6 +276,7 @@ class PerfMonitor {
         if (this.overlayEl) {
             this.overlayEl.textContent = '';
         }
+        this.log('PerfMonitor Reset');
     }
 
     //==============================================================================================

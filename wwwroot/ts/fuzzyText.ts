@@ -4,6 +4,11 @@
  * @description Handles text distortion effect on any element containing text
  */
 
+import { logEvent, LogData, LogLevel } from './common';
+
+const logFuzzy = (event: string, data?: LogData, note?: string, level: LogLevel = 'info') => {
+	logEvent('fuzzyText', event, data, note, level);
+};
 type FuzzyTextOptions = {
 	fontSize?: string | number;
 	fontWeight?: number | string | 'inherit';
@@ -103,6 +108,10 @@ class FuzzyTextAnimator {
 		this.ctx = null;
 		this.offCtx = null;
 		this.cleanupHandlers = [];
+		logFuzzy('Animator Created', {
+			enableHover: Number(this.options.enableHover),
+			baseIntensity: this.options.baseIntensity
+		});
 	}
 
 	//==============================================================================================
@@ -115,6 +124,7 @@ class FuzzyTextAnimator {
 		const element = this.targetElement;
 		const text = getTextFromElement(element);
 		if (!text) {
+			logFuzzy('Init Skipped', { reason: 'empty-text' });
 			return { canvas: this.canvas, destroy: () => this.destroy() };
 		}
 
@@ -142,6 +152,7 @@ class FuzzyTextAnimator {
 		this.ctx = this.canvas.getContext('2d');
 		this.offCtx = this.offscreen.getContext('2d');
 		if (!this.ctx || !this.offCtx) {
+			logFuzzy('Init Failed', { reason: 'context' }, 'Canvas context unavailable', 'error');
 			return { canvas: this.canvas, destroy: () => this.destroy() };
 		}
 
@@ -192,6 +203,10 @@ class FuzzyTextAnimator {
 		this.canvas.height = tightHeight + verticalMargin * 2;
 		this.ctx.save();
 		this.ctx.translate(horizontalMargin, verticalMargin);
+		logFuzzy('Canvas Prepared', {
+			width: this.canvas.width,
+			height: this.canvas.height
+		});
 
 		const interactiveLeft = horizontalMargin + xOffset;
 		const interactiveTop = verticalMargin;
@@ -253,6 +268,7 @@ class FuzzyTextAnimator {
 				this.canvas.removeEventListener('touchmove', handleTouchMove as any);
 				this.canvas.removeEventListener('touchend', handleTouchEnd as any);
 			});
+			logFuzzy('Hover Enabled');
 		}
 
 		// Rebuild on resize
@@ -266,6 +282,7 @@ class FuzzyTextAnimator {
 		};
 		window.addEventListener('resize', handleResize);
 		this.cleanupHandlers.push(() => window.removeEventListener('resize', handleResize));
+		logFuzzy('Animator Initialized');
 
 		return { canvas: this.canvas, destroy: () => this.destroy() };
 	}
@@ -292,6 +309,7 @@ class FuzzyTextAnimator {
 		}
 		this.ctx = null;
 		this.offCtx = null;
+		logFuzzy('Animator Destroyed', { keepCanvas: Number(Boolean(opts.keepCanvas)) });
 	}
 }
 
@@ -305,6 +323,7 @@ class FuzzyTextAnimator {
 export function attachFuzzyTextToElement(element: HTMLElement, options: FuzzyTextOptions = {}) {
 	const animator = new FuzzyTextAnimator(element, options);
 	animator.init();
+	logFuzzy('Animator Attached');
 	return animator;
 }
 

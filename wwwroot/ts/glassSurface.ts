@@ -4,7 +4,11 @@
  * @description Creates glass surface material with real-time distortion and lighting
  */
 
-import { supportsSVGFilters } from './common';
+import { supportsSVGFilters, logEvent, LogData, LogLevel } from './common';
+
+const logGlass = (event: string, data?: LogData, note?: string, level: LogLevel = 'info') => {
+    logEvent('glassSurface', event, data, note, level);
+};
 
 let uniqueIdCounter = 0;
 
@@ -52,6 +56,7 @@ export function createGlassSurface(options: GlassSurfaceOptions = {}): GlassSurf
 
     // Set defaults (using ternary rather than nullish coalescing for NUglify compatibility)
     if (!options) options = {};
+    
     const width = options.width !== undefined ? options.width : 200;
     const height = options.height !== undefined ? options.height : 80;
     const borderRadius = options.borderRadius !== undefined ? options.borderRadius : 20;
@@ -89,6 +94,10 @@ export function createGlassSurface(options: GlassSurfaceOptions = {}): GlassSurf
     glassSurfaceClass = 'glass-surface--fallback'; // testing with frosted glass on all browsers...
 
     container.className = `glass-surface ${glassSurfaceClass} ${className}`.trim();
+    logGlass('Surface Created', {
+        svgSupported: Number(isSVGSupported),
+        className
+    });
     
     // Apply styles
     Object.assign(container.style, style, {
@@ -262,6 +271,7 @@ export function createGlassSurface(options: GlassSurfaceOptions = {}): GlassSurf
         updateDisplacementMap,
         destroy: () => {
             resizeObserver.disconnect();
+            logGlass('Surface Destroyed');
         }
     };
 }

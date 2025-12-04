@@ -4,7 +4,11 @@
  */
 
 import { getNebulaTexture } from './textures';
-import { isErrorPage } from './common';
+import { isErrorPage, logEvent, LogData, LogLevel } from './common';
+
+const logNebula = (event: string, data?: LogData, note?: string, level: LogLevel = 'info') => {
+    logEvent('nebulae', event, data, note, level);
+};
 
 // Store original opacity values for restoration
 const nebulaOriginalOpacities = new WeakMap<any, number>();
@@ -203,6 +207,7 @@ export function createNebulae(nebulaCount: number, scene: any): any[] {
         scene.add(sprite);
     }
     
+    logNebula('Create + Cache Completed', { total: nebulae.length });
     return nebulae;
 }
 
@@ -365,6 +370,7 @@ export function reduceNebulaOpacity(nebulae: any[], factor: number = 0.3) {
             material.opacity = originalOpacity * factor;
         }
     });
+    logNebula('Opacity Reduced', { factor });
 }
 
 //==============================================================================================
@@ -383,4 +389,5 @@ export function restoreNebulaOpacity(nebulae: any[]) {
             }
         }
     });
+    logNebula('Opacity Restored', { count: nebulae.length });
 } 

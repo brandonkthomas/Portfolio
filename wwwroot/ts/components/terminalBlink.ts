@@ -3,6 +3,11 @@
  * @fileoverview Terminal component with blinking caret (for Projects view)
  */
 
+import { logEvent, LogData, LogLevel } from '../common';
+
+const logTerminal = (event: string, data?: LogData, note?: string, level: LogLevel = 'info') => {
+	logEvent('terminalBlink', event, data, note, level);
+};
 export const stylesHref = '/css/components/terminalBlink.css';
 
 //==============================================================================================
@@ -27,10 +32,11 @@ export async function mount(container: HTMLElement, props: { prompt?: string } =
     line.append(prompt, caret);
     root.appendChild(line);
     container.appendChild(root);
+	logTerminal('Mounted', { prompt: prompt.textContent?.trim() });
 
     return {
         setSize() { /* not required */ },
-        update(nextProps: { prompt?: string }) { if (nextProps?.prompt) prompt.textContent = nextProps.prompt + ' '; },
-        destroy() { root.remove(); }
+		update(nextProps: { prompt?: string }) { if (nextProps?.prompt) { prompt.textContent = nextProps.prompt + ' '; logTerminal('Prompt Updated', { prompt: nextProps.prompt }); } },
+		destroy() { root.remove(); logTerminal('Destroyed'); }
     };
 }

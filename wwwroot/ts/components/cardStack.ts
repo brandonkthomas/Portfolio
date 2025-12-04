@@ -3,6 +3,11 @@
  * @fileoverview Card stack component with subtle parallax (for Projects view)
  */
 
+import { logEvent, LogData, LogLevel } from '../common';
+
+const logCardStack = (event: string, data?: LogData, note?: string, level: LogLevel = 'info') => {
+	logEvent('cardStack', event, data, note, level);
+};
 export const stylesHref = '/css/components/cardStack.css';
 
 //==============================================================================================
@@ -22,6 +27,7 @@ export async function mount(container: HTMLElement, props: Record<string, unknow
     const l3 = document.createElement('div'); l3.className = 'card-layer layer-3';
     root.append(l1, l2, l3);
     container.appendChild(root);
+	logCardStack('Mounted');
 
     // avoid CSS transition restarts (BT: was causing stutter during mouse movement)
     [l1, l2, l3].forEach(layer => {
@@ -179,6 +185,7 @@ export async function mount(container: HTMLElement, props: Record<string, unknow
         mid.targetY = -6;
         mid.targetRot = 6;
         mid.targetScale = 1.04;
+        logCardStack('Touch Nudge');
     }, { passive: true });
     root.addEventListener('touchend', resetPointer, { passive: true });
 
@@ -196,6 +203,7 @@ export async function mount(container: HTMLElement, props: Record<string, unknow
             destroyed = true;
             if (rafId != null) cancelAnimationFrame(rafId);
             root.remove();
+            logCardStack('Destroyed');
         }
     };
 }

@@ -5,6 +5,7 @@
  */
 
 import PhotoLightbox from './photoLightbox';
+import { logEvent, LogData, LogLevel } from './common';
 
 type PhotoItem = { url: string; width: number; height: number; aspectRatio: number; index: number };
 type ManifestImageEntry = string | { url?: string; width?: number; height?: number };
@@ -53,6 +54,10 @@ class PhotoGallery {
         this.init();
     }
 
+    private log(event: string, data?: LogData, note?: string, level: LogLevel = 'info') {
+        logEvent('photoGallery', event, data, note, level);
+    }
+
     //==============================================================================================
     /**
      * Initialize photo gallery
@@ -75,10 +80,12 @@ class PhotoGallery {
         if (!this.container) {
             const path = (window.location.pathname || '').toLowerCase();
             if (path === '/photos' || path === '/photos/') {
-                console.warn('Photo gallery container not found');
+                this.log('Container Missing', { path }, 'Expected .photo-gallery-container', 'warn');
             }
             return;
         }
+
+        this.log('Container Ready', { path: window.location.pathname || '/' });
 
         // Create gallery HTML structure
         this.createGalleryHTML();
@@ -116,22 +123,25 @@ class PhotoGallery {
             const fallback = { width: 800, height: 1200 };
             let settled = false;
 
-            const done = (w?: number, h?: number) => {
+            const finalize = (w?: number, h?: number, note?: string) => {
                 if (settled) return;
                 settled = true;
-                resolve({ width: Math.max(1, w || fallback.width), height: Math.max(1, h || fallback.height) });
+                const width = Math.max(1, w || fallback.width);
+                const height = Math.max(1, h || fallback.height);
+                this.log('Image Measured', { width, height }, note ? `${note} – ${url}` : url);
+                resolve({ width, height });
             };
 
             const img = new Image();
-            const timer = setTimeout(() => done(fallback.width, fallback.height), timeoutMs);
+            const timer = setTimeout(() => finalize(fallback.width, fallback.height, 'timeout fallback'), timeoutMs);
 
             img.onload = () => {
                 clearTimeout(timer);
-                done(img.naturalWidth, img.naturalHeight);
+                finalize(img.naturalWidth, img.naturalHeight, 'natural size');
             };
             img.onerror = () => {
                 clearTimeout(timer);
-                done(fallback.width, fallback.height);
+                finalize(fallback.width, fallback.height, 'load error');
             };
 
             // Avoid blocking rendering; decode if supported
@@ -168,6 +178,7 @@ class PhotoGallery {
         }
 
         if (!url) {
+            this.log('Manifest Entry Invalid', { entryIndex: index }, 'Missing URL', 'warn');
             return { photo: null, hasDimensions: false };
         }
 
@@ -178,6 +189,10 @@ class PhotoGallery {
             aspectRatio: width / height,
             index
         };
+
+        if (!hasDimensions) {
+            this.log('Manifest Missing Dimensions', { entryIndex: index });
+        }
 
         return { photo, hasDimensions };
     }
@@ -202,6 +217,11 @@ class PhotoGallery {
             photo.width = width;
             photo.height = height;
             photo.aspectRatio = width / height;
+            this.log('Dimensions Backfilled', {
+                photoIndex: photo.index,
+                width,
+                height
+            });
 
             const selector = `.photo-item[data-photo-index="${photo.index}"]`;
             const photoItem = this.container?.querySelector(selector) as HTMLElement | null;
@@ -213,8 +233,13 @@ class PhotoGallery {
                     trigger.setAttribute('data-photo-lightbox-height', `${height}`);
                 }
             }
-        }).catch(() => {
-            // No-op: measurement already provides fallback defaults
+        }).catch((error) => {
+            this.log(
+                'Dimension Backfill Failed',
+                { photoIndex: photo.index },
+                error instanceof Error ? error.message : String(error),
+                'warn'
+            );
         });
     }
 
@@ -225,7 +250,10 @@ class PhotoGallery {
      */
     async retrievePhotos() {
         const grid = this.container!.querySelector('.photo-grid');
-        if (!grid) return;
+        if (!grid) {
+            this.log('Retrieve Skipped', {}, 'Photo grid missing', 'warn');
+            return;
+        }
 
         const measurementQueue: PhotoItem[] = [];
 
@@ -248,14 +276,25 @@ class PhotoGallery {
             });
 
             this.photos = normalizedPhotos;
+            this.log('Manifest Loaded', {
+                entries: entries.length,
+                normalized: normalizedPhotos.length,
+                measurementQueue: measurementQueue.length
+            });
         } catch (err) {
-            console.error('Error loading photo manifest', err);
+            this.log(
+                'Manifest Load Failed',
+                {},
+                err instanceof Error ? err.message : String(err),
+                'error'
+            );
             this.photos = [];
         }
 
         this.renderPhotoGrid();
 
         if (measurementQueue.length) {
+            this.log('Measurement Queue Dispatched', { items: measurementQueue.length });
             measurementQueue.forEach((photo: PhotoItem) => this.backfillPhotoDimensions(photo));
         }
     }
@@ -266,7 +305,10 @@ class PhotoGallery {
      */
     renderPhotoGrid() {
         const grid = this.container!.querySelector('.photo-grid') as HTMLElement | null;
-        if (!grid) return;
+        if (!grid) {
+            this.log('Render Skipped', {}, 'Photo grid missing', 'warn');
+            return;
+        }
 
         // Clear existing content
         grid.innerHTML = '';
@@ -353,6 +395,9 @@ class PhotoGallery {
             img.addEventListener('error', () => {
                 photoItem.classList.remove('photo-item--loading');
                 photoItem.classList.add('photo-item--error');
+                this.log('Image Load Failed', {
+                    photoIndex: photo.index
+                }, photo.url, 'warn');
             });
 
             trigger.appendChild(skeleton);
@@ -396,6 +441,11 @@ class PhotoGallery {
 
         this.prioritizeImageRequests(loadQueue);
         this.initPhotoLightbox();
+        this.log('Grid Rendered', {
+            columns: columnCount,
+            photos: this.photos.length,
+            queue: loadQueue.length
+        });
     }
 
     //==============================================================================================
@@ -406,8 +456,10 @@ class PhotoGallery {
         if (!this.preloadHintNodes.length) {
             return;
         }
+        const removed = this.preloadHintNodes.length;
         this.preloadHintNodes.forEach(link => link.remove());
         this.preloadHintNodes = [];
+        this.log('Preload Hints Cleared', { removed });
     }
 
     //==============================================================================================
@@ -439,6 +491,7 @@ class PhotoGallery {
             headEl.appendChild(link);
             this.preloadHintNodes.push(link);
         }
+        this.log('Preload Hints Updated', { added: this.preloadHintNodes.length });
     }
 
     //==============================================================================================
@@ -505,6 +558,11 @@ class PhotoGallery {
 
             scheduleAssignment(assignSrc, orderIndex * 12);
         });
+
+        this.log('Image Queue Scheduled', {
+            queued: sortedQueue.length,
+            columns: this.currentColumnCount
+        });
     }
 
     //==============================================================================================
@@ -514,12 +572,14 @@ class PhotoGallery {
     initPhotoLightbox() {
         const grid = this.container?.querySelector('.photo-grid');
         if (!grid) {
+            this.log('Lightbox Init Skipped', {}, 'Photo grid missing', 'warn');
             return;
         }
 
         if (this.lightboxInstance) {
             this.lightboxInstance.destroy();
             this.lightboxInstance = null;
+            this.log('Lightbox Destroyed');
         }
 
         this.lightboxInstance = new PhotoLightbox({
@@ -531,6 +591,9 @@ class PhotoGallery {
         });
 
         this.lightboxInstance.init();
+        this.log('Lightbox Initialized', {
+            slides: this.photos.length
+        });
     }
 
     //==============================================================================================
@@ -541,6 +604,10 @@ class PhotoGallery {
         // Only re-render if column count changes
         const newColumnCount = this.getColumnCount();
         if (newColumnCount !== this.currentColumnCount) {
+            this.log('Resize Reflow', {
+                from: this.currentColumnCount,
+                to: newColumnCount
+            });
             this.renderPhotoGrid();
         }
     }
@@ -584,6 +651,8 @@ class PhotoGallery {
 
         // Handle window resize for responsive column layout
         window.addEventListener('resize', () => this.handleResize());
+
+        this.log('Event Listeners Bound');
     }
 
 
@@ -592,7 +661,10 @@ class PhotoGallery {
      * Show the photo gallery
      */
     show() {
-        if (!this.container) { return; }
+        if (!this.container) {
+            this.log('Show Skipped', {}, 'Container missing', 'warn');
+            return;
+        }
                 
         // Generate photos on first show (lazy initialization)
         if (!this.photosGenerated) {
@@ -603,10 +675,12 @@ class PhotoGallery {
                 requestIdleCallback(() => {
                     this.retrievePhotos();
                 }, { timeout: 100 });
+                this.log('Manifest Load Scheduled', { strategy: 'idle' });
             } else {
                 setTimeout(() => {
                     this.retrievePhotos();
                 }, 0);
+                this.log('Manifest Load Scheduled', { strategy: 'timeout' });
             }
         }
         
@@ -615,6 +689,7 @@ class PhotoGallery {
         
         // Enable scrolling
         document.body.style.overflow = 'auto';
+        this.log('Gallery Shown');
     }
 
     //==============================================================================================
@@ -622,7 +697,10 @@ class PhotoGallery {
      * Hide the photo gallery
      */
     hide() {
-        if (!this.container) { return; }
+        if (!this.container) {
+            this.log('Hide Skipped', {}, 'Container missing', 'warn');
+            return;
+        }
         
         this.container.classList.remove('visible');
         this.isVisible = false;
@@ -634,6 +712,7 @@ class PhotoGallery {
         this.clearPreloadHints();
 
         // Lightbox UI (photoLightbox) manages its own visibility; we're done here
+        this.log('Gallery Hidden');
     }
 
     //==============================================================================================

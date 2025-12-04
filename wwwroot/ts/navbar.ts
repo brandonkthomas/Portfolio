@@ -6,7 +6,7 @@
 
 import { createGlassSurface } from './glassSurface';
 import type { GlassSurfaceInstance } from './glassSurface';
-import { isMobile } from './common';
+import { isMobile, logEvent, LogData, LogLevel } from './common';
 import stateManager, { ViewState } from './stateManager';
 
 class Navbar {
@@ -36,6 +36,10 @@ class Navbar {
         this.init();
     }
 
+    private log(event: string, data?: LogData, note?: string, level: LogLevel = 'info') {
+        logEvent('navbar', event, data, note, level);
+    }
+
     //==============================================================================================
     /**
      * Initialize the URL display with glass surface
@@ -55,7 +59,10 @@ class Navbar {
      */
     setup() {
         this.container = document.querySelector('.url-display');
-        if (!this.container) return;
+        if (!this.container) {
+            this.log('Setup Skipped', { reason: 'container-missing' }, undefined, 'warn');
+            return;
+        }
 
         // Get references to elements
         this.burgerButton = this.container.querySelector('.burger-menu');
@@ -63,11 +70,17 @@ class Navbar {
 
         // Create glass surface wrapper
         const glassSurfaceWrapper = this.container.querySelector('.glass-surface-wrapper');
-        if (!glassSurfaceWrapper) return;
+        if (!glassSurfaceWrapper) {
+            this.log('Setup Skipped', { reason: 'wrapper-missing' }, undefined, 'warn');
+            return;
+        }
 
         // Get the content that should be inside the glass surface
         const content = glassSurfaceWrapper.querySelector('.url-display-content');
-        if (!content) return;
+        if (!content) {
+            this.log('Setup Skipped', { reason: 'content-missing' }, undefined, 'warn');
+            return;
+        }
 
         // Create glass surface with appropriate dimensions
         this.glassSurface = createGlassSurface({
@@ -100,9 +113,11 @@ class Navbar {
 
         // Replace wrapper with glass surface
         glassSurfaceWrapper.replaceWith(this.glassSurface.element);
+        this.log('Glass Surface Initialized');
 
         // Setup event listeners
         this.setupEventListeners();
+        this.log('Event Listeners Bound');
         
         // Initial responsive check
         this.handleResize();
@@ -112,6 +127,7 @@ class Navbar {
             this._resolveReady();
             this._resolveReady = null;
         }
+        this.log('Navbar Ready');
     }
 
     //==============================================================================================
@@ -132,6 +148,7 @@ class Navbar {
                     if (!target?.closest('.url-link')) {
                         e.stopPropagation();
                         this.toggleMenu();
+                        this.log('Mobile Bar Toggled', { isOpen: Number(this.isMenuOpen) });
                     }
                 }
             });
@@ -163,6 +180,7 @@ class Navbar {
                     const currentView = stateManager.getCurrentView();
                     const targetView = currentView === ViewState.PHOTOS ? ViewState.CARD : ViewState.PHOTOS;
                     stateManager.navigateToView(targetView, true);
+                    this.log('Photos Link SPA', { from: currentView, to: targetView });
                 } else {
                     // Fallback to full navigation
                     const path = window.location.pathname;
@@ -171,6 +189,7 @@ class Navbar {
                     } else {
                         window.location.href = '/photos';
                     }
+                    this.log('Photos Link Hard Nav', { path });
                 }
             });
         });
@@ -197,6 +216,7 @@ class Navbar {
                     const currentView = stateManager.getCurrentView();
                     const targetView = currentView === ViewState.PROJECTS ? ViewState.CARD : ViewState.PROJECTS;
                     stateManager.navigateToView(targetView, true);
+                    this.log('Projects Link SPA', { from: currentView, to: targetView });
                 } else {
                     const path = window.location.pathname;
                     if (path.toLowerCase() === '/projects') {
@@ -204,6 +224,7 @@ class Navbar {
                     } else {
                         window.location.href = '/projects';
                     }
+                    this.log('Projects Link Hard Nav', { path });
                 }
             });
         });
@@ -222,8 +243,10 @@ class Navbar {
                     if (canSpa) {
                         // Navigate to card view
                         stateManager.navigateToView(ViewState.CARD, true);
+                        this.log('Home Link SPA');
                     } else {
                         window.location.href = '/';
+                        this.log('Home Link Hard Nav');
                     }
                 }
             });
@@ -232,6 +255,7 @@ class Navbar {
         // Listen for view changes to update mobile nav
         stateManager.onViewChange((view: string) => {
             this.updateMobileNav(view);
+            this.log('View Changed', { view });
         });
 
         // Close menu when clicking outside
@@ -281,6 +305,7 @@ class Navbar {
                 `;
             }
         });
+        this.log('Mobile Nav Updated', { view });
     }
 
     //==============================================================================================
@@ -293,6 +318,7 @@ class Navbar {
         } else {
             this.openMenu();
         }
+        this.log('Menu Toggled', { isOpen: Number(this.isMenuOpen) });
     }
 
     //==============================================================================================
@@ -305,6 +331,7 @@ class Navbar {
         if (this.burgerButton) {
             this.burgerButton.setAttribute('aria-expanded', 'true');
         }
+        this.log('Menu Opened');
     }
 
     //==============================================================================================
@@ -317,6 +344,7 @@ class Navbar {
         if (this.burgerButton) {
             this.burgerButton.setAttribute('aria-expanded', 'false');
         }
+        this.log('Menu Closed');
     }
 
     //==============================================================================================
@@ -327,6 +355,7 @@ class Navbar {
         // Close menu if switching from mobile to desktop
         if (!isMobile() && this.isMenuOpen) {
             this.closeMenu();
+            this.log('Menu Closed On Resize');
         }
     }
 
@@ -338,11 +367,13 @@ class Navbar {
         if (this.glassSurface) {
             this.glassSurface.destroy();
         }
+        this.log('Navbar Destroyed');
     }
 }
 
 // Initialize when module loads
 const navbarManager = new Navbar();
 (window as any).navbarManagerInstance = navbarManager;
+logEvent('navbar', 'Instance Mounted');
 
 export default navbarManager;

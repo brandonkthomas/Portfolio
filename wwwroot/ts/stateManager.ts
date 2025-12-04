@@ -4,7 +4,7 @@
  * @description Handles view transitions between card and photo gallery views
  */
 
-import { isMobile, isErrorPage } from './common';
+import { isMobile, isErrorPage, logEvent, LogData, LogLevel } from './common';
 import { triggerStarfieldWarp } from './starfield';
 
 //==============================================================================================
@@ -21,6 +21,7 @@ import { triggerStarfieldWarp } from './starfield';
         if (photoContainer) {
             (photoContainer as HTMLElement).classList.add('visible');
         }
+        logEvent('stateManager', 'Early Route Applied', { path: '/photos' });
     } else if (path === '/projects' || path === '/Projects') {
         const cardContainer = document.querySelector('.card-container');
         const projectsContainer = document.querySelector('.projects-container');
@@ -30,6 +31,7 @@ import { triggerStarfieldWarp } from './starfield';
         if (projectsContainer) {
             (projectsContainer as HTMLElement).classList.add('visible');
         }
+        logEvent('stateManager', 'Early Route Applied', { path: '/projects' });
     }
 })();
 
@@ -90,6 +92,16 @@ class StateManager {
         this.init();
     }
 
+    private log(event: string, data?: LogData, note?: string, level: LogLevel = 'info') {
+        logEvent('stateManager', event, data, note, level);
+    }
+
+    private describeView(view: string) {
+        if (view === (ViewState as any).PHOTOS) return 'photos';
+        if (view === (ViewState as any).PROJECTS) return 'projects';
+        return 'card';
+    }
+
     //==============================================================================================
     /**
      * Initialize state manager -- call ctor first
@@ -119,6 +131,7 @@ class StateManager {
         // BT 2025-10-31: finally got this working last week and then Safari 26 decided to cause 
         //   issues... to investigate
         this.setupInitialReveal();
+        this.log('Initialized');
     }
 
 
@@ -134,6 +147,7 @@ class StateManager {
             // Set current view immediately (DOM already updated by early init)
             this.currentView = (ViewState as any).PHOTOS;
             history.replaceState({ view: (ViewState as any).PHOTOS }, '', '/photos');
+            this.log('Initial Route', { path: '/photos' });
             
             // Notify listeners immediately so navbar updates
             this.notifyListeners();
@@ -154,6 +168,7 @@ class StateManager {
             // Set current view immediately (DOM already updated by early init)
             this.currentView = (ViewState as any).PROJECTS;
             history.replaceState({ view: (ViewState as any).PROJECTS }, '', '/projects');
+            this.log('Initial Route', { path: '/projects' });
 
             // Notify listeners immediately so navbar updates
             this.notifyListeners();
@@ -176,6 +191,7 @@ class StateManager {
             
             if (path === '/' || path === '') {
                 history.replaceState({ view: (ViewState as any).CARD }, '', '/');
+                this.log('Initial Route', { path: '/' });
 
                 // Ensure modules are connected, then trigger card.show() so CTA scheduling starts on initial load
                 this.waitForModules(() => {
@@ -183,6 +199,8 @@ class StateManager {
                         this.card.show();
                     }
                 });
+            } else {
+                this.log('Initial Route', { path: path || '(other)' });
             }
         }
     }
@@ -198,6 +216,11 @@ class StateManager {
             
             // Check if all critical modules are connected
             if (this.starfield && this.card && this.photoGallery) {
+                this.log('Core Modules Ready', {
+                    starfield: Number(Boolean(this.starfield)),
+                    card: Number(Boolean(this.card)),
+                    photoGallery: Number(Boolean(this.photoGallery))
+                });
                 if (callback) callback();
             } else {
                 // Check again in 50ms
@@ -218,6 +241,7 @@ class StateManager {
         const check = () => {
             this.connectModules();
             if (this.projects) {
+                this.log('Projects Module Ready');
                 if (callback) callback();
             } else {
                 setTimeout(check, 50);
@@ -234,18 +258,23 @@ class StateManager {
     connectModules() {
         if (window.starfieldInstance && !this.starfield) {
             this.starfield = window.starfieldInstance;
+            this.log('Module Connected', { module: 'starfield' });
         }
         if (window.card3DInstance && !this.card) {
             this.card = window.card3DInstance;
+            this.log('Module Connected', { module: 'card' });
         }
         if (window.photoGalleryInstance && !this.photoGallery) {
             this.photoGallery = window.photoGalleryInstance;
+            this.log('Module Connected', { module: 'photoGallery' });
         }
         if (window.projectsInstance && !this.projects) {
             this.projects = window.projectsInstance;
+            this.log('Module Connected', { module: 'projects' });
         }
         if (window.navbarManagerInstance && !this.navbar) {
             this.navbar = window.navbarManagerInstance;
+            this.log('Module Connected', { module: 'navbar' });
         }
     }
 
@@ -256,6 +285,7 @@ class StateManager {
      */
     onViewChange(callback: (view: string) => void) {
         this.listeners.push(callback);
+        this.log('Listener Registered', { total: this.listeners.length });
     }
 
     //==============================================================================================
@@ -264,6 +294,10 @@ class StateManager {
      */
     notifyListeners() {
         this.listeners.forEach((listener: (view: string) => void) => listener(this.currentView));
+        this.log('Listeners Notified', {
+            listeners: this.listeners.length,
+            view: this.describeView(this.currentView)
+        });
     }
 
     //==============================================================================================
@@ -273,8 +307,10 @@ class StateManager {
      */
     setupInitialReveal() {
         if (this.initialRevealDone) {
+            this.log('Initial Reveal Skipped', { reason: 'already-done' });
             return;
         }
+        this.log('Initial Reveal Started');
 
         // Create abort controller to abort initial reveal if needed (if loading /photos or /projects)
         const abortController = new AbortController();
@@ -346,6 +382,7 @@ class StateManager {
         // Abort initial reveal if needed
         abortController.signal.addEventListener('abort', () => {
             clearInterval(moduleInterval);
+            this.log('Initial Reveal Aborted');
         });
     }
 
@@ -361,6 +398,7 @@ class StateManager {
 
         this.initialRevealDone = true;
         (document.body as any).dataset.initialState = 'ready';
+        this.log('Initial Reveal Triggered');
 
         const mainElements = this.getInitialRevealElements();
         mainElements.forEach(({ element, className }) => {
@@ -412,12 +450,16 @@ class StateManager {
      */
     async navigateToView(view: string, pushHistory: boolean = true, skipAnimations: boolean = false) {
         if (this.isTransitioning || view === this.currentView) {
+            this.log('Navigation Ignored', {
+                to: this.describeView(view),
+                reason: this.isTransitioning ? 'transitioning' : 'already-active'
+            });
             return;
         }
 
         // Ensure modules are connected
         if (!this.starfield || !this.card || !this.photoGallery || (view === (ViewState as any).PROJECTS && !this.projects)) {
-            console.warn('Waiting for modules to be ready...');
+            this.log('Modules Pending', { view: this.describeView(view) }, 'Waiting for dependencies', 'warn');
             this.waitForModules(() => {
                 if (view === (ViewState as any).PROJECTS) {
                     this.waitForProjects(() => {
@@ -460,6 +502,9 @@ class StateManager {
         this.currentView = view;
         this.isTransitioning = false;
         this.notifyListeners();
+        this.log('Navigation Completed', {
+            view: this.describeView(view)
+        });
     }
 
     //==============================================================================================
@@ -468,6 +513,10 @@ class StateManager {
      * @param {boolean} skipAnimations - Whether to skip animations
      */
     async transitionToPhotos(skipAnimations: boolean = false) {
+        this.log('Transition Photos Start', {
+            skipAnimations: Number(skipAnimations),
+            from: this.describeView(this.currentView)
+        });
         
         // Set star direction to reverse (away from camera)
         if (this.starfield) {
@@ -502,7 +551,7 @@ class StateManager {
         if (this.card) {
             this.card.hide();
         } else {
-            console.warn('Card instance not available');
+            this.log('Module Missing', { module: 'card', transition: 'photos' }, 'Unable to hide card', 'warn');
         }
 
         // Hide projects if visible, then show photo gallery
@@ -513,7 +562,7 @@ class StateManager {
         if (this.photoGallery) {
             this.photoGallery.show();
         } else {
-            console.warn('Photo gallery instance not available');
+            this.log('Module Missing', { module: 'photoGallery', transition: 'photos' }, 'Unable to show gallery', 'warn');
         }
 
         // Wait for animations to complete
@@ -524,7 +573,7 @@ class StateManager {
             if (this.starfield) {
                 this.starfield.reduceStars();
             } else {
-                console.warn('Starfield instance not available');
+                this.log('Module Missing', { module: 'starfield', transition: 'photos' }, 'Reduce stars skipped', 'warn');
             }
         }
         
@@ -536,6 +585,10 @@ class StateManager {
      * @param {boolean} skipAnimations - Whether to skip animations
      */
     async transitionToProjects(skipAnimations: boolean = false) {
+        this.log('Transition Projects Start', {
+            skipAnimations: Number(skipAnimations),
+            from: this.describeView(this.currentView)
+        });
 
         // Set star direction to reverse (away from camera)
         if (this.starfield) {
@@ -583,6 +636,10 @@ class StateManager {
      * @param {boolean} skipAnimations - Whether to skip animations
      */
     async transitionToCard(skipAnimations: boolean = false) {
+        this.log('Transition Card Start', {
+            skipAnimations: Number(skipAnimations),
+            from: this.describeView(this.currentView)
+        });
         
         // Set star direction to forward (toward camera)
         if (this.starfield) {
@@ -607,7 +664,7 @@ class StateManager {
         if (this.card) {
             this.card.show();
         } else {
-            console.warn('Card instance not available');
+            this.log('Module Missing', { module: 'card', transition: 'card' }, 'Unable to show card', 'warn');
         }
 
         // Trigger starfield warp (forward direction)
@@ -620,7 +677,7 @@ class StateManager {
         if (this.starfield) {
             this.starfield.restoreStars();
         } else {
-            console.warn('Starfield instance not available');
+            this.log('Module Missing', { module: 'starfield', transition: 'card' }, 'Restore stars skipped', 'warn');
         }
         
     }

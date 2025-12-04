@@ -3,6 +3,8 @@
  * @fileoverview Photo lightbox library with swipe/drag functionality + smooth animations
  */
 
+import { logEvent, LogData, LogLevel } from './common';
+
 type GalleryInput = HTMLElement | HTMLElement[] | NodeListOf<HTMLElement> | string;
 
 export interface PhotoLightboxOptions {
@@ -89,7 +91,13 @@ function emitLightboxState(state: LightboxState) {
         try {
             listener(state);
         } catch (error) {
-            console.error('photoLightbox state listener error', error);
+            logEvent(
+                'photoLightbox',
+                'State Listener Error',
+                { state },
+                error instanceof Error ? error.message : String(error),
+                'error'
+            );
         }
     });
 }
@@ -203,6 +211,24 @@ export default class PhotoLightbox {
     private readonly onPointerUp = (event: PointerEvent) => this.endPointerDrag(event);
     private readonly onBackdropClick = (event: MouseEvent) => this.handleBackdropClick(event);
 
+    private log(event: string, data?: LogData, note?: string, level: LogLevel = 'info') {
+        logEvent('photoLightbox', event, data, note, level);
+    }
+
+    private describeElement(element?: HTMLElement | null) {
+        if (!element) {
+            return 'unknown';
+        }
+        return (
+            element.dataset.photoLightboxId ||
+            element.getAttribute('data-gallery') ||
+            element.id ||
+            element.className ||
+            element.tagName ||
+            'unknown'
+        );
+    }
+
     //==============================================================================================
     // Constructor
     //==============================================================================================
@@ -225,8 +251,15 @@ export default class PhotoLightbox {
      * @description Binds galleries and prepares for user interaction
      */
     init() {
+        if (!this.galleries.length) {
+            this.log('Init Skipped', { galleries: 0 }, 'No gallery elements resolved', 'warn');
+            return;
+        }
+
+        let boundCount = 0;
         this.galleries.forEach((gallery) => {
             if (this.galleryHandlers.has(gallery)) {
+                this.log('Gallery Already Bound', { gallery: this.describeElement(gallery) });
                 return;
             }
 
@@ -234,10 +267,18 @@ export default class PhotoLightbox {
             gallery.addEventListener('click', handler);
             this.galleryHandlers.set(gallery, handler);
 
-            // Cache slide metadata for this gallery. We recompute on demand in
-            // case the DOM mutates (e.g. gallery re-render), but an eager read
-            // costs little here.
-            this.dataSources.set(gallery, this.extractSlides(gallery));
+            const slides = this.extractSlides(gallery);
+            this.dataSources.set(gallery, slides);
+            boundCount += 1;
+            this.log('Gallery Prepared', {
+                gallery: this.describeElement(gallery),
+                slides: slides.length
+            });
+        });
+
+        this.log('Init Completed', {
+            galleries: this.galleries.length,
+            bound: boundCount
         });
     }
 
@@ -249,12 +290,15 @@ export default class PhotoLightbox {
     destroy() {
         this.close(false);
 
+        let removedHandlers = 0;
         this.galleryHandlers.forEach((handler, gallery) => {
             gallery.removeEventListener('click', handler);
+            removedHandlers += 1;
         });
         this.galleryHandlers.clear();
         this.dataSources.clear();
 
+        const hadOverlay = Boolean(this.overlay);
         if (this.overlay) {
             this.overlay.remove();
         }
@@ -268,6 +312,11 @@ export default class PhotoLightbox {
         this.nextButton = undefined;
         this.slides = [];
         this.activeDataSource = undefined;
+
+        this.log('Destroyed', {
+            handlers: removedHandlers,
+            hadOverlay: Number(hadOverlay)
+        });
     }
 
     //==============================================================================================
@@ -279,10 +328,21 @@ export default class PhotoLightbox {
      */
     open(index = 0, gallery?: HTMLElement) {
         const host = gallery ?? this.galleries[0];
-        if (!host) return;
+        if (!host) {
+            this.log('Open Skipped', { requestedIndex: index }, 'No gallery host available', 'warn');
+            return;
+        }
 
         const slides = this.extractSlides(host);
-        if (!slides.length) return;
+        if (!slides.length) {
+            this.log(
+                'Open Skipped',
+                { requestedIndex: index, gallery: this.describeElement(host) },
+                'No slides extracted',
+                'warn'
+            );
+            return;
+        }
 
         this.activeDataSource = host;
         this.slides = slides;
@@ -311,6 +371,12 @@ export default class PhotoLightbox {
         if (!wasOpen) {
             emitLightboxState('open');
         }
+
+        this.log('Opened', {
+            index: this.currentIndex,
+            slides: this.slides.length,
+            gallery: this.describeElement(host)
+        });
     }
 
     //==============================================================================================
@@ -322,6 +388,7 @@ export default class PhotoLightbox {
      */
     close(restoreFocus = true, resetVerticalState = true) {
         if (!this.isOpen) {
+            this.log('Close Ignored', { restoreFocus: Number(restoreFocus) }, 'Lightbox already closed');
             return;
         }
 
@@ -349,6 +416,11 @@ export default class PhotoLightbox {
             this.lastFocusedElement.focus();
         }
         this.lastFocusedElement = null;
+
+        this.log('Closed', {
+            restoreFocus: Number(restoreFocus),
+            resetVerticalState: Number(resetVerticalState)
+        });
     }
 
     //==============================================================================================
@@ -377,6 +449,7 @@ export default class PhotoLightbox {
      */
     goTo(index: number) {
         if (!this.slides.length) {
+            this.log('Navigation Skipped', { requestedIndex: index }, 'No slides are loaded', 'warn');
             return;
         }
 
@@ -389,17 +462,24 @@ export default class PhotoLightbox {
             const isWrapForward = fromIndex === slideCount - 1 && index >= slideCount;
 
             if (isWrapBackward || isWrapForward) {
+                this.log('Wrap Boundary', {
+                    from: fromIndex,
+                    to: index,
+                    direction: isWrapForward ? 'forward' : 'backward'
+                });
                 this.animateBoundaryWrap(isWrapForward ? 'forward' : 'backward');
                 return;
             }
         }
 
         if (this.isAnimatingWrap) {
+            this.log('Navigation Deferred', { requestedIndex: index }, 'Wrap animation in progress');
             return;
         }
 
         const target = this.normalizeIndex(index);
         if (target === this.currentIndex) {
+            this.log('Navigation Noop', { targetIndex: target });
             this.updateTrackTransform(0, true);
             return;
         }
@@ -409,6 +489,7 @@ export default class PhotoLightbox {
         this.updateUIState();
         this.preloadNearbySlides();
         this.options.onSlideChange(this.currentIndex);
+        this.log('Slide Changed', { index: this.currentIndex });
     }
 
     //==============================================================================================
@@ -494,15 +575,25 @@ export default class PhotoLightbox {
 
         const slides = this.extractSlides(gallery);
         if (!slides.length) {
+            this.log('Thumbnail Click Skipped', {
+                gallery: this.describeElement(gallery)
+            }, 'No slides available', 'warn');
             return;
         }
 
         const index = slides.findIndex((slide) => slide.trigger === clickable);
         if (index === -1) {
+            this.log('Thumbnail Not Registered', {
+                gallery: this.describeElement(gallery)
+            }, 'Clicked element not found in slides', 'warn');
             return;
         }
 
         event.preventDefault();
+        this.log('Thumbnail Activated', {
+            gallery: this.describeElement(gallery),
+            index
+        });
         this.open(index, gallery);
     }
 
@@ -699,6 +790,7 @@ export default class PhotoLightbox {
 
         if (event.target === this.overlay) {
             this.close();
+            this.log('Backdrop Close', { reason: 'backdrop' });
         }
     }
 
@@ -785,6 +877,11 @@ export default class PhotoLightbox {
     private animateVerticalDismissAndClose() {
         const direction = this.dragOffsetY >= 0 ? 1 : -1;
         const travel = direction * (window.innerHeight * 0.6);
+        this.log('Vertical Close', {
+            direction,
+            velocity: this.pointerVelocityY.toFixed(3),
+            offset: this.dragOffsetY
+        });
 
         if (this.content) {
             this.content.style.transition = 'transform 220ms ease, backdrop-filter 220ms ease';
@@ -822,7 +919,11 @@ export default class PhotoLightbox {
     private ensureSlideLoaded(index: number) {
         const actual = this.normalizeIndex(index);
         const slide = this.slides[actual];
-        if (!slide || slide.loaded || !slide.image) return;
+        if (!slide) {
+            this.log('Preload Skipped', { requestedIndex: index }, 'Slide missing', 'warn');
+            return;
+        }
+        if (slide.loaded || !slide.image) return;
 
         const setSource = (src: string) => {
             if (!slide.image) return;
@@ -833,11 +934,13 @@ export default class PhotoLightbox {
         if (slide.thumb) {
             const preferredSrc = slide.thumb.currentSrc || slide.thumb.src;
             if (slide.thumb.complete && preferredSrc) {
+                this.log('Preload From Thumb', { index: actual });
                 setSource(preferredSrc);
                 return;
             }
         }
 
+        this.log('Preload From Source', { index: actual });
         setSource(slide.src);
     }
 
@@ -866,6 +969,7 @@ export default class PhotoLightbox {
      */
     private animateBoundaryWrap(direction: 'forward' | 'backward') {
         if (!this.track || !this.slides.length) {
+            this.log('Wrap Animation Fallback', { direction }, 'Missing track or slides', 'warn');
             // Fallback to immediate jump if we can't animate
             this.currentIndex = direction === 'forward' ? 0 : this.slides.length - 1;
             this.updateTrackTransform(0, true);
@@ -881,6 +985,7 @@ export default class PhotoLightbox {
 
         const width = this.viewportWidth || (this.content?.clientWidth ?? 0);
         if (!width) {
+            this.log('Wrap Animation Fallback', { direction }, 'Viewport width unavailable', 'warn');
             // If we can't determine a width, just snap without animation
             this.currentIndex = direction === 'forward' ? 0 : this.slides.length - 1;
             this.updateTrackTransform(0, true);
@@ -891,6 +996,7 @@ export default class PhotoLightbox {
         }
 
         this.isAnimatingWrap = true;
+        this.log('Wrap Animation Start', { direction, target: direction === 'forward' ? 0 : this.slides.length - 1 });
 
         const slideCount = this.slides.length;
         const targetIndex = direction === 'forward' ? 0 : slideCount - 1;
@@ -986,7 +1092,10 @@ export default class PhotoLightbox {
      */
     private beginPointerDrag(event: PointerEvent) {
         if (!this.isOpen || event.button !== 0 || this.isAnimatingWrap) return;
-        if (this.pointerId !== null) return;
+        if (this.pointerId !== null) {
+            this.log('Drag Ignored', { pointerId: event.pointerId }, 'Pointer already active');
+            return;
+        }
 
         this.pointerId = event.pointerId;
         this.dragStartX = event.clientX;
@@ -1005,6 +1114,7 @@ export default class PhotoLightbox {
 
         this.track?.classList.add('is-dragging');
         this.updateTrackTransform(0, false);
+        this.log('Drag Started', { pointerId: event.pointerId });
     }
 
     //==============================================================================================
@@ -1104,8 +1214,16 @@ export default class PhotoLightbox {
                 Math.abs(this.pointerVelocityY) > VERTICAL_VELOCITY_TRIGGER;
 
             if (shouldClose) {
+                this.log('Vertical Swipe Close Triggered', {
+                    offset: this.dragOffsetY,
+                    velocity: this.pointerVelocityY.toFixed(3)
+                });
                 this.animateVerticalDismissAndClose();
             } else {
+                this.log('Vertical Swipe Cancelled', {
+                    offset: this.dragOffsetY,
+                    velocity: this.pointerVelocityY.toFixed(3)
+                });
                 this.resetVerticalDrag(true);
             }
 
@@ -1125,6 +1243,12 @@ export default class PhotoLightbox {
             Math.abs(this.pointerVelocityX) > VELOCITY_TRIGGER;
 
         if (shouldAdvance) {
+            const direction = this.dragOffsetX < 0 ? 'next' : 'prev';
+            this.log('Swipe Advance', {
+                direction,
+                offset: this.dragOffsetX,
+                velocity: this.pointerVelocityX.toFixed(3)
+            });
             if (this.dragOffsetX < 0) {
                 this.next();
             } else {
@@ -1132,6 +1256,10 @@ export default class PhotoLightbox {
             }
         } else {
             this.updateTrackTransform(0, true);
+            this.log('Swipe Cancelled', {
+                offset: this.dragOffsetX,
+                velocity: this.pointerVelocityX.toFixed(3)
+            });
         }
 
         this.track?.classList.remove('is-dragging');

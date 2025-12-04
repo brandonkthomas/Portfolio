@@ -4,7 +4,7 @@
  * @description Creates an interactive starfield background with a triggerable warp effect using Three.js
  */
 
-import { isMobile, isErrorPage } from './common';
+import { isMobile, isErrorPage, logEvent, LogData, LogLevel } from './common';
 import { createCircleTexture } from './textures';
 import { createNebulae, updateNebulae, reduceNebulaOpacity, restoreNebulaOpacity } from './nebulae';
 import perf from './perfMonitor';
@@ -146,6 +146,7 @@ class Starfield {
         if (this.isErrorPage && !DEBUG_GRADIENT) {
             this.setRedBackgroundGlow();
             this.glowStartTime = performance.now(); // Remove delay to sync with CSS animation
+            this.log('Error Glow Activated');
         }
         
         this.readyPromise = new Promise((resolve) => {
@@ -153,6 +154,14 @@ class Starfield {
         });
 
         this.animate();
+        this.log('Starfield Created', {
+            starCount: this.starCount,
+            nebulae: this.nebulaCount
+        });
+    }
+
+    private log(event: string, data?: LogData, note?: string, level: LogLevel = 'info') {
+        logEvent('starfield', event, data, note, level);
     }
 
     //==============================================================================================
@@ -165,6 +174,10 @@ class Starfield {
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.setPixelRatio(window.devicePixelRatio); // mobile-specific pixel ratio for better visibility
         this.camera.position.z = 5;
+        this.log('Renderer Configured', {
+            width: window.innerWidth,
+            height: window.innerHeight
+        });
 
         // Create stars with varying colors and speeds
         const geometry = new THREE.BufferGeometry();
@@ -231,14 +244,17 @@ class Starfield {
         this.starField = new THREE.Points(geometry, material);
         this.scene.add(this.starField);
         this.starMaterial = material;
+        this.log('Stars Created', { starCount: this.starCount });
 
         // Create debug gradient if enabled (will be behind stars)
         if (DEBUG_GRADIENT) {
             this.createDebugGradient();
+            this.log('Debug Gradient Enabled');
         }
 
         // Create nebulae (MUST come after stars to ensure correct draw order)
         this.nebulae = createNebulae(this.nebulaCount, this.scene);
+        this.log('Nebulae Created', { count: this.nebulae.length });
         
         // Hide nebulae in debug mode for clearer gradient visualization
         if (DEBUG_GRADIENT) {
@@ -257,6 +273,7 @@ class Starfield {
                     nebula.material.opacity = originalOpacity * 0.01;
                 }
             });
+            this.log('Nebulae Dimmed For Error Page');
         }
 
         // Create trail geometry for warp pulse effect
@@ -274,6 +291,7 @@ class Starfield {
         this.trails = new THREE.LineSegments(this.trailGeometry, trailMaterial);
         this.scene.add(this.trails);
         this.trailMaterial = trailMaterial;
+        this.log('Trails Initialized');
 
         // Handle window resize
         window.addEventListener('resize', () => {
@@ -281,6 +299,7 @@ class Starfield {
             this.camera.updateProjectionMatrix();
             this.renderer.setSize(window.innerWidth, window.innerHeight);
             this.renderer.setPixelRatio(window.devicePixelRatio); // mobile-specific pixel ratio for better visibility
+            this.log('Renderer Resized', { width: window.innerWidth, height: window.innerHeight });
         });
     }
 
@@ -290,6 +309,7 @@ class Starfield {
      * @param {boolean} reverse - When true, warp direction is reversed (away from camera)
      */
     triggerWarp(reverse: boolean = false) {
+        this.log('Warp Triggered', { reverse: Number(reverse) });
         this.triggerWarpPulse((intensity) => {
             this.warpIntensity = intensity;
         }, reverse);
@@ -303,6 +323,7 @@ class Starfield {
      * @description Initiates a warp pulse that fades out over 0.5 seconds
      */
     triggerWarpPulse(setWarpIntensity: (value: number) => void, reverse: boolean = false): void {
+        this.log('Warp Pulse Start', { reverse: Number(reverse) });
         // Set warp intensity to 1 immediately with direction
         setWarpIntensity(reverse ? -1 : 1);
 
@@ -334,6 +355,7 @@ class Starfield {
      */
     setStarDirection(direction: number) {
         this.starDirection = direction >= 0 ? 1 : -1;
+        this.log('Star Direction Set', { direction: this.starDirection });
     }
 
     //==============================================================================================
@@ -342,7 +364,7 @@ class Starfield {
      * @description Initiates a Konami warp that fades out over 5 seconds
      */
     triggerKonamiWarp() {
-        console.log('todo');
+        this.log('Konami Warp Triggered');
     }
 
     //==============================================================================================
@@ -367,6 +389,7 @@ class Starfield {
 
         // Reduce nebula opacity
         reduceNebulaOpacity(this.nebulae, 0.3);
+        this.log('Stars Reduced', { target: Math.floor(this.starCount * 0.3) });
     }
 
     //==============================================================================================
@@ -388,6 +411,7 @@ class Starfield {
 
         // Restore nebula opacity
         restoreNebulaOpacity(this.nebulae);
+        this.log('Stars Restored', { count: this.starCount });
     }
 
     //==============================================================================================
@@ -449,6 +473,7 @@ class Starfield {
         this.redGlowEffect.scale.set(90, 90, 1); // Larger size to be more ambient
         this.redGlowEffect.position.set(0, 0, -40); // Positioned further behind
         this.scene.add(this.redGlowEffect);
+        this.log('Red Glow Sprite Active');
     }
 
     //==============================================================================================
@@ -740,6 +765,7 @@ class Starfield {
         if (this._resolveReady) {
             this._resolveReady();
             this._resolveReady = null;
+            this.log('Starfield Ready');
         }
         // Perf: frame end
         perf.loopFrameEnd('starfield');
@@ -756,6 +782,7 @@ class Starfield {
         } else {
             this.minFrameInterval = this.defaultFrameInterval;
         }
+        this.log('Frame Cap Updated', { fps: fps ?? 0 });
     }
 
     //==============================================================================================
@@ -825,6 +852,7 @@ window.addEventListener('load', () => {
 
     // Expose to window for stateManager
     (window as any).starfieldInstance = starfieldInstance;
+    logEvent('starfield', 'Instance Mounted');
 });
 
 //==============================================================================================
@@ -856,5 +884,7 @@ export function setStarfieldFrameCap(fps: number | null) {
  * @param {string} state - The state of the photo lightbox
  */
 onPhotoLightboxStateChange(state => {
-    setStarfieldFrameCap(state === 'open' ? 30 : null);
+    const fps = state === 'open' ? 30 : null;
+    logEvent('starfield', 'Lightbox Frame Cap Sync', { fps: fps ?? 0, lightboxState: state });
+    setStarfieldFrameCap(fps);
 });

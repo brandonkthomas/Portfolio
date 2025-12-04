@@ -3,6 +3,11 @@
  * @fileoverview Component registry with dynamic imports and per-component stylesheet loader
  */
 
+import { logEvent, LogData, LogLevel } from '../common';
+
+const logRegistry = (event: string, data?: LogData, note?: string, level: LogLevel = 'info') => {
+    logEvent('componentRegistry', event, data, note, level);
+};
 const loadedStyles = new Set<string>();
 
 //==============================================================================================
@@ -23,12 +28,17 @@ const registry: Record<string, () => Promise<any>> = {
  * @returns {void}
  */
 function ensureStyles(href: string): void {
-    if (!href || loadedStyles.has(href)) return;
+    if (!href) return;
+    if (loadedStyles.has(href)) {
+        // logRegistry('Styles Skipped', { href }, 'Already loaded');
+        return;
+    }
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = href;
     document.head.appendChild(link);
     loadedStyles.add(href);
+    // logRegistry('Styles Loaded', { href });
 }
 
 //==============================================================================================
@@ -41,8 +51,14 @@ function ensureStyles(href: string): void {
  */
 export async function mountComponent(type: string, container: HTMLElement, props?: Record<string, unknown>): Promise<any> {
     const load = registry[type];
-    if (!load) throw new Error(`Unknown component type: ${type}`);
+    if (!load) {
+        logRegistry('Unknown Component', { type }, undefined, 'error');
+        throw new Error(`Unknown component type: ${type}`);
+    }
+    logRegistry('Component Loading', { type });
     const mod = await load();
     if (mod.stylesHref) ensureStyles(mod.stylesHref as string);
-    return mod.mount(container, props || {});
+    const instance = await mod.mount(container, props || {});
+    logRegistry('Component Mounted', { type });
+    return instance;
 }
