@@ -933,6 +933,12 @@ let card3DInstance: any = null;
 let pendingCardFrameCap: number | null = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Skip heavy init if the card isn't present on this route
+    if (!document.querySelector('.card-container')) {
+        logEvent('card', 'Instance Skipped', { reason: 'container-missing' }, undefined, 'warn');
+        return;
+    }
+
     card3DInstance = new Card();
     card3DInstance.ready = card3DInstance.readyPromise;
     window.addEventListener('resize', () => card3DInstance.onWindowResize());

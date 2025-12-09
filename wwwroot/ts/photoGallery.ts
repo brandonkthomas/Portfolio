@@ -38,6 +38,7 @@ class PhotoGallery {
     private photosGenerated: boolean;
     private lightboxInstance: LightboxController | null;
     private preloadHintNodes: HTMLLinkElement[];
+    private listenersBound: boolean;
 
     //==============================================================================================
     // Constructor
@@ -50,6 +51,7 @@ class PhotoGallery {
         this.photosGenerated = false; // Track if photos have been generated
         this.lightboxInstance = null;
         this.preloadHintNodes = [];
+        this.listenersBound = false;
         
         this.init();
     }
@@ -89,10 +91,7 @@ class PhotoGallery {
 
         // Create gallery HTML structure
         this.createGalleryHTML();
-        
-        // Setup event listeners
-        this.setupEventListeners();
-        
+
         // Note: Photo generation is deferred until gallery is first shown
         // This prevents blocking initial page load
     }
@@ -664,6 +663,12 @@ class PhotoGallery {
         if (!this.container) {
             this.log('Show Skipped', {}, 'Container missing', 'warn');
             return;
+        }
+
+        // Bind event listeners only when the gallery is first shown
+        if (!this.listenersBound) {
+            this.setupEventListeners();
+            this.listenersBound = true;
         }
                 
         // Generate photos on first show (lazy initialization)
