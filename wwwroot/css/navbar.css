@@ -105,6 +105,8 @@
 .url-link svg,
 .url-link img {
     flex-shrink: 0;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
 }
 
 .url-link img {
@@ -114,6 +116,23 @@
 .url-link svg {
     width: 20px;
     height: 20px;
+}
+
+/* External link indicators */
+.url-link-external-sup {
+    display: inline-flex;
+    align-items: flex-start;
+}
+
+.url-link-external-sup img.url-link-external-sup-icon {
+    width: 0.5em;
+    height: 0.5em;
+}
+
+.url-link-icon-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
 }
 
 /* Burger menu button */
@@ -233,5 +252,10 @@
     
     .url-link {
         padding: 0.5rem 0;
+    }
+
+    .url-link img.url-link-external-icon {
+        width: 10px;
+        height: 10px;
     }
 }
