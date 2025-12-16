@@ -232,7 +232,7 @@ class PerfMonitor {
         if (this.overlayEl) return;
         const el = document.createElement('div');
         el.style.position = 'fixed';
-        el.style.top = '8px';
+        el.style.bottom = '8px';
         el.style.right = '8px';
         el.style.zIndex = '99999';
         el.style.fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
