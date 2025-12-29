@@ -342,7 +342,8 @@ class ProjectsGrid {
             }
 
             // Optional per-project Download button (currently only Spectrometer on Windows desktop)
-            if (shouldShowDownload(proj)) {
+            const hasDownload = shouldShowDownload(proj);
+            if (hasDownload) {
                 const dlBtn = document.createElement('button');
                 dlBtn.type = 'button';
                 dlBtn.className = 'bento-download';
@@ -366,6 +367,32 @@ class ProjectsGrid {
                     }
                 });
                 wrapper.appendChild(dlBtn);
+            }
+
+            // optional GitHub button (bottom right) -- used for projects w/ both live demos and source code
+            if (proj.githubUrl) {
+                const githubBtn = document.createElement('a');
+                githubBtn.href = proj.githubUrl;
+                githubBtn.className = 'bento-github';
+                githubBtn.setAttribute('aria-label', `View ${proj.title || 'project'} on GitHub`);
+                githubBtn.title = `View on GitHub`;
+                githubBtn.rel = 'noopener noreferrer';
+                githubBtn.target = '_blank';
+                if (hasDownload) {
+                    githubBtn.classList.add('bento-github--with-download');
+                }
+
+                const icon = document.createElement('img');
+                icon.src = '/assets/svg/github-logo-roundrect-filled.svg';
+                icon.alt = '';
+                icon.width = 18;
+                icon.height = 18;
+
+                githubBtn.appendChild(icon);
+                githubBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+                wrapper.appendChild(githubBtn);
             }
 
             link.appendChild(wrapper);

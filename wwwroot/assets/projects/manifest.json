@@ -42,27 +42,41 @@
     },
     {
       "slug": "nametrace",
-      "title": "NameTrace",
+      "title": "Reverse Phone Lookup",
       "tag": "Web",
-      "footer": "Search for a phone number's registered owner",
+      "footer": ".NET Core, TypeScript",
       "gradientAngle": 210,
       "gradientColor1": "#63a1f1",
       "gradientColor2": "#4469dc",
       "span": "1x1",
       "url": "/nametrace",
       "external": false,
-      "component": null
+      "component": null,
+      "githubUrl": "https://github.com/brandonkthomas/NameTrace"
     },
     {
       "slug": "realitycheck",
-      "title": "RealityCheck (Preview)",
+      "title": "AI Image Detector (Preview)",
       "tag": "Web",
-      "footer": "Check if an image may be AI-generated",
+      "footer": ".NET Core, TypeScript",
       "gradientAngle": 210,
       "gradientColor1": "#1c1f2a",
       "gradientColor2": "#1a2420",
       "span": "1x1",
       "url": "/realitycheck",
+      "external": false,
+      "component": null
+    },
+    {
+      "slug": "imagehexeditor",
+      "title": "Image Hex Editor",
+      "tag": "Web",
+      "footer": "Client-side JPEG glitcher",
+      "gradientAngle": 210,
+      "gradientColor1": "#5b3f80",
+      "gradientColor2": "#22263a",
+      "span": "1x1",
+      "url": "/imagehexeditor",
       "external": false,
       "component": null
     }

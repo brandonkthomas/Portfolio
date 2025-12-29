@@ -150,6 +150,11 @@
     gap: 0.5rem;
 }
 
+.bento-chip {
+    font-size: 11px;
+    color: rgb(220, 220, 220);
+}
+
 .bento-thumb {
     position: absolute;
     inset: 0;
@@ -241,6 +246,42 @@
 
 .bento-download img {
     width: 20px;
+    height: auto;
+    filter: brightness(0) invert(1);
+}
+
+/* GitHub button chip (bottom-right, above download if present) */
+.bento-github {
+    position: absolute;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.42);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.18);
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    text-decoration: none;
+}
+
+.bento-github:hover {
+    background: rgba(0, 0, 0, 0.52);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+}
+
+.bento-github--with-download {
+    bottom: calc(0.75rem + 40px); /* Position above download button (button height + gap) */
+}
+
+.bento-github img {
+    width: 18px;
     height: auto;
     filter: brightness(0) invert(1);
 }
