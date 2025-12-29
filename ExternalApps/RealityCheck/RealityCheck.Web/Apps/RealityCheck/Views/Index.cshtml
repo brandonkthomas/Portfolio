@@ -1,0 +1,79 @@
+@{
+    ViewData["Title"] = "RealityCheck";
+}
+
+<section class="rc-page">
+    <div class="glass-surface glass-surface--fallback rc-card" role="region" aria-label="RealityCheck">
+        <div class="glass-surface__content rc-card-content">
+            <header class="rc-header">
+                <div class="rc-title">RealityCheck (Preview)</div>
+                <p class="rc-subtitle">Checks whether an image may be AI-generated.</p>
+            </header>
+
+            <div class="rc-dropzone" id="rc-dropzone">
+                <input type="file" id="rc-file-input" accept="image/*" hidden />
+                <div class="rc-drop-inner">
+                    <div class="rc-drop-text">
+                        <span class="rc-drop-text--desktop">Drag & drop or click to upload</span>
+                        <span class="rc-drop-text--mobile" aria-hidden="true">Tap to Upload</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rc-status rc-status--empty" id="rc-status" aria-live="polite">
+                <div class="rc-status-text" id="rc-status-text"></div>
+                <div class="rc-status-file" id="rc-status-file" hidden>
+                    <img class="rc-status-thumb" id="rc-status-thumb" alt="" />
+                    <div class="rc-status-filename" id="rc-status-filename"></div>
+                </div>
+            </div>
+
+            <div class="rc-result" id="rc-result" hidden>
+                <div class="rc-result-label" id="rc-result-label"></div>
+                <div class="rc-result-metrics">
+                    <div>
+                        <div class="rc-metric-head">
+                            <span>AI score</span>
+                            <strong id="rc-score">—</strong>
+                        </div>
+                        <div
+                            class="rc-meter"
+                            id="rc-score-meter"
+                            role="progressbar"
+                            aria-label="AI score"
+                            aria-valuemin="0"
+                            aria-valuemax="100"
+                            aria-valuenow="0">
+                            <div class="rc-meter__fill" id="rc-score-fill"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="rc-metric-head">
+                            <span>Confidence</span>
+                            <strong id="rc-confidence">—</strong>
+                        </div>
+                        <div
+                            class="rc-meter"
+                            id="rc-confidence-meter"
+                            role="progressbar"
+                            aria-label="Confidence"
+                            aria-valuemin="0"
+                            aria-valuemax="100"
+                            aria-valuenow="0">
+                            <div class="rc-meter__fill" id="rc-confidence-fill"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="rc-result-notes" id="rc-notes" hidden></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Styles {
+    <link rel="stylesheet" href="~/apps/realitycheck/css/apps/realitycheck.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/apps/realitycheck/dist/js/realitycheck.js" type="module" asp-append-version="true"></script>
+}

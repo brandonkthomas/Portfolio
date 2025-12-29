@@ -29,6 +29,30 @@
       "downloadUrl": "https://github.com/brandonkthomas/Spectrometer/releases/latest/download/Spectrometer.exe"
     },
     {
+      "slug": "nametrace",
+      "title": "NameTrace",
+      "tag": "Web",
+      "footer": "Search for a phone number's registered owner",
+      "gradientAngle": 210,
+      "gradientColor1": "#63a1f1",
+      "gradientColor2": "#4469dc",
+      "span": "1x1",
+      "url": "/nametrace",
+      "external": false
+    },
+    {
+      "slug": "realitycheck",
+      "title": "RealityCheck (Preview)",
+      "tag": "Web",
+      "footer": "Check if an image may be AI-generated",
+      "gradientAngle": 210,
+      "gradientColor1": "#1c1f2a",
+      "gradientColor2": "#1a2420",
+      "span": "1x1",
+      "url": "/realitycheck",
+      "external": false
+    },
+    {
       "slug": "utility-scripts",
       "title": "Utility Scripts",
       "tag": "CLI",

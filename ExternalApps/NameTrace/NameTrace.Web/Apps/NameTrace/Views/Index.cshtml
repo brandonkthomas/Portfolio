@@ -1,0 +1,68 @@
+@{
+    ViewData["Title"] = "NameTrace";
+}
+
+<section class="nt-page">
+    <div class="glass-surface glass-surface--fallback nt-card" role="region" aria-label="NameTrace">
+        <div class="glass-surface__content nt-card-content">
+            <header class="nt-header">
+                <div class="nt-title">
+                    <img src="~/apps/nametrace/assets/icons/nametrace.svg" alt="" class="nt-title-icon" />
+                    <span>NameTrace</span>
+                </div>
+                <p class="nt-subtitle">Search for a phone number's registered owner.</p>
+            </header>
+
+            <div class="nt-dropzone" id="nt-dropzone">
+                <form id="nt-form" class="nt-form" novalidate>
+                    <div class="nt-input-row">
+                        <input
+                            id="nt-phone-input"
+                            name="phone"
+                            type="tel"
+                            inputmode="tel"
+                            autocomplete="tel"
+                            placeholder="e.g. (425) 555-0123"
+                            required />
+                        <button id="nt-submit" type="submit" class="nt-submit" aria-label="Search">
+                            <img src="~/apps/nametrace/assets/svg/search-filled.svg" alt="" />
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="nt-status nt-status--empty" id="nt-status" aria-live="polite">
+                <div class="nt-status-text" id="nt-status-text"></div>
+            </div>
+
+            <div class="nt-result" id="nt-result" hidden>
+                <div class="nt-result-body" id="nt-result-body">
+                    <div class="nt-result-metrics">
+                        <div>
+                            <div class="nt-metric-head">
+                                <span>Likely Owner</span>
+                                <div class="nt-name-wrap">
+                                    <strong id="nt-name">—</strong>
+                                    <img
+                                        src="~/assets/svg/throbber-ring-indef.svg"
+                                        alt=""
+                                        id="nt-spinner"
+                                        class="nt-spinner"
+                                        aria-hidden="true" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Styles {
+    <link rel="stylesheet" href="~/apps/nametrace/css/apps/nametrace.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/apps/nametrace/dist/js/nametrace.js" type="module" asp-append-version="true"></script>
+}

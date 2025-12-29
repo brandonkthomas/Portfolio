@@ -845,6 +845,28 @@ let pendingFrameCap: number | null = null;
  * Initialize starfield when page loads + expose to state manager
  */
 window.addEventListener('load', () => {
+    // Allow pages to disable starfield
+    // Default: enabled, unless explicitly disabled via body dataset
+    const enabledByFlag = document.body?.dataset?.enableStarfield !== 'false';
+
+    // Also auto-disable when the starfield canvas is not present on the page.
+    const canvas = document.getElementById('starfield') as HTMLCanvasElement | null;
+    if (!canvas) {
+        logEvent('starfield', 'Skipped', { reason: 'no-canvas' });
+        return;
+    }
+
+    if (!enabledByFlag) {
+        logEvent('starfield', 'Skipped', { reason: 'disabled' });
+        return;
+    }
+
+    // Defensive: on pages where the global THREE script is not loaded, avoid throwing.
+    if (!(window as any).THREE) {
+        logEvent('starfield', 'Skipped', { reason: 'three-missing' }, 'Global THREE not found', 'warn');
+        return;
+    }
+
     starfieldInstance = new Starfield();
     if (pendingFrameCap !== null) {
         starfieldInstance.setFrameCap(pendingFrameCap);

@@ -2,12 +2,38 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Routing;
 using Portfolio.Services;
 using Microsoft.Extensions.FileProviders;
+using RealityCheck;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services
+    .AddControllersWithViews()
+    // Ensure controllers/views in app modules are discoverable
+    .AddApplicationPart(typeof(NameTrace.Web.Controllers.NameTraceController).Assembly)
+    .AddApplicationPart(typeof(RealityCheck.Web.Controllers.RealityCheckController).Assembly);
 builder.Services.AddSingleton<IAssetManifest, AssetManifest>();
+builder.Services.AddSingleton<AiDetector>();
+
+// Rate limiting (defense-in-depth for upload/compute endpoints)
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy("realitycheck-upload", context =>
+    {
+        // Use the resolved remote IP (respects forwarded headers since we call app.UseForwardedHeaders()).
+        var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 10,
+            Window = TimeSpan.FromMinutes(1),
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit = 0
+        });
+    });
+});
 
 const string PhotoReelRequestPrefix = "/assets/images/reel/";
 
@@ -147,6 +173,7 @@ if (!app.Environment.IsDevelopment())
 app.MapGet("/api/health", () => Results.Ok());
 
 app.UseRouting();
+app.UseRateLimiter();
 
 // Cache control for HTML pages - set before response is sent
 app.Use(async (ctx, next) =>
@@ -187,6 +214,30 @@ app.MapControllerRoute(
     name: "project-detail",
     pattern: "/projects/{slug}",
     defaults: new { controller = "Projects", action = "Detail" });
+
+// NameTrace landing page
+app.MapControllerRoute(
+    name: "nametrace",
+    pattern: "/nametrace",
+    defaults: new { controller = "NameTrace", action = "Index" });
+
+// RealityCheck landing page
+app.MapControllerRoute(
+    name: "realitycheck",
+    pattern: "/realitycheck",
+    defaults: new { controller = "RealityCheck", action = "Index" });
+
+// NameTrace API endpoint
+app.MapControllerRoute(
+    name: "nametrace-api",
+    pattern: "/api/nametrace/lookup",
+    defaults: new { controller = "NameTrace", action = "Lookup" });
+
+// RealityCheck API endpoint
+app.MapControllerRoute(
+    name: "realitycheck-api",
+    pattern: "/api/realitycheck/analyze",
+    defaults: new { controller = "RealityCheck", action = "Analyze" });
 
 app.MapControllerRoute(
     name: "error",

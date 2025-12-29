@@ -6,4 +6,18 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <!-- Prevent the host project from accidentally compiling nested module source (and their obj/bin)
+       when modules live under this repo folder. They should build only via ProjectReference. -->
+  <ItemGroup>
+    <Compile Remove="ExternalApps/**" />
+    <Content Remove="ExternalApps/**" />
+    <EmbeddedResource Remove="ExternalApps/**" />
+    <None Remove="ExternalApps/**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="ExternalApps/NameTrace/NameTrace.Web/NameTrace.Web.csproj" />
+    <ProjectReference Include="ExternalApps/RealityCheck/RealityCheck.Web/RealityCheck.Web.csproj" />
+  </ItemGroup>
+
 </Project>
