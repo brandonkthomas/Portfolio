@@ -1,0 +1,60 @@
+/*
+    hexGrid.css
+    Rotated hex byte grid component styling (for Projects view)
+*/
+
+.comp-hex-grid {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    pointer-events: auto;
+}
+
+.comp-hex-grid .hg-inner {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: clamp(7px, 0.85vw, 11px);
+    line-height: 1.3;
+    color: rgba(255, 240, 170, 0.98);
+    text-shadow:
+        0 0 4px rgba(255, 210, 64, 0.75),
+        0 0 14px rgba(255, 170, 0, 0.65);
+    transform: rotate(-30deg) scale(1.55);
+    transform-origin: center;
+    opacity: 0.98;
+}
+
+@media (max-width: 767.98px) {
+    .comp-hex-grid .hg-inner {
+        transform: rotate(-30deg) scale(2.7);
+    }
+}
+
+.comp-hex-grid .hg-row {
+    display: flex;
+    gap: 0.7ch;
+}
+
+.comp-hex-grid .hg-byte {
+    display: inline-block;
+    min-width: 2ch;
+    text-align: center;
+    letter-spacing: 0.05em;
+}
+
+/* Fade edges slightly for depth */
+.comp-hex-grid .hg-inner {
+    position: relative;
+}
+
+.comp-hex-grid .hg-inner::before {
+    content: "";
+    position: absolute;
+    inset: -15%;
+    background: radial-gradient(circle at 50% 50%, transparent 0%, rgba(0, 0, 0, 0.7) 68%, rgba(0, 0, 0, 0.95) 100%);
+    pointer-events: none;
+    mix-blend-mode: multiply;
+}
+
+
+

@@ -19,6 +19,7 @@ const registry: Record<string, () => Promise<any>> = {
     cardStack: () => import('./cardStack'),
     lineGraph: () => import('./lineGraph'),
     terminalBlink: () => import('./terminalBlink'),
+    hexGrid: () => import('./hexGrid'),
 };
 
 //==============================================================================================
