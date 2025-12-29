@@ -46,12 +46,12 @@
       "tag": "Web",
       "footer": "TypeScript",
       "gradientAngle": 210,
-      "gradientColor1": "#5b3f80",
-      "gradientColor2": "#22263a",
+      "gradientColor1": "#5a4413",
+      "gradientColor2": "#171108",
       "span": "1x1",
       "url": "/imagehexeditor",
       "external": false,
-      "component": null
+      "component": { "type": "hexGrid", "props": {} }
     },
     {
       "slug": "nametrace",
