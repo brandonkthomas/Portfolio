@@ -41,6 +41,19 @@
       "component": { "type": "terminalBlink", "props": { "prompt": "brandonthomas@mbp ~ %" } }
     },
     {
+      "slug": "imagehexeditor",
+      "title": "Image Hex Editor",
+      "tag": "Web",
+      "footer": "TypeScript",
+      "gradientAngle": 210,
+      "gradientColor1": "#5b3f80",
+      "gradientColor2": "#22263a",
+      "span": "1x1",
+      "url": "/imagehexeditor",
+      "external": false,
+      "component": null
+    },
+    {
       "slug": "nametrace",
       "title": "Reverse Phone Lookup",
       "tag": "Web",
@@ -64,19 +77,6 @@
       "gradientColor2": "#1a2420",
       "span": "1x1",
       "url": "/realitycheck",
-      "external": false,
-      "component": null
-    },
-    {
-      "slug": "imagehexeditor",
-      "title": "Image Hex Editor",
-      "tag": "Web",
-      "footer": "Client-side JPEG glitcher",
-      "gradientAngle": 210,
-      "gradientColor1": "#5b3f80",
-      "gradientColor2": "#22263a",
-      "span": "1x1",
-      "url": "/imagehexeditor",
       "external": false,
       "component": null
     }
