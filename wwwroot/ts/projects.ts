@@ -329,8 +329,8 @@ class ProjectsGrid {
             `;
             wrapper.appendChild(header);
 
-            // Component: mount inner visual based on manifest (default: cardStack)
-            const comp = proj.component || { type: 'cardStack', props: {} };
+            // Component: mount inner visual based on manifest (default: none)
+            const comp = proj.component || null;
             this.attachComponentToTile(link, wrapper, comp).catch(() => { /* no-op fallback */ });
 
             // Footer chip
@@ -442,6 +442,9 @@ class ProjectsGrid {
      * @returns {Promise<void>}
      */
     async attachComponentToTile(tileEl: HTMLElement, contentEl: HTMLElement, comp: any) {
+        if (!comp || !comp.type) {
+            return; // No component to mount
+        }
         try {
             const instance = await mountComponent(comp.type, contentEl, comp.props || {});
             this.tileInstances.set(tileEl, instance);

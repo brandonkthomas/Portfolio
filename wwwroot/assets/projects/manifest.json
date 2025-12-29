@@ -29,6 +29,18 @@
       "downloadUrl": "https://github.com/brandonkthomas/Spectrometer/releases/latest/download/Spectrometer.exe"
     },
     {
+      "slug": "utility-scripts",
+      "title": "Utility Scripts",
+      "tag": "CLI",
+      "footer": "Bash",
+      "gradientColor1": "#1c1f2a",
+      "gradientColor2": "#2a1f24",
+      "span": "1x1",
+      "url": "https://github.com/brandonkthomas/scripts",
+      "external": true,
+      "component": { "type": "terminalBlink", "props": { "prompt": "brandonthomas@mbp ~ %" } }
+    },
+    {
       "slug": "nametrace",
       "title": "NameTrace",
       "tag": "Web",
@@ -38,7 +50,8 @@
       "gradientColor2": "#4469dc",
       "span": "1x1",
       "url": "/nametrace",
-      "external": false
+      "external": false,
+      "component": null
     },
     {
       "slug": "realitycheck",
@@ -50,19 +63,8 @@
       "gradientColor2": "#1a2420",
       "span": "1x1",
       "url": "/realitycheck",
-      "external": false
-    },
-    {
-      "slug": "utility-scripts",
-      "title": "Utility Scripts",
-      "tag": "CLI",
-      "footer": "Bash",
-      "gradientColor1": "#1c1f2a",
-      "gradientColor2": "#2a1f24",
-      "span": "1x1",
-      "url": "https://github.com/brandonkthomas/scripts",
-      "external": true,
-      "component": { "type": "terminalBlink", "props": { "prompt": "brandonthomas@mbp ~ %" } }
+      "external": false,
+      "component": null
     }
   ]
 }
