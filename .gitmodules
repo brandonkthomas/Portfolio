@@ -6,3 +6,7 @@
 	path = ExternalApps/RealityCheck
 	url = https://github.com/brandonkthomas/RealityCheck.git
 	branch = main
+[submodule "ExternalApps/ImageHexEditor"]
+	path = ExternalApps/ImageHexEditor
+	url = https://github.com/brandonkthomas/ImageHexEditor.git
+	branch = main

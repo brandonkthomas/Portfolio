@@ -18,6 +18,7 @@
   <ItemGroup>
     <ProjectReference Include="ExternalApps/NameTrace/NameTrace.Web/NameTrace.Web.csproj" />
     <ProjectReference Include="ExternalApps/RealityCheck/RealityCheck.Web/RealityCheck.Web.csproj" />
+    <ProjectReference Include="ExternalApps/ImageHexEditor/ImageHexEditor.Web/ImageHexEditor.Web.csproj" />
   </ItemGroup>
 
 </Project>
