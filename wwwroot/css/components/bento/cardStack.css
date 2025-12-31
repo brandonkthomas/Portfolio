@@ -3,7 +3,7 @@
     Card stack component styling (for Projects view)
 */
 
-/* outermost container */
+/* Container */
 .card-stack {
     position: absolute;
     inset: 0;
@@ -18,23 +18,40 @@
     height: var(--stack-h, 56%);
     aspect-ratio: 3 / 2;
     border-radius: 10px;
-    background: rgba(255,255,255,0.08);
-    box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
     backdrop-filter: blur(5px);
-    transform: translate3d(0,0,0) rotate(0deg) scale(1);
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
     transition: transform 220ms ease, background 220ms ease;
-    overflow: hidden; /* ensure overlay is clipped to card */
+    overflow: hidden;
+    /* ensure overlay is clipped to card */
 }
 
-.card-layer.layer-1 { transform: translate3d(-8px, 10px, 0) rotate(-6deg) scale(0.98); }
-.card-layer.layer-2 { transform: translate3d(6px, 0, 0) rotate(2deg) scale(1.0); }
-.card-layer.layer-3 { transform: translate3d(14px, -10px, 0) rotate(8deg) scale(0.98); }
+.card-layer.layer-1 {
+    transform: translate3d(-8px, 10px, 0) rotate(-6deg) scale(0.98);
+}
 
-.bento-item:hover .card-layer.layer-1 { transform: translate3d(-18px, 16px, 0) rotate(-10deg) scale(0.98); }
-.bento-item:hover .card-layer.layer-2 { transform: translate3d(8px, -4px, 0) rotate(4deg) scale(1.02); }
-.bento-item:hover .card-layer.layer-3 { transform: translate3d(24px, -20px, 0) rotate(12deg) scale(1.0); }
+.card-layer.layer-2 {
+    transform: translate3d(6px, 0, 0) rotate(2deg) scale(1.0);
+}
 
-/* Overlay image on topmost card -- transparent path SVG edit of card-front  */
+.card-layer.layer-3 {
+    transform: translate3d(14px, -10px, 0) rotate(8deg) scale(0.98);
+}
+
+.bento-item:hover .card-layer.layer-1 {
+    transform: translate3d(-18px, 16px, 0) rotate(-10deg) scale(0.98);
+}
+
+.bento-item:hover .card-layer.layer-2 {
+    transform: translate3d(8px, -4px, 0) rotate(4deg) scale(1.02);
+}
+
+.bento-item:hover .card-layer.layer-3 {
+    transform: translate3d(24px, -20px, 0) rotate(12deg) scale(1.0);
+}
+
+/* Overlay */
 .card-layer.layer-3::after {
     content: "";
     position: absolute;

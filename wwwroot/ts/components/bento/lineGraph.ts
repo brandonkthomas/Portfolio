@@ -13,9 +13,9 @@ export const stylesHref = '/css/components/bento/lineGraph.css';
 //==============================================================================================
 /**
  * Mount the line graph component
- * @param {Element} container
- * @param {Object} props
- * @returns {Promise<{setSize: () => void, update: (nextProps: Object) => void, destroy: () => void}>}
+ * @param {HTMLElement} container - Container element
+ * @param {Object} props - Component props with optional width/height
+ * @returns {Promise<Object>} Component instance with setSize, update, destroy methods
  */
 export async function mount(container: HTMLElement, props: { width?: number; height?: number } = {}) {
     const root = document.createElement('div');
@@ -54,11 +54,8 @@ export async function mount(container: HTMLElement, props: { width?: number; hei
     tile.addEventListener('pointerleave', onLeave);
 
     /**
-     * Resize the canvas (local function)
-     * @param {Object} size
-     * @param {number} size.width
-     * @param {number} size.height
-     * @returns {void}
+     * Resize the canvas
+     * @param {Object} size - Size object with width and height
      */
     function resize({ width, height }: { width: number; height: number }) {
         lastW = Math.max(1, Math.floor(width));
@@ -71,8 +68,7 @@ export async function mount(container: HTMLElement, props: { width?: number; hei
     }
 
     /**
-     * Draw a frame of the animation (local function)
-     * @returns {void}
+     * Draw a frame of the animation
      */
     function drawFrame() {
         ctx.clearRect(0, 0, lastW, lastH);
@@ -111,8 +107,7 @@ export async function mount(container: HTMLElement, props: { width?: number; hei
     }
 
     /**
-     * Main animation loop (local function)
-     * @returns {void}
+     * Main animation loop
      */
     function loop() {
         if (!running) return;
@@ -130,11 +125,10 @@ export async function mount(container: HTMLElement, props: { width?: number; hei
 
 //==============================================================================================
 /**
- * Create a canvas
- * @param {number} width
- * @param {number} height
- * @returns {Object}
- * @returns {Object<{canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, dpr: number}>}
+ * Create a canvas with device pixel ratio scaling
+ * @param {number} width - Canvas width
+ * @param {number} height - Canvas height
+ * @returns {Object} Canvas, context, and device pixel ratio
  */
 function createCanvas(width: number, height: number): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D; dpr: number } {
     const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
@@ -153,9 +147,9 @@ function createCanvas(width: number, height: number): { canvas: HTMLCanvasElemen
 
 //==============================================================================================
 /**
- * Generate wave function (smooth multi-sine blend)
- * @param {number} seed
- * @returns {Function}
+ * Generate wave function with smooth multi-sine blend
+ * @param {number} seed - Random seed for wave generation
+ * @returns {Function} Wave function taking x and t parameters
  */
 function genWaveFn(seed: number = Math.random() * 1000): (x: number, t: number) => number {
     // Smooth multi-sine blend

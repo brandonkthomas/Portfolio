@@ -13,20 +13,18 @@ const loadedStyles = new Set<string>();
 //==============================================================================================
 /**
  * Component registry with dynamic imports and per-component stylesheet loader
- * @type {Object<string, () => Promise<{stylesHref: string, mount: (container: Element, props: Object) => Promise<{setSize: () => void, update: (nextProps: Object) => void, destroy: () => void}>}>>}
  */
 const registry: Record<string, () => Promise<any>> = {
     cardStack: () => import('./bento/cardStack'),
     lineGraph: () => import('./bento/lineGraph'),
     terminalBlink: () => import('./bento/terminalBlink'),
-    hexGrid: () => import('./bento/hexGrid'),
+    byteGrid: () => import('./bento/byteGrid'),
 };
 
 //==============================================================================================
 /**
- * Ensure styles are loaded
- * @param {string} href
- * @returns {void}
+ * Ensure stylesheet is loaded
+ * @param {string} href - Stylesheet URL
  */
 function ensureStyles(href: string): void {
     if (!href) return;
@@ -44,11 +42,11 @@ function ensureStyles(href: string): void {
 
 //==============================================================================================
 /**
- * Load + mount a component
- * @param {string} type
- * @param {Element} container
- * @param {Object} props
- * @returns {Promise<{setSize: () => void, update: (nextProps: Object) => void, destroy: () => void}>}
+ * Load and mount a component
+ * @param {string} type - Component type name
+ * @param {HTMLElement} container - Container element
+ * @param {Object} props - Optional component props
+ * @returns {Promise<Object>} Component instance with setSize, update, destroy methods
  */
 export async function mountComponent(type: string, container: HTMLElement, props?: Record<string, unknown>): Promise<any> {
     const load = registry[type];

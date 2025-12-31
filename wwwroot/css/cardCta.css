@@ -1,8 +1,9 @@
 /*
     cardCta.css
+    Tap indicator animation for card CTA
 */
 
-/* Tap animation indicator */
+/* Indicator */
 .tap-indicator {
     position: absolute;
     width: 48px;
@@ -28,13 +29,13 @@
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
-/* Hide dots initially */
+/* Cursor rays */
 #tap-cursor-clickrays circle {
     opacity: 0;
     transform-origin: center;
 }
 
-/* Ray animations */
+/* Animations */
 @keyframes dot-burst {
 
     0%,
@@ -59,7 +60,7 @@
     }
 }
 
-/* Individual dot movement directions */
+/* Ray directions */
 #rr1 {
     --dot-x: -750px;
     --dot-y: 200px;
@@ -75,7 +76,7 @@
     --dot-y: -750px;
 }
 
-/* Main cursor animation */
+/* Cursor */
 #tap-cursor-main {
     transform-origin: center;
     animation: tap-cursor-click 1.5s infinite;

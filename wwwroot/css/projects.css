@@ -4,7 +4,7 @@
     -- same transitions as in photoGallery.css
 */
 
-/* Projects container */
+/* Container */
 .projects-container {
     position: fixed;
     top: 0;
@@ -45,7 +45,7 @@
     transition-duration: 0.15s;
 }
 
-/* Projects root */
+/* Gallery layout */
 .projects-gallery {
     width: 100%;
     min-height: 100vh;
@@ -96,7 +96,7 @@
     .projects-grid > .bento-item { grid-column: span 1 !important; }
 }
 
-/* Tile visuals */
+/* Tiles */
 .bento-item {
     position: relative;
     overflow: hidden;
@@ -128,7 +128,7 @@
     height: 100%;
 }
 
-/* Title bar */
+/* Header */
 .bento-header {
     position: absolute;
     left: 0.75rem;
@@ -168,7 +168,7 @@
 
 .bento-item:hover .bento-thumb { opacity: 1; transform: scale(1.02); }
 
-/* Stack-of-cards hover effect */
+/* Card stack component */
 .card-stack {
     position: absolute;
     inset: 0;
@@ -200,7 +200,7 @@
 .bento-item:hover .card-layer.layer-2 { transform: translate3d(8px, -4px, 0) rotate(4deg) scale(1.02); }
 .bento-item:hover .card-layer.layer-3 { transform: translate3d(24px, -20px, 0) rotate(12deg) scale(1.0); }
 
-/* Footer chip */
+/* Footer */
 .bento-footer {
     position: absolute;
     left: 0.75rem;
@@ -218,7 +218,7 @@
     backdrop-filter: blur(6px);
 }
 
-/* Download button chip (bottom-right) */
+/* Download button */
 .bento-download {
     position: absolute;
     right: 0.75rem;
@@ -250,7 +250,7 @@
     filter: brightness(0) invert(1);
 }
 
-/* GitHub button chip (bottom-right, above download if present) */
+/* GitHub button */
 .bento-github {
     position: absolute;
     right: 0.75rem;
@@ -286,7 +286,7 @@
     filter: brightness(0) invert(1);
 }
 
-/* Scrollbar (match photos view) */
+/* Scrollbar */
 .projects-container::-webkit-scrollbar { width: 8px; }
 .projects-container::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
 .projects-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
@@ -294,7 +294,6 @@
 
 
 /* Footer link */
-/* Prevent footer flash when projects view is not active */
 .projects-container:not(.visible) .projects-footer {
     visibility: hidden;
 }

@@ -3,6 +3,7 @@
     Line graph component styling (for Projects view)
 */
 
+/* Container */
 .comp-line-graph {
     position: absolute;
     inset: 0;

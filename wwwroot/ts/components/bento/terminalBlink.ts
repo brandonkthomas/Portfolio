@@ -13,9 +13,9 @@ export const stylesHref = '/css/components/bento/terminalBlink.css';
 //==============================================================================================
 /**
  * Mount the terminal component
- * @param {Element} container   
- * @param {Object} props
- * @returns {Promise<{setSize: () => void, update: (nextProps: Object) => void, destroy: () => void}>}
+ * @param {HTMLElement} container - Container element
+ * @param {Object} props - Component props with optional prompt
+ * @returns {Promise<Object>} Component instance with setSize, update, destroy methods
  */
 export async function mount(container: HTMLElement, props: { prompt?: string } = {}) {
     const root = document.createElement('div');

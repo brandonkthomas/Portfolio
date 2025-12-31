@@ -3,7 +3,7 @@
     Photo gallery and lightbox styles
 */
 
-/* Photo gallery container */
+/* Container */
 .photo-gallery-container {
     position: fixed;
     top: 0;
@@ -44,7 +44,7 @@
     transition-duration: 0.15s;
 }
 
-/* Photo gallery */
+/* Gallery layout */
 .photo-gallery {
     width: 100%;
     min-height: 100vh;
@@ -52,7 +52,7 @@
     box-sizing: border-box;
 }
 
-/* Photo grid - outer container with column distribution */
+/* Grid */
 .photo-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -62,7 +62,7 @@
     margin: 0 auto;
 }
 
-/* Photo column - each column is its own vertical grid (this allows for responsive column distribution & unlocked row heights) */
+/* Columns */
 .photo-column {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -95,7 +95,7 @@
     }
 }
 
-/* Photo items */
+/* Items */
 .photo-item {
     position: relative;
     overflow: hidden;
@@ -132,7 +132,7 @@
     transform: scale(0.98);
 }
 
-/* Skeleton loader */
+/* Skeleton */
 .photo-skeleton {
     position: absolute;
     top: 0;
@@ -289,7 +289,7 @@
     text-transform: uppercase;
 }
 
-/* Lightbox control wrappers */
+/* Controls */
 .lightbox-control {
     position: fixed;
     z-index: 10000;
@@ -312,7 +312,7 @@
     transform: translateY(-50%);
 }
 
-/* Glass surface for buttons */
+/* Button glass surface */
 .lightbox-button-glass {
     min-width: 100px;
     height: 48px !important;
@@ -331,7 +331,7 @@
     transform: scale(0.98);
 }
 
-/* Button content inside glass surface */
+/* Buttons */
 .lightbox-button {
     background: transparent;
     border: none;
@@ -365,7 +365,7 @@
     white-space: nowrap;
 }
 
-/* Mobile adjustments */
+/* Mobile */
 @media (max-width: 768px) {
     .lightbox-content {
         padding: 3rem 1rem 1rem 1rem;
@@ -391,7 +391,7 @@
     }
 }
 
-/* Scroll behavior */
+/* Scrollbar */
 .photo-gallery-container::-webkit-scrollbar {
     width: 8px;
 }
@@ -410,11 +410,7 @@
 }
 
 
-/*
-    Disable saving interactions on images in Photos view
-    - Prevent long-press callout on mobile
-    - Prevent text selection and dragging on all platforms
-*/
+/* Image interaction prevention */
 .photo-gallery-container img,
 .photo-lightbox .lightbox-image {
     -webkit-touch-callout: none; /* iOS Safari: disable callout */

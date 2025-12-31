@@ -1,7 +1,9 @@
 /*
     error.css
+    Error page styles with red glow effect
 */
 
+/* Base overrides */
 html,
 body {
     background-color: #1d0e0d !important; /* attempt to override Safari 26's theme color calculation */
@@ -11,6 +13,7 @@ body {
     background-color: #1d0e0d !important; /* attempt to override Safari 26's theme color calculation */
 }
 
+/* Error message */
 .error-message {
     position: relative;
     z-index: 10;
@@ -26,7 +29,7 @@ body {
     border: none;
 }
 
-/* large blurred non-distinguishable backdrop shape for text distinction */
+/* Backdrop glow */
 .error-message::before {
     content: '';
     position: absolute;

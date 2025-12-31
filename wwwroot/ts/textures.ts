@@ -151,8 +151,9 @@ export function getNebulaTexture(isBackground: boolean = false, shapeType: numbe
 //==============================================================================================
 /**
  * Draws an irregular base shape for nebulae
+ * @description Creates various nebula shapes (blobs, stretched clouds, spirals, filaments, noise)
  * @param {CanvasRenderingContext2D} ctx - Canvas context
- * @param {number} shapeType - Type of shape to draw (0-4)
+ * @param {number} shapeType - Type of shape (0=blobs, 1=stretched, 2=spiral, 3=filament, 4=chaos)
  */
 function drawIrregularBase(ctx: CanvasRenderingContext2D, shapeType: number) {
     const width = 256;
@@ -375,7 +376,8 @@ function drawIrregularBase(ctx: CanvasRenderingContext2D, shapeType: number) {
 
 //==============================================================================================
 /**
- * Applies texture noise to nebula
+ * Applies texture noise to nebula for texture detail
+ * @description Adds noise patterns and edge distortion to nebula textures
  * @param {Uint8ClampedArray} data - Image data array
  * @param {number} size - Canvas size
  */
@@ -424,7 +426,8 @@ function applyTextureNoise(data: Uint8ClampedArray, size: number) {
 
 //==============================================================================================
 /**
- * Applies irregular edges to the nebula texture
+ * Applies irregular edges to nebula texture mask
+ * @description Creates smooth falloff at nebula edges based on radial noise
  * @param {Uint8ClampedArray} data - Image data array
  * @param {number} size - Canvas size
  */
@@ -472,14 +475,14 @@ function applyIrregularEdges(finalData: Uint8ClampedArray, size: number) {
 
 //==============================================================================================
 /**
- * Simple noise function (not true simplex but similar effect)
- * @param {number} x - X coordinate 
+ * Simple noise function for texture variation (not true Simplex but similar effect)
+ * @param {number} x - X coordinate  
  * @param {number} y - Y coordinate
- * @param {number} seed - Random seed
+ * @param {number} seed - Random seed for variation
  * @returns {number} Noise value from -1 to 1
  */
 function simplexLikeNoise(x: number, y: number, seed: number = 0): number {
     // Simple deterministic noise function
     const n = Math.sin(x + y * 113 + seed * 157) * 43758.5453;
     return (n - Math.floor(n)) * 2 - 1;
-} 
+}

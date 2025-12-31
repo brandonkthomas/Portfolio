@@ -13,9 +13,9 @@ export const stylesHref = '/css/components/bento/cardStack.css';
 //==============================================================================================
 /**
  * Mount the card stack component
- * @param {Element} container
- * @param {Object} props
- * @returns {Promise<{setSize: () => void, update: (nextProps: Object) => void, destroy: () => void}>}
+ * @param {HTMLElement} container - Container element
+ * @param {Object} props - Component props
+ * @returns {Promise<Object>} Component instance with setSize, update, destroy methods
  */
 export async function mount(container: HTMLElement, props: Record<string, unknown> = {}) {
     const root = document.createElement('div');
