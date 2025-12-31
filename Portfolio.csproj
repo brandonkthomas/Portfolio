@@ -9,16 +9,16 @@
   <!-- Prevent the host project from accidentally compiling nested module source (and their obj/bin)
        when modules live under this repo folder. They should build only via ProjectReference. -->
   <ItemGroup>
-    <Compile Remove="ExternalApps/**" />
-    <Content Remove="ExternalApps/**" />
-    <EmbeddedResource Remove="ExternalApps/**" />
-    <None Remove="ExternalApps/**" />
+    <Compile Remove="Submodules/**" />
+    <Content Remove="Submodules/**" />
+    <EmbeddedResource Remove="Submodules/**" />
+    <None Remove="Submodules/**" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="ExternalApps/NameTrace/NameTrace.Web/NameTrace.Web.csproj" />
-    <ProjectReference Include="ExternalApps/RealityCheck/RealityCheck.Web/RealityCheck.Web.csproj" />
-    <ProjectReference Include="ExternalApps/ImageHexEditor/ImageHexEditor.Web/ImageHexEditor.Web.csproj" />
+    <ProjectReference Include="Submodules/NameTrace/NameTrace.Web/NameTrace.Web.csproj" />
+    <ProjectReference Include="Submodules/RealityCheck/RealityCheck.Web/RealityCheck.Web.csproj" />
+    <ProjectReference Include="Submodules/ImageHexEditor/ImageHexEditor.Web/ImageHexEditor.Web.csproj" />
   </ItemGroup>
 
 </Project>

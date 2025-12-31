@@ -15,8 +15,8 @@ wwwroot/js/**/*.map
 wwwroot/dist/**/*.map
 
 # Generated JS files
-ExternalApps/NameTrace/NameTrace.Web/wwwroot/dist/js/nametrace.js
-ExternalApps/RealityCheck/RealityCheck.Web/wwwroot/dist/js/realitycheck.js
+Submodules/NameTrace/NameTrace.Web/wwwroot/dist/js/nametrace.js
+Submodules/RealityCheck/RealityCheck.Web/wwwroot/dist/js/realitycheck.js
 
 # Temp working folders
 .tmp/

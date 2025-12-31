@@ -1,12 +1,12 @@
-[submodule "ExternalApps/NameTrace"]
-	path = ExternalApps/NameTrace
+[submodule "Submodules/NameTrace"]
+	path = Submodules/NameTrace
 	url = https://github.com/brandonkthomas/NameTrace.git
 	branch = main
-[submodule "ExternalApps/RealityCheck"]
-	path = ExternalApps/RealityCheck
+[submodule "Submodules/RealityCheck"]
+	path = Submodules/RealityCheck
 	url = https://github.com/brandonkthomas/RealityCheck.git
 	branch = main
-[submodule "ExternalApps/ImageHexEditor"]
-	path = ExternalApps/ImageHexEditor
+[submodule "Submodules/ImageHexEditor"]
+	path = Submodules/ImageHexEditor
 	url = https://github.com/brandonkthomas/ImageHexEditor.git
 	branch = main
