@@ -34,6 +34,12 @@ body {
     background-color: #1c1c1c;
 }
 
+/* App pages should scroll like normal documents instead of using the SPA scroll containers */
+body.app-page {
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
 /* Initial state loading styles */
 body[data-initial-state="loading"] #starfield,
 body[data-initial-state="loading"] .card-container,

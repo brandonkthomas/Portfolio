@@ -53,7 +53,7 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
     }
 </head>
-<body data-initial-state="loading" data-enable-starfield="@(enableStarfield.ToString().ToLowerInvariant())">
+<body class="@(isAppPage ? "app-page" : "")" data-initial-state="loading" data-enable-starfield="@(enableStarfield.ToString().ToLowerInvariant())">
     <div class="loading-overlay" aria-hidden="true">
         <img src="~/assets/svg/bt-logo-boxed.svg" alt="Brandon Thomas Logo" class="loading-logo" fetchpriority="high" />
         <img src="~/assets/svg/throbber-ring-indef.svg" alt="" class="loading-throbber" />
