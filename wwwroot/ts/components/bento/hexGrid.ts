@@ -3,13 +3,13 @@
  * @fileoverview Rotated hex byte grid with interactive neighborhood randomization
  */
 
-import { logEvent, LogData, LogLevel } from '../common';
+import { logEvent, LogData, LogLevel } from '../../common';
 
 const logHexGrid = (event: string, data?: LogData, note?: string, level: LogLevel = 'info') => {
     logEvent('hexGrid', event, data, note, level);
 };
 
-export const stylesHref = '/css/components/hexGrid.css';
+export const stylesHref = '/css/components/bento/hexGrid.css';
 
 interface HexGridProps {
     rows?: number;

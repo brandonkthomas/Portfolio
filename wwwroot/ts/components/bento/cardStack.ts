@@ -3,12 +3,12 @@
  * @fileoverview Card stack component with subtle parallax (for Projects view)
  */
 
-import { logEvent, LogData, LogLevel } from '../common';
+import { logEvent, LogData, LogLevel } from '../../common';
 
 const logCardStack = (event: string, data?: LogData, note?: string, level: LogLevel = 'info') => {
 	logEvent('cardStack', event, data, note, level);
 };
-export const stylesHref = '/css/components/cardStack.css';
+export const stylesHref = '/css/components/bento/cardStack.css';
 
 //==============================================================================================
 /**

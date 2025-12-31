@@ -16,10 +16,10 @@ const loadedStyles = new Set<string>();
  * @type {Object<string, () => Promise<{stylesHref: string, mount: (container: Element, props: Object) => Promise<{setSize: () => void, update: (nextProps: Object) => void, destroy: () => void}>}>>}
  */
 const registry: Record<string, () => Promise<any>> = {
-    cardStack: () => import('./cardStack'),
-    lineGraph: () => import('./lineGraph'),
-    terminalBlink: () => import('./terminalBlink'),
-    hexGrid: () => import('./hexGrid'),
+    cardStack: () => import('./bento/cardStack'),
+    lineGraph: () => import('./bento/lineGraph'),
+    terminalBlink: () => import('./bento/terminalBlink'),
+    hexGrid: () => import('./bento/hexGrid'),
 };
 
 //==============================================================================================

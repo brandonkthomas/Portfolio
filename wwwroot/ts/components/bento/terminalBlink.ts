@@ -3,12 +3,12 @@
  * @fileoverview Terminal component with blinking caret (for Projects view)
  */
 
-import { logEvent, LogData, LogLevel } from '../common';
+import { logEvent, LogData, LogLevel } from '../../common';
 
 const logTerminal = (event: string, data?: LogData, note?: string, level: LogLevel = 'info') => {
 	logEvent('terminalBlink', event, data, note, level);
 };
-export const stylesHref = '/css/components/terminalBlink.css';
+export const stylesHref = '/css/components/bento/terminalBlink.css';
 
 //==============================================================================================
 /**

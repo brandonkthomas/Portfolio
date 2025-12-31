@@ -3,12 +3,12 @@
  * @fileoverview Line graph component with animated waves (for Projects view)
  */
 
-import { logEvent, LogData, LogLevel } from '../common';
+import { logEvent, LogData, LogLevel } from '../../common';
 
 const logLineGraph = (event: string, data?: LogData, note?: string, level: LogLevel = 'info') => {
 	logEvent('lineGraph', event, data, note, level);
 };
-export const stylesHref = '/css/components/lineGraph.css';
+export const stylesHref = '/css/components/bento/lineGraph.css';
 
 //==============================================================================================
 /**
