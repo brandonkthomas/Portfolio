@@ -803,6 +803,19 @@ export default class PhotoLightbox {
     private handleBackdropClick(event: MouseEvent) {
         if (!this.options.closeOnBackdrop || !this.overlay) return;
 
+        // If single photo, close on any click
+        if (!this.canNavigate) {
+            // Don't close if clicking on the close button (it has its own handler)
+            const target = event.target as HTMLElement;
+            if (target.closest('.lightbox-close')) {
+                return;
+            }
+            this.close();
+            this.log('Backdrop Close', { reason: 'single-photo-click' });
+            return;
+        }
+
+        // For multiple photos, only close on backdrop click
         if (event.target === this.overlay) {
             this.close();
             this.log('Backdrop Close', { reason: 'backdrop' });
@@ -1158,6 +1171,54 @@ export default class PhotoLightbox {
         const horizontalDelta = Math.abs(deltaX);
         const nearNeutral = verticalDelta < 8 && horizontalDelta < 8;
 
+        // If single photo, prevent horizontal dragging
+        if (!this.canNavigate) {
+            // Only allow vertical drags for single photo
+            if (!this.isVerticalDrag) {
+                const shouldStartVertical = verticalDelta > horizontalDelta + 12 && verticalDelta > 30;
+                if (shouldStartVertical) {
+                    this.lockedDragAxis = 'vertical';
+                    this.isVerticalDrag = true;
+                    this.track?.classList.remove('is-dragging');
+                    this.dragOffsetX = 0;
+                    this.updateTrackTransform(0, false);
+                } else {
+                    // Prevent horizontal drag from starting
+                    this.dragOffsetX = 0;
+                    this.updateTrackTransform(0, false);
+                }
+            }
+            
+            // Handle vertical drag for single photo
+            if (this.isVerticalDrag) {
+                this.dragOffsetY = deltaY;
+                const progress = clamp(Math.abs(deltaY) / 380, 0, 1);
+                const opacity = 0.95 * (1 - progress * 0.85);
+                const blurProgress = clamp(Math.abs(deltaY) / BLUR_FADE_DISTANCE, 0, 1);
+                const currentBlur = this.baseBackdropBlur * (1 - blurProgress);
+
+                if (this.content) {
+                    this.content.style.transition = 'none';
+                    this.content.style.transform = `translate3d(0, ${deltaY}px, 0)`;
+                    this.content.style.backdropFilter = `blur(${currentBlur}px)`;
+                }
+
+                if (this.overlay) {
+                    this.overlay.style.background = `rgba(0, 0, 0, ${opacity})`;
+                }
+            }
+
+            // Update velocity tracking
+            const dt = event.timeStamp - this.lastPointerTime;
+            if (dt > 0) {
+                this.pointerVelocityY = (event.clientY - this.lastPointerY) / dt;
+                this.lastPointerTime = event.timeStamp;
+                this.lastPointerY = event.clientY;
+            }
+
+            return;
+        }
+
         // If the drag is not vertical and not locked to horizontal, check if it should start vertical
         if (!this.isVerticalDrag && this.lockedDragAxis !== 'horizontal') {
             if (nearNeutral) {
@@ -1214,13 +1275,16 @@ export default class PhotoLightbox {
             return;
         }
 
-        const horizontalDeadzone = this.isVerticalDrag ? 0 : 6;
-        if (Math.abs(deltaX) <= horizontalDeadzone && !this.isVerticalDrag) {
-            this.dragOffsetX = 0;
-            this.updateTrackTransform(0, false);
-        } else if (!this.isVerticalDrag) {
-            this.dragOffsetX = deltaX;
-            this.updateTrackTransform(this.dragOffsetX, false);
+        // Only process horizontal drag if navigation is enabled
+        if (this.canNavigate) {
+            const horizontalDeadzone = this.isVerticalDrag ? 0 : 6;
+            if (Math.abs(deltaX) <= horizontalDeadzone && !this.isVerticalDrag) {
+                this.dragOffsetX = 0;
+                this.updateTrackTransform(0, false);
+            } else if (!this.isVerticalDrag) {
+                this.dragOffsetX = deltaX;
+                this.updateTrackTransform(this.dragOffsetX, false);
+            }
         }
     }
 
@@ -1259,6 +1323,18 @@ export default class PhotoLightbox {
             this.pointerVelocityY = 0;
 
             // Reset any locked drag axis
+            this.lockedDragAxis = null;
+            return;
+        }
+
+        // If single photo, don't process horizontal drags
+        if (!this.canNavigate) {
+            this.updateTrackTransform(0, true);
+            this.track?.classList.remove('is-dragging');
+            this.isDragging = false;
+            this.pointerId = null;
+            this.dragOffsetX = 0;
+            this.pointerVelocityX = 0;
             this.lockedDragAxis = null;
             return;
         }
