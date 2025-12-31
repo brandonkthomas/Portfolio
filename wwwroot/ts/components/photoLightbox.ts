@@ -3,7 +3,7 @@
  * @fileoverview Photo lightbox library with swipe/drag functionality + smooth animations
  */
 
-import { logEvent, LogData, LogLevel } from './common';
+import { logEvent, LogData, LogLevel } from '../common';
 
 type GalleryInput = HTMLElement | HTMLElement[] | NodeListOf<HTMLElement> | string;
 

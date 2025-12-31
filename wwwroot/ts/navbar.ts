@@ -4,8 +4,8 @@
  * @description Handles the glass surface URL bar with responsive burger menu
  */
 
-import { createGlassSurface } from './glassSurface';
-import type { GlassSurfaceInstance } from './glassSurface';
+import { createGlassSurface } from './components/glassSurface';
+import type { GlassSurfaceInstance } from './components/glassSurface';
 import { isMobile, logEvent, LogData, LogLevel } from './common';
 import stateManager, { ViewState } from './stateManager';
 

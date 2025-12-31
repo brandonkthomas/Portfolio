@@ -210,6 +210,15 @@ app.MapControllerRoute(
     pattern: "/projects",
     defaults: new { controller = "Home", action = "Projects" });
 
+// Internal UI kit test page (not linked from navigation)
+if (app.Environment.IsDevelopment())
+{
+    app.MapControllerRoute(
+        name: "ui-kit",
+        pattern: "/internal/ui",
+        defaults: new { controller = "Home", action = "UiKit" });
+}
+
 // Project detail route to ProjectsController Detail action
 app.MapControllerRoute(
     name: "project-detail",

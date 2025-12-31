@@ -8,7 +8,7 @@ import { isMobile, isErrorPage, logEvent, LogData, LogLevel } from './common';
 import { createCircleTexture } from './textures';
 import { createNebulae, updateNebulae, reduceNebulaOpacity, restoreNebulaOpacity } from './nebulae';
 import perf from './perfMonitor';
-import { onPhotoLightboxStateChange } from './photoLightbox';
+import { onPhotoLightboxStateChange } from './components/photoLightbox';
 
 // DEBUG FLAG: if true, show animated gradient instead of starfield (for testing glass material behavior/interactions)
 const DEBUG_GRADIENT = false;

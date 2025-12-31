@@ -19,6 +19,16 @@ public class HomeController : Controller
         return View();
     }
 
+    /// <summary>
+    /// Internal UI kit test layout (not linked from navigation)
+    /// </summary>
+    public IActionResult UiKit()
+    {
+        ViewData["Title"] = "UI Kit";
+        ViewData["IsAppPage"] = true;
+        return View();
+    }
+
     public IActionResult Photos()
     {
         return View("Index");

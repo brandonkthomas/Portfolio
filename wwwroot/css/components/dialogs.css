@@ -1,0 +1,213 @@
+/*
+    dialogs.css
+    Glass-surface dialog UI kit styles
+*/
+
+.ui-dialog-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 11000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.25rem;
+    background: radial-gradient(circle at top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.95));
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(1.02);
+    filter: blur(4px);
+    transition:
+        opacity 0.2s ease-out,
+        transform 0.2s ease-out,
+        filter 0.2s ease-out;
+}
+
+.ui-dialog-overlay.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+    filter: none;
+    backdrop-filter: blur(1px);
+}
+
+.ui-dialog {
+    max-width: min(420px, 100%);
+}
+
+.ui-dialog-glass {
+    width: auto !important;
+}
+
+.ui-dialog-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding: 1.25rem 1.4rem 1.3rem 1.4rem;
+    box-sizing: border-box;
+    color: rgba(255, 255, 255, 0.92);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+}
+
+.ui-dialog-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.ui-dialog-title {
+    font-size: 1.1rem;
+    font-family: ui-monospace, SFMono-Regular, 'SF Mono', monospace;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 0.01em;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
+    text-align: center;
+    grid-column: 1 / -1;
+    justify-self: center;
+}
+
+.ui-dialog-close {
+    display: none;
+}
+
+.ui-dialog-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.ui-dialog-message {
+    margin: 0;
+    font-size: 0.85rem;
+    font-family: ui-monospace, SFMono-Regular, 'SF Mono', monospace;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.ui-dialog-input {
+    width: auto;
+    margin-top: 0.35rem;
+    padding: 0.55rem 0.7rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(0, 0, 0, 0.35);
+    color: rgba(255, 255, 255, 0.94);
+    font: inherit;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    outline: none;
+    transition:
+        border-color 0.16s ease,
+        background 0.16s ease,
+        box-shadow 0.16s ease;
+}
+
+.ui-dialog-input::placeholder {
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.ui-dialog-input:focus-visible {
+    border-color: rgba(120, 212, 255, 0.25);
+    box-shadow: 0 0 0 1px rgba(120, 212, 255, 0.7);
+}
+
+.ui-dialog-input--invalid {
+    border-color: rgba(255, 90, 90, 0.5);
+    box-shadow: 0 0 0 1px rgba(255, 90, 90, 0.8);
+}
+
+.ui-dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.35rem;
+}
+
+.ui-dialog-button {
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    padding: 0.75rem 0.9rem;
+    font-family: ui-monospace, SFMono-Regular, 'SF Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.09em;
+    /* text-transform: uppercase; */
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(0, 0, 0, 0.45);
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+    transition:
+        background 0.16s ease,
+        color 0.16s ease,
+        border-color 0.16s ease,
+        transform 0.1s ease,
+        box-shadow 0.16s ease;
+}
+
+.ui-dialog-button--secondary {
+    background: rgba(0, 0, 0, 0.3);
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.ui-dialog-button--primary {
+    background: linear-gradient(145deg, rgba(120, 212, 255, 0.9), rgba(88, 159, 255, 0.95));
+    color: #050710;
+    border-color: rgba(197, 238, 255, 0.2);
+}
+
+/* default variant already defined via gradient above */
+/* .ui-dialog-button--default {
+} */
+
+.ui-dialog-button--info {
+    background: linear-gradient(135deg, rgba(116, 196, 255, 0.95), rgba(86, 148, 245, 0.96));
+}
+
+.ui-dialog-button--success {
+    background: linear-gradient(135deg, rgba(123, 230, 178, 0.95), rgba(77, 192, 140, 0.96));
+}
+
+.ui-dialog-button--danger {
+    background: linear-gradient(135deg, rgba(255, 131, 131, 0.95), rgba(224, 85, 85, 0.96));
+}
+
+.ui-dialog-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 7px 24px rgba(0, 0, 0, 0.6);
+}
+
+.ui-dialog-button:active {
+    transform: translateY(0);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.45);
+}
+
+.ui-dialog-button:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.85);
+    outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+    .ui-dialog-overlay {
+        padding: 1.75rem 0.9rem;
+    }
+
+    .ui-dialog-inner {
+        padding: 1.05rem 1.1rem 1.15rem 1.1rem;
+    }
+
+    .ui-dialog-footer {
+        width: 100%; /* kind of looks like iOS 26... keeping for now */
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+
+    .ui-dialog-button {
+        width: 100%;
+        justify-content: center;
+    }
+}

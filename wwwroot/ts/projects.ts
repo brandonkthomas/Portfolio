@@ -4,9 +4,9 @@
  */
 
 import { isMobile, getOperatingSystem, logEvent, LogData, LogLevel } from './common';
-import { createGlassSurface } from './glassSurface';
-import type { GlassSurfaceInstance } from './glassSurface';
-import { mountComponent } from './components/registry';
+import { createGlassSurface } from './components/glassSurface';
+import type { GlassSurfaceInstance } from './components/glassSurface';
+import { mountComponent } from './components/bento/registry';
 
 class ProjectsGrid {
     private container: HTMLElement | null;

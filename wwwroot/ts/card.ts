@@ -8,7 +8,7 @@ import { isMobile, logEvent, LogData, LogLevel } from './common';
 import stateManager, { ViewState } from './stateManager';
 import perf from './perfMonitor';
 import { triggerStarfieldWarp } from './starfield';
-import { onPhotoLightboxStateChange } from './photoLightbox';
+import { onPhotoLightboxStateChange } from './components/photoLightbox';
 
 class Card {
     // DOM

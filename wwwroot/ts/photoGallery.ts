@@ -4,7 +4,7 @@
  * @description Handles photo grid display and image expansion
  */
 
-import PhotoLightbox from './photoLightbox';
+import PhotoLightbox from './components/photoLightbox';
 import { logEvent, LogData, LogLevel } from './common';
 
 type PhotoItem = { url: string; width: number; height: number; aspectRatio: number; index: number };
