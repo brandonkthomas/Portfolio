@@ -51,7 +51,8 @@
       "span": "1x1",
       "url": "/imagehexeditor",
       "external": false,
-      "component": { "type": "byteGrid", "props": {} }
+      "component": { "type": "byteGrid", "props": {} },
+      "githubUrl": "https://github.com/brandonkthomas/ImageHexEditor"
     },
     {
       "slug": "nametrace",
