@@ -181,6 +181,7 @@ export default class PhotoLightbox {
     private currentIndex = 0;
     private viewportWidth = 0;
     private isOpen = false;
+    private canNavigate = false;
 
     private dragStartX = 0;
     private dragStartY = 0;
@@ -312,6 +313,7 @@ export default class PhotoLightbox {
         this.nextButton = undefined;
         this.slides = [];
         this.activeDataSource = undefined;
+        this.canNavigate = false;
 
         this.log('Destroyed', {
             handlers: removedHandlers,
@@ -347,6 +349,7 @@ export default class PhotoLightbox {
         this.activeDataSource = host;
         this.slides = slides;
         this.currentIndex = clamp(index, 0, this.slides.length - 1);
+        this.canNavigate = this.slides.length > 1;
 
         if (!this.overlay) {
             this.buildOverlay();
@@ -450,6 +453,13 @@ export default class PhotoLightbox {
     goTo(index: number) {
         if (!this.slides.length) {
             this.log('Navigation Skipped', { requestedIndex: index }, 'No slides are loaded', 'warn');
+            return;
+        }
+
+        // if we can't navigate, just update the track transform and return
+        if (!this.canNavigate) {
+            this.log('Navigation Disabled', { requestedIndex: index, slides: this.slides.length }, 'Single-slide mode');
+            this.updateTrackTransform(0, true);
             return;
         }
 
@@ -618,16 +628,23 @@ export default class PhotoLightbox {
             <line x1="6" y1="6" x2="18" y2="18"></line>
         `, false);
         closeButton.button.addEventListener('click', () => this.close());
-
-        const prevButton = this.createIconButton('Prev', 'lightbox-prev', `<polyline points="15 18 9 12 15 6"></polyline>`, false);
-        prevButton.button.addEventListener('click', () => this.prev());
-
-        const nextButton = this.createIconButton('Next', 'lightbox-next', `<polyline points="9 18 15 12 9 6"></polyline>`, true);
-        nextButton.button.addEventListener('click', () => this.next());
-
+        
         closeWrapper.appendChild(closeButton.wrapper);
-        prevWrapper.appendChild(prevButton.wrapper);
-        nextWrapper.appendChild(nextButton.wrapper);
+
+        // if we can navigate, create the prev and next buttons
+        if (this.canNavigate) {
+            const prevButton = this.createIconButton('Prev', 'lightbox-prev', `<polyline points="15 18 9 12 15 6"></polyline>`, false);
+            prevButton.button.addEventListener('click', () => this.prev());
+    
+            const nextButton = this.createIconButton('Next', 'lightbox-next', `<polyline points="9 18 15 12 9 6"></polyline>`, true);
+            nextButton.button.addEventListener('click', () => this.next());
+
+            prevWrapper.appendChild(prevButton.wrapper);
+            nextWrapper.appendChild(nextButton.wrapper);   
+            
+            this.prevButton = prevButton.button;
+            this.nextButton = nextButton.button;    
+        }
 
         const content = createElement('div', ['lightbox-content']);
         const track = createElement('div', ['lightbox-track']);
@@ -650,8 +667,6 @@ export default class PhotoLightbox {
         this.track = track;
         this.content = content;
         this.closeButton = closeButton.button;
-        this.prevButton = prevButton.button;
-        this.nextButton = nextButton.button;
 
         document.body.appendChild(this.overlay);
         this.overlayBaseBg = window.getComputedStyle(this.overlay).backgroundColor || this.overlayBaseBg;
@@ -770,10 +785,10 @@ export default class PhotoLightbox {
         if (event.key === 'Escape') {
             event.preventDefault();
             this.close();
-        } else if (event.key === 'ArrowRight') {
+        } else if (event.key === 'ArrowRight' && this.canNavigate) {
             event.preventDefault();
             this.next();
-        } else if (event.key === 'ArrowLeft') {
+        } else if (event.key === 'ArrowLeft' && this.canNavigate) {
             event.preventDefault();
             this.prev();
         }
@@ -1038,25 +1053,34 @@ export default class PhotoLightbox {
 
     //==============================================================================================
     /**
-     * Update the UI state
+     * Update the UI state (prev and next buttons, counter)
      * @returns {void}
      */
     private updateUIState() {
-        if (!this.counter) return;
+        const slideCount = this.slides.length;
+        const hasMultiple = slideCount > 1;
 
-        this.counter.textContent = `${this.currentIndex + 1} / ${this.slides.length}`;
+        if (this.counter) {
+            this.counter.textContent = `${this.currentIndex + 1} / ${slideCount}`;
+        }
+
         this.slides.forEach((slide, idx) => {
-            slide.element?.classList.toggle('is-active', idx === this.currentIndex);
-            slide.element?.setAttribute('aria-hidden', idx === this.currentIndex ? 'false' : 'true');
+            const isActive = idx === this.currentIndex;
+            slide.element?.classList.toggle('is-active', isActive);
+            slide.element?.setAttribute('aria-hidden', isActive ? 'false' : 'true');
         });
 
-        if (!this.options.loop) {
-            const atStart = this.currentIndex === 0;
-            const atEnd = this.currentIndex === this.slides.length - 1;
-            this.prevButton?.classList.toggle(DISABLED_CLASS, atStart);
-            this.nextButton?.classList.toggle(DISABLED_CLASS, atEnd);
-            this.prevButton && (this.prevButton.disabled = atStart);
-            this.nextButton && (this.nextButton.disabled = atEnd);
+        const disablePrev = !hasMultiple || (!this.options.loop && this.currentIndex === 0);
+        const disableNext = !hasMultiple || (!this.options.loop && this.currentIndex === slideCount - 1);
+
+        if (this.prevButton) {
+            this.prevButton.classList.toggle(DISABLED_CLASS, disablePrev);
+            this.prevButton.disabled = disablePrev;
+        }
+
+        if (this.nextButton) {
+            this.nextButton.classList.toggle(DISABLED_CLASS, disableNext);
+            this.nextButton.disabled = disableNext;
         }
     }
 
@@ -1239,8 +1263,11 @@ export default class PhotoLightbox {
             return;
         }
 
-        const shouldAdvance = Math.abs(this.dragOffsetX) > (this.options.dragThreshold ?? DEFAULT_OPTIONS.dragThreshold) ||
-            Math.abs(this.pointerVelocityX) > VELOCITY_TRIGGER;
+        // if we can navigate, check if the drag offset is greater than the drag threshold or the pointer velocity is greater than the velocity trigger
+        const shouldAdvance = this.canNavigate && (
+            Math.abs(this.dragOffsetX) > (this.options.dragThreshold ?? DEFAULT_OPTIONS.dragThreshold) ||
+            Math.abs(this.pointerVelocityX) > VELOCITY_TRIGGER
+        );
 
         if (shouldAdvance) {
             const direction = this.dragOffsetX < 0 ? 'next' : 'prev';
