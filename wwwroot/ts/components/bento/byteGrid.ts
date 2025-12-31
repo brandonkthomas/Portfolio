@@ -1,17 +1,19 @@
 /**
- * hexGrid.js
- * @fileoverview Rotated hex byte grid with interactive neighborhood randomization
+ * byteGrid.ts
+ * @fileoverview Interactive rotated hex byte grid component with neighborhood randomization.
+ * Renders a grid of random hexadecimal bytes that update in 3x3 neighborhoods as the user moves
+ * their cursor across the grid. Includes resize handling and center position caching for performance.
  */
 
 import { logEvent, LogData, LogLevel } from '../../common';
 
-const logHexGrid = (event: string, data?: LogData, note?: string, level: LogLevel = 'info') => {
-    logEvent('hexGrid', event, data, note, level);
+const logByteGrid = (event: string, data?: LogData, note?: string, level: LogLevel = 'info') => {
+    logEvent('byteGrid', event, data, note, level);
 };
 
-export const stylesHref = '/css/components/bento/hexGrid.css';
+export const stylesHref = '/css/components/bento/byteGrid.css';
 
-interface HexGridProps {
+interface ByteGridProps {
     rows?: number;
     cols?: number;
     thresholdPx?: number;
@@ -25,18 +27,21 @@ interface Cell {
     centerY: number;
 }
 
+// ============================================================================================
 /**
- * Mount the hex grid component.
- * @param {Element} container
- * @param {Object} props
- * @returns {Promise<{setSize: () => void, update: (nextProps: Object) => void, destroy: () => void}>}
+ * Mount the byte grid component and initialize its interactive behavior.
+ * Creates a grid of random hex byte cells that respond to pointer movement, randomizing
+ * the 3x3 neighborhood around the nearest cell when the cursor moves beyond the threshold distance.
+ * @param {HTMLElement} container - Container element to mount the grid into
+ * @param {ByteGridProps} props - Configuration props: rows, cols, and thresholdPx for movement detection
+ * @returns {Object} Component instance with setSize(), update(), and destroy() methods
  */
-export async function mount(container: HTMLElement, props: HexGridProps = {}) {
+export async function mount(container: HTMLElement, props: ByteGridProps = {}) {
     const root = document.createElement('div');
-    root.className = 'comp-hex-grid';
+    root.className = 'comp-byte-grid';
 
     const inner = document.createElement('div');
-    inner.className = 'hg-inner';
+    inner.className = 'bg-inner';
     root.appendChild(inner);
     container.appendChild(root);
 
@@ -48,11 +53,22 @@ export async function mount(container: HTMLElement, props: HexGridProps = {}) {
     const cellsGrid: Cell[][] = [];
     const cellsFlat: Cell[] = [];
 
+    // ============================================================================================
+    /**
+     * Generate a random hexadecimal byte (00-FF) as a string.
+     * @returns {string} Two-character uppercase hex string (e.g., "A3", "FF")
+     */
     function randomHexByte(): string {
         const value = Math.floor(Math.random() * 256);
         return value.toString(16).padStart(2, '0').toUpperCase();
     }
 
+    // ============================================================================================
+    /**
+     * Build the DOM grid structure with random hex bytes.
+     * Creates rows and cells, populating cellsGrid (2D array) and cellsFlat (1D array)
+     * for efficient access during pointer interactions.
+     */
     function buildGrid() {
         inner.innerHTML = '';
         cellsGrid.length = 0;
@@ -60,7 +76,7 @@ export async function mount(container: HTMLElement, props: HexGridProps = {}) {
 
         for (let r = 0; r < rows; r++) {
             const rowEl = document.createElement('div');
-            rowEl.className = 'hg-row';
+            rowEl.className = 'bg-row';
             inner.appendChild(rowEl);
 
             const rowCells: Cell[] = [];
@@ -68,7 +84,7 @@ export async function mount(container: HTMLElement, props: HexGridProps = {}) {
 
             for (let c = 0; c < cols; c++) {
                 const span = document.createElement('span');
-                span.className = 'hg-byte';
+                span.className = 'bg-byte';
                 span.textContent = randomHexByte();
                 rowEl.appendChild(span);
 
@@ -86,18 +102,28 @@ export async function mount(container: HTMLElement, props: HexGridProps = {}) {
     }
 
     buildGrid();
-    logHexGrid('Mounted', { rows, cols, thresholdPx });
+    logByteGrid('Mounted', { rows, cols, thresholdPx });
 
     let centersDirty = true;
 
+    // ============================================================================================
     /**
-     * Placeholder for future size-based adjustments; currently zoom is controlled purely via CSS.
+     * Fit grid to container size (reserved for future layout adjustments).
+     * Currently a no-op but preserved as a hook for responsive sizing logic.
+     * @param {number} width - Container width in pixels
+     * @param {number} height - Container height in pixels
      */
     function fitToContainer(width: number, height: number): void {
         void width;
         void height;
     }
 
+    // ============================================================================================
+    /**
+     * Recompute and cache the center positions of all cells.
+     * Iterates through all cells and updates their centerX and centerY based on current DOM positions.
+     * Sets centersDirty to false to avoid redundant recalculations during pointer events.
+     */
     function recomputeCenters(): void {
         if (!cellsFlat.length) return;
         for (const cell of cellsFlat) {
@@ -108,6 +134,11 @@ export async function mount(container: HTMLElement, props: HexGridProps = {}) {
         centersDirty = false;
     }
 
+    // ============================================================================================
+    /**
+     * Mark the cached cell centers as stale, triggering recomputation on next pointer move.
+     * Called after resize events to ensure accurate distance calculations.
+     */
     function markCentersDirty(): void {
         centersDirty = true;
     }
@@ -115,6 +146,13 @@ export async function mount(container: HTMLElement, props: HexGridProps = {}) {
     let lastX: number | null = null;
     let lastY: number | null = null;
 
+    // ============================================================================================
+    /**
+     * Randomize hex bytes in a 3x3 neighborhood around a center cell.
+     * All cells in the neighborhood (including out-of-bounds checks) are given new random hex values.
+     * @param {number} centerRow - Center cell row index
+     * @param {number} centerCol - Center cell column index
+     */
     function randomizeNeighborhood(centerRow: number, centerCol: number): void {
         for (let dr = -1; dr <= 1; dr++) {
             const r = centerRow + dr;
@@ -128,6 +166,7 @@ export async function mount(container: HTMLElement, props: HexGridProps = {}) {
         }
     }
 
+    // ============================================================================================
     function handlePointerMove(ev: PointerEvent): void {
         if (!cellsFlat.length) return;
 
@@ -166,6 +205,11 @@ export async function mount(container: HTMLElement, props: HexGridProps = {}) {
         randomizeNeighborhood(nearest.row, nearest.col);
     }
 
+    // ============================================================================================
+    /**
+     * Handle pointer leaving the grid container.
+     * Resets tracking of the last pointer position so subsequent pointer moves are not throttled.
+     */
     function handlePointerLeave(): void {
         lastX = null;
         lastY = null;
@@ -195,7 +239,7 @@ export async function mount(container: HTMLElement, props: HexGridProps = {}) {
             markCentersDirty();
             window.requestAnimationFrame(() => recomputeCenters());
         },
-        update(nextProps: HexGridProps) {
+        update(nextProps: ByteGridProps) {
             // Currently no dynamic prop changes; hook reserved for future density tweaks.
             void nextProps;
         },
@@ -204,10 +248,7 @@ export async function mount(container: HTMLElement, props: HexGridProps = {}) {
             inner.removeEventListener('pointerleave', handlePointerLeave);
             window.removeEventListener('resize', onResize);
             root.remove();
-            logHexGrid('Destroyed');
+            logByteGrid('Destroyed');
         }
     };
 }
-
-
-
