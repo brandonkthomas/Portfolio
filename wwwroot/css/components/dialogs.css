@@ -31,7 +31,7 @@
 }
 
 .ui-dialog {
-    max-width: min(420px, 100%);
+    max-width: min(500px, 100%);
 }
 
 .ui-dialog-glass {

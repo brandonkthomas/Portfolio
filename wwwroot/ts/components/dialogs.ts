@@ -207,7 +207,7 @@ class DialogManager {
             className: `ui-dialog-glass ui-dialog-glass--${variant}`,
             style: {
                 minWidth: '260px',
-                maxWidth: options.width || 'min(420px, 100%)',
+                maxWidth: options.width || 'min(500px, 100%)',
             },
         });
 
@@ -432,12 +432,18 @@ class DialogManager {
     //------------------------------------------------------------------------------------------
     private closeInternal(fromDestroy: boolean) {
         if (!this.isOpen) return;
-        const overlay = this.activeOverlay;
         this.isOpen = false;
 
+        const overlay = this.activeOverlay;
+        const glass = this.glassSurface;
+
+        this.activeOverlay = null;
+        this.glassSurface = null;
+
         if (!overlay) {
-            this.glassSurface?.destroy();
-            this.glassSurface = null;
+            if (glass) {
+                glass.destroy();
+            }
             return;
         }
 
@@ -448,29 +454,25 @@ class DialogManager {
 
         overlay.classList.remove('is-visible');
 
-        const removeOverlay = () => {
-            if (overlay.parentNode) {
-                overlay.parentNode.removeChild(overlay);
-            }
-            this.glassSurface?.destroy();
-            this.glassSurface = null;
-            this.activeOverlay = null;
+        if (overlay.parentNode) {
+            overlay.parentNode.removeChild(overlay);
+        }
 
-            if (!fromDestroy && this.lastFocusedElement) {
-                this.lastFocusedElement.focus();
-            }
-            this.lastFocusedElement = null;
+        if (glass) {
+            glass.destroy();
+        }
 
-            if (this.bodyOverflowBefore !== null) {
-                document.body.style.overflow = this.bodyOverflowBefore;
-            } else {
-                document.body.style.overflow = '';
-            }
-            this.bodyOverflowBefore = null;
-        };
+        if (!fromDestroy && this.lastFocusedElement) {
+            this.lastFocusedElement.focus();
+        }
+        this.lastFocusedElement = null;
 
-        // Allow CSS transition to play
-        setTimeout(removeOverlay, 210);
+        if (this.bodyOverflowBefore !== null) {
+            document.body.style.overflow = this.bodyOverflowBefore;
+        } else {
+            document.body.style.overflow = '';
+        }
+        this.bodyOverflowBefore = null;
 
         this.log('Closed');
     }
