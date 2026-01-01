@@ -402,11 +402,13 @@ export default class PhotoLightbox {
             this.pointerVelocityY = 0;
         }
 
+        const overlay = this.overlay ?? undefined;
+        const previouslyFocused = this.lastFocusedElement;
+
         const wasOpen = this.isOpen;
         this.isOpen = false;
 
-        this.overlay?.classList.remove(ACTIVE_CLASS);
-        this.overlay?.setAttribute('aria-hidden', 'true');
+        overlay?.classList.remove(ACTIVE_CLASS);
 
         this.detachGlobalListeners();
         this.preventBodyScroll(false);
@@ -415,9 +417,28 @@ export default class PhotoLightbox {
             emitLightboxState('close');
         }
 
-        if (restoreFocus && this.lastFocusedElement) {
-            this.lastFocusedElement.focus();
+        // Move focus away from the overlay *before* marking it aria-hidden to
+        // avoid situations where a focused descendant becomes hidden from
+        // assistive technologies (which modern browsers will now block).
+        if (overlay) {
+            const active = document.activeElement as HTMLElement | null;
+            const containsActive = active ? overlay.contains(active) : false;
+
+            if (containsActive) {
+                if (restoreFocus && previouslyFocused) {
+                    previouslyFocused.focus();
+                } else {
+                    overlay.blur();
+                }
+            } else if (restoreFocus && previouslyFocused) {
+                previouslyFocused.focus();
+            }
+
+            overlay.setAttribute('aria-hidden', 'true');
+        } else if (restoreFocus && previouslyFocused) {
+            previouslyFocused.focus();
         }
+
         this.lastFocusedElement = null;
 
         this.log('Closed', {
