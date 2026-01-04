@@ -33,7 +33,7 @@ git push -u origin main
   - `_ViewImports.cshtml` → `@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers`
   - `_ViewStart.cshtml` → `Layout = "_Layout";`
   - `Index.cshtml` → app landing page.
-- Optional: `wwwroot/ts/*.ts`, `wwwroot/css/apps/*.css`, esbuild target (copy from `NameTrace.Web` / `WebAmp.Web`).
+- Optional: `wwwroot/ts/*.ts`, `wwwroot/css/*.css`, esbuild target (copy from `NameTrace.Web` / `WebAmp.Web`).
 
 ### 3. Add as submodule in Portfolio (GitHub URL)
 
