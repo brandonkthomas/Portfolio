@@ -63,9 +63,9 @@
 <body class="@(isAppPage ? "app-page" : "")" data-initial-state="loading" data-enable-starfield="@(enableStarfield.ToString().ToLowerInvariant())">
     @{
         var showLoadingOverlay = (ViewData["ShowLoadingOverlay"] as bool?) ?? true;
-        var loadingLogoSrc = ViewData["LoadingOverlayLogoSrc"] as string ?? "~/assets/svg/bt-logo-boxed.svg";
+        var loadingLogoSrc = ViewData["LoadingOverlayLogoSrc"] as string ?? "/assets/svg/bt-logo-boxed.svg";
         var loadingLogoAlt = ViewData["LoadingOverlayLogoAlt"] as string ?? "Brandon Thomas Logo";
-        var loadingThrobberSrc = ViewData["LoadingOverlayThrobberSrc"] as string ?? "~/assets/svg/throbber-ring-indef.svg";
+        var loadingThrobberSrc = ViewData["LoadingOverlayThrobberSrc"] as string ?? "/assets/svg/throbber-ring-indef.svg";
         var loadingThrobberAlt = ViewData["LoadingOverlayThrobberAlt"] as string ?? "";
 
         // By default, isolated pages hide the navbar unless explicitly overridden.
