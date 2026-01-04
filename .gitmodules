@@ -12,4 +12,4 @@
 	branch = main
 [submodule "Submodules/WebAmp"]
 	path = Submodules/WebAmp
-	url = /Users/brandonthomas/SynologyDrive/Development/Projects/Web/WebAmp
+	url = https://github.com/brandonkthomas/WebAmp.git

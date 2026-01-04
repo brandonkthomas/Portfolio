@@ -19,6 +19,7 @@
     <ProjectReference Include="Submodules/NameTrace/NameTrace.Web/NameTrace.Web.csproj" />
     <ProjectReference Include="Submodules/RealityCheck/RealityCheck.Web/RealityCheck.Web.csproj" />
     <ProjectReference Include="Submodules/ImageHexEditor/ImageHexEditor.Web/ImageHexEditor.Web.csproj" />
+    <ProjectReference Include="Submodules/WebAmp/WebAmp.Web/WebAmp.Web.csproj" />
   </ItemGroup>
 
 </Project>

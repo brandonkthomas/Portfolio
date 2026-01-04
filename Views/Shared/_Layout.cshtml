@@ -1,6 +1,7 @@
 ﻿@{
     // Page-type flag used across the layout (kept in outer scope so it works inside TagHelpers like <environment/>)
     var isAppPage = (ViewData["IsAppPage"] as bool?) ?? false;
+    var isIsolatedCss = (ViewData["IsolatedCss"] as bool?) ?? false;
     var enableStarfield = (ViewData["EnableStarfield"] as bool?) ?? !isAppPage;
 
     var absolutePageUrl = $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.PathBase}{Context.Request.Path}{Context.Request.QueryString}";
@@ -19,13 +20,18 @@
     
     <title>Brandon Thomas</title>
 
-    <link rel="stylesheet" href="~/css/common.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/navbar.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/starfield.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/components/glassSurface.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/photoGallery.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/projects.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/components/dialogs.css" asp-append-version="true" />
+    @if (!isIsolatedCss)
+    {
+        <link rel="stylesheet" href="~/css/common.css" asp-append-version="true" />
+        <link rel="stylesheet" href="~/css/navbar.css" asp-append-version="true" />
+        <link rel="stylesheet" href="~/css/starfield.css" asp-append-version="true" />
+        <link rel="stylesheet" href="~/css/components/glassSurface.css" asp-append-version="true" />
+        <link rel="stylesheet" href="~/css/photoGallery.css" asp-append-version="true" />
+        <link rel="stylesheet" href="~/css/projects.css" asp-append-version="true" />
+        <link rel="stylesheet" href="~/css/components/dialogs.css" asp-append-version="true" />
+    }
+
+    @await RenderSectionAsync("Styles", required: false)
 
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
 
@@ -55,11 +61,23 @@
     }
 </head>
 <body class="@(isAppPage ? "app-page" : "")" data-initial-state="loading" data-enable-starfield="@(enableStarfield.ToString().ToLowerInvariant())">
-    <div class="loading-overlay" aria-hidden="true">
-        <img src="~/assets/svg/bt-logo-boxed.svg" alt="Brandon Thomas Logo" class="loading-logo" fetchpriority="high" />
-        <img src="~/assets/svg/throbber-ring-indef.svg" alt="" class="loading-throbber" />
-    </div>
-    @{ var hideNavbar = (ViewData["HideNavbar"] as bool?) ?? false; }
+    @{
+        var showLoadingOverlay = (ViewData["ShowLoadingOverlay"] as bool?) ?? true;
+        var loadingLogoSrc = ViewData["LoadingOverlayLogoSrc"] as string ?? "~/assets/svg/bt-logo-boxed.svg";
+        var loadingLogoAlt = ViewData["LoadingOverlayLogoAlt"] as string ?? "Brandon Thomas Logo";
+        var loadingThrobberSrc = ViewData["LoadingOverlayThrobberSrc"] as string ?? "~/assets/svg/throbber-ring-indef.svg";
+        var loadingThrobberAlt = ViewData["LoadingOverlayThrobberAlt"] as string ?? "";
+
+        // By default, isolated pages hide the navbar unless explicitly overridden.
+        var hideNavbar = (ViewData["HideNavbar"] as bool?) ?? isIsolatedCss;
+    }
+    @if (showLoadingOverlay)
+    {
+        <div class="loading-overlay" aria-hidden="true">
+            <img src="@loadingLogoSrc" alt="@loadingLogoAlt" class="loading-logo" fetchpriority="high" />
+            <img src="@loadingThrobberSrc" alt="@loadingThrobberAlt" class="loading-throbber" />
+        </div>
+    }
     @if (!hideNavbar)
     {
     <div class="url-display">
@@ -154,26 +172,32 @@
         @RenderBody()
     </main>
     <environment include="Development">
-        <script src="~/js/common.js" type="module"></script>
-        <script src="~/js/navbar.js" type="module"></script>
-        @if (!isAppPage) // Only load these for the main site page -- app pages are standalone, not SPA-managed
+        @if (!isIsolatedCss)
         {
-            <script src="~/js/stateManager.js" type="module"></script>
-            <script src="~/js/starfield.js" type="module"></script>
-            <script src="~/js/photoGallery.js" type="module"></script>
-            <script src="~/js/projects.js" type="module"></script>
+            <script src="~/js/common.js" type="module"></script>
+            <script src="~/js/navbar.js" type="module"></script>
+            @if (!isAppPage) // Only load these for the main site page -- app pages are standalone, not SPA-managed
+            {
+                <script src="~/js/stateManager.js" type="module"></script>
+                <script src="~/js/starfield.js" type="module"></script>
+                <script src="~/js/photoGallery.js" type="module"></script>
+                <script src="~/js/projects.js" type="module"></script>
+            }
         }
     </environment>
     <environment exclude="Development">
-        @inject Portfolio.Services.IAssetManifest AssetManifest
-        <script src="@AssetManifest.GetAssetPath("common.js")" type="module"></script>
-        <script src="@AssetManifest.GetAssetPath("navbar.js")" type="module"></script>
-        @if (!isAppPage) // Only load these for the main site page -- app pages are standalone, not SPA-managed
+        @if (!isIsolatedCss)
         {
-            <script src="@AssetManifest.GetAssetPath("stateManager.js")" type="module"></script>
-            <script src="@AssetManifest.GetAssetPath("starfield.js")" type="module"></script>
-            <script src="@AssetManifest.GetAssetPath("photoGallery.js")" type="module"></script>
-            <script src="@AssetManifest.GetAssetPath("projects.js")" type="module"></script>
+            @inject Portfolio.Services.IAssetManifest AssetManifest
+            <script src="@AssetManifest.GetAssetPath("common.js")" type="module"></script>
+            <script src="@AssetManifest.GetAssetPath("navbar.js")" type="module"></script>
+            @if (!isAppPage) // Only load these for the main site page -- app pages are standalone, not SPA-managed
+            {
+                <script src="@AssetManifest.GetAssetPath("stateManager.js")" type="module"></script>
+                <script src="@AssetManifest.GetAssetPath("starfield.js")" type="module"></script>
+                <script src="@AssetManifest.GetAssetPath("photoGallery.js")" type="module"></script>
+                <script src="@AssetManifest.GetAssetPath("projects.js")" type="module"></script>
+            }
         }
     </environment>
     <script>
@@ -181,12 +205,9 @@
         window.__dotnetDebuggerAttached = @((System.Diagnostics.Debugger.IsAttached).ToString().ToLower());
     </script>
     @await RenderSectionAsync("Scripts", required: false)
-    @await RenderSectionAsync("Styles", required: false)
-    @if (!isAppPage) // Only load these for the main site page -- app pages are standalone, not SPA-managed
+    @if (isAppPage) // For app pages without the SPA state manager, hide the loading overlay after all assets load.
     {
         <script>
-            // For app pages without the SPA state manager, hide the loading overlay
-            // only after all assets (CSS, SVG, etc.) are loaded.
             window.addEventListener('load', () => {
                 document.body.dataset.initialState = 'ready';
             });

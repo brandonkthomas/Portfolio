@@ -14,6 +14,19 @@
       "component": { "type": "cardStack", "props": { "layers": 3 } }
     },
     {
+      "slug": "webamp",
+      "title": "WebAmp",
+      "tag": "Web",
+      "footer": ".NET Core, TypeScript",
+      "gradientAngle": 210,
+      "gradientColor1": "#241c34",
+      "gradientColor2": "#0b1020",
+      "span": "2x2",
+      "url": "/webamp",
+      "external": false,
+      "component": null
+    },
+    {
       "slug": "spectrometer",
       "title": "Spectrometer",
       "tag": "Windows",

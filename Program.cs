@@ -13,7 +13,8 @@ builder.Services
     // Ensure controllers/views in app modules are discoverable
     .AddApplicationPart(typeof(NameTrace.Web.Controllers.NameTraceController).Assembly)
     .AddApplicationPart(typeof(RealityCheck.Web.Controllers.RealityCheckController).Assembly)
-    .AddApplicationPart(typeof(ImageHexEditor.Web.Controllers.ImageHexEditorController).Assembly);
+    .AddApplicationPart(typeof(ImageHexEditor.Web.Controllers.ImageHexEditorController).Assembly)
+    .AddApplicationPart(typeof(WebAmp.Web.Controllers.WebAmpController).Assembly);
 builder.Services.AddSingleton<IAssetManifest, AssetManifest>();
 builder.Services.AddSingleton<AiDetector>();
 
@@ -242,6 +243,18 @@ app.MapControllerRoute(
     name: "imagehexeditor",
     pattern: "/imagehexeditor",
     defaults: new { controller = "ImageHexEditor", action = "Index" });
+
+// WebAmp landing page
+app.MapControllerRoute(
+    name: "webamp",
+    pattern: "/webamp",
+    defaults: new { controller = "WebAmp", action = "Index" });
+
+// WebAmp SPA deep links (client-side router). Must come after the exact /webamp route.
+app.MapControllerRoute(
+    name: "webamp-spa",
+    pattern: "/webamp/{*path}",
+    defaults: new { controller = "WebAmp", action = "Index" });
 
 // NameTrace API endpoint
 app.MapControllerRoute(
