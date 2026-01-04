@@ -4,6 +4,7 @@ using Portfolio.Services;
 using Microsoft.Extensions.FileProviders;
 using RealityCheck;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +18,24 @@ builder.Services
     .AddApplicationPart(typeof(WebAmp.Web.Controllers.WebAmpController).Assembly);
 builder.Services.AddSingleton<IAssetManifest, AssetManifest>();
 builder.Services.AddSingleton<AiDetector>();
+
+// WebAmp: Spotify integration (OAuth + Web API proxy + Web Playback SDK token endpoint)
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient();
+builder.Services.Configure<WebAmp.Web.Spotify.SpotifyOptions>(builder.Configuration.GetSection("Spotify"));
+builder.Services.AddScoped<WebAmp.Web.Spotify.SpotifyAuthService>();
+builder.Services.AddScoped<WebAmp.Web.Spotify.SpotifyWebApiClient>();
+
+// Optional: persist DataProtection keys so auth cookies survive container recreation.
+// Configure with env var: DataProtection__KeyRingPath=/data/protection-keys and mount that path in Docker.
+var keyRingPath = builder.Configuration["DataProtection:KeyRingPath"];
+if (!string.IsNullOrWhiteSpace(keyRingPath))
+{
+    builder.Services
+        .AddDataProtection()
+        .SetApplicationName("Portfolio")
+        .PersistKeysToFileSystem(new DirectoryInfo(keyRingPath));
+}
 
 // Rate limiting (defense-in-depth for upload/compute endpoints)
 builder.Services.AddRateLimiter(options =>
@@ -255,6 +274,12 @@ app.MapControllerRoute(
     name: "webamp-spa",
     pattern: "/webamp/{*path}",
     defaults: new { controller = "WebAmp", action = "Index" });
+
+// WebAmp: Spotify JSON API endpoints
+app.MapControllerRoute(
+    name: "webamp-spotify-api",
+    pattern: "/api/webamp/spotify/{action}",
+    defaults: new { controller = "WebAmpSpotifyApi", action = "Status" });
 
 // NameTrace API endpoint
 app.MapControllerRoute(
