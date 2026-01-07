@@ -1,4 +1,0 @@
-[submodule "Submodules/ImageHexEditor"]
-	path = Submodules/ImageHexEditor
-	url = https://github.com/brandonkthomas/ImageHexEditor.git
-	branch = main
