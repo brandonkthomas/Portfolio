@@ -20,3 +20,7 @@ Submodules/RealityCheck/RealityCheck.Web/wwwroot/dist/js/realitycheck.js
 
 # Temp working folders
 .tmp/
+
+# Local-only build/IDE overrides (do not commit)
+Directory.Build.props.local
+Portfolio.local.code-workspace

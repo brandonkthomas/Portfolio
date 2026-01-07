@@ -6,6 +6,27 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <!--
+    Module project paths:
+      - Defaults point to git submodules under `Submodules/*`.
+      - Locally, you can override these in `Directory.Build.props.local` to point at canonical repos
+        elsewhere on disk (and skip checking out submodule working trees in this repo).
+  -->
+  <PropertyGroup>
+    <NameTraceWebProjectPath Condition="'$(NameTraceWebProjectPath)' == ''">Submodules/NameTrace/NameTrace.Web/NameTrace.Web.csproj</NameTraceWebProjectPath>
+    <RealityCheckWebProjectPath Condition="'$(RealityCheckWebProjectPath)' == ''">Submodules/RealityCheck/RealityCheck.Web/RealityCheck.Web.csproj</RealityCheckWebProjectPath>
+    <ImageHexEditorWebProjectPath Condition="'$(ImageHexEditorWebProjectPath)' == ''">Submodules/ImageHexEditor/ImageHexEditor.Web/ImageHexEditor.Web.csproj</ImageHexEditorWebProjectPath>
+    <WebAmpWebProjectPath Condition="'$(WebAmpWebProjectPath)' == ''">Submodules/WebAmp/WebAmp.Web/WebAmp.Web.csproj</WebAmpWebProjectPath>
+
+    <!--
+      Tooling:
+        - Some module projects bundle TS with esbuild and assume a node_modules relative to their repo root.
+        - When module repos live outside Portfolio, that relative path may not exist.
+        - Pass an explicit EsbuildCli path down to ProjectReferences to keep builds consistent.
+    -->
+    <EsbuildCli Condition="'$(EsbuildCli)' == ''">$(MSBuildProjectDirectory)/node_modules/esbuild/bin/esbuild</EsbuildCli>
+  </PropertyGroup>
+
   <!-- Prevent the host project from accidentally compiling nested module source (and their obj/bin)
        when modules live under this repo folder. They should build only via ProjectReference. -->
   <ItemGroup>
@@ -16,10 +37,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="Submodules/NameTrace/NameTrace.Web/NameTrace.Web.csproj" />
-    <ProjectReference Include="Submodules/RealityCheck/RealityCheck.Web/RealityCheck.Web.csproj" />
-    <ProjectReference Include="Submodules/ImageHexEditor/ImageHexEditor.Web/ImageHexEditor.Web.csproj" />
-    <ProjectReference Include="Submodules/WebAmp/WebAmp.Web/WebAmp.Web.csproj" />
+    <ProjectReference Include="$(NameTraceWebProjectPath)" Condition="Exists('$(NameTraceWebProjectPath)')" Properties="EsbuildCli=$(EsbuildCli)" />
+    <ProjectReference Include="$(RealityCheckWebProjectPath)" Condition="Exists('$(RealityCheckWebProjectPath)')" Properties="EsbuildCli=$(EsbuildCli)" />
+    <ProjectReference Include="$(ImageHexEditorWebProjectPath)" Condition="Exists('$(ImageHexEditorWebProjectPath)')" Properties="EsbuildCli=$(EsbuildCli)" />
+    <ProjectReference Include="$(WebAmpWebProjectPath)" Condition="Exists('$(WebAmpWebProjectPath)')" Properties="EsbuildCli=$(EsbuildCli)" />
   </ItemGroup>
+
+  <Target Name="ValidateModuleProjectReferences" BeforeTargets="Build" Condition="'$(SkipModuleProjectValidation)' != 'true'">
+    <Error Condition="!Exists('$(NameTraceWebProjectPath)')" Text="Missing NameTrace module project. Set NameTraceWebProjectPath (e.g. via Directory.Build.props.local) or init submodule Submodules/NameTrace." />
+    <Error Condition="!Exists('$(RealityCheckWebProjectPath)')" Text="Missing RealityCheck module project. Set RealityCheckWebProjectPath (e.g. via Directory.Build.props.local) or init submodule Submodules/RealityCheck." />
+    <Error Condition="!Exists('$(ImageHexEditorWebProjectPath)')" Text="Missing ImageHexEditor module project. Set ImageHexEditorWebProjectPath (e.g. via Directory.Build.props.local) or init submodule Submodules/ImageHexEditor." />
+    <Error Condition="!Exists('$(WebAmpWebProjectPath)')" Text="Missing WebAmp module project. Set WebAmpWebProjectPath (e.g. via Directory.Build.props.local) or init submodule Submodules/WebAmp." />
+  </Target>
 
 </Project>

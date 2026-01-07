@@ -114,4 +114,5 @@ git pull --rebase origin main
 git push -u origin main
 ```
 
-- Avoid local-path submodules. Use the GitHub URL so VS Code + submodule pulls work normally.
+- Avoid local-path submodules in `.gitmodules`. Use the GitHub URL so VS Code + submodule pulls work normally.
+- If you want **one canonical checkout on disk** (without making the repo non-portable), use local-only overrides / worktrees: see `docs/submodules-local-origins.md`.

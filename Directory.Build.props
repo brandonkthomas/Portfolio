@@ -1,0 +1,11 @@
+<Project>
+  <!--
+    Local overrides:
+      - Create `Directory.Build.props.local` (ignored by git) to override MSBuild properties,
+        e.g. to point Portfolio ProjectReferences at canonical repos outside this folder.
+  -->
+  <Import
+    Project="$(MSBuildThisFileDirectory)Directory.Build.props.local"
+    Condition="Exists('$(MSBuildThisFileDirectory)Directory.Build.props.local')" />
+</Project>
+
