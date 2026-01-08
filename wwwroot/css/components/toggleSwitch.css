@@ -43,6 +43,11 @@
         box-shadow 160ms ease-in-out;
 }
 
+    .comp-toggle-track.comp-toggle-large { /* optional inset icon style */
+        width: 50px;
+        height: 30px;
+    }
+
 .comp-toggle-thumb {
     position: absolute;
     top: 3px;
@@ -61,6 +66,28 @@
         box-shadow 160ms ease-in-out;
 }
 
+/* Ensure any icon inside the thumb cannot exceed the thumb bounds */
+.comp-toggle-thumb {
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.comp-toggle-thumb img {
+    display: block;
+    width: 75%;
+    height: 75%;
+    object-fit: contain;
+}
+
+    .comp-toggle-track.comp-toggle-large .comp-toggle-thumb { /* optional inset icon style */
+        top: 4px;
+        left: 4px;
+        width: 22px;
+        height: 22px;
+    }
+
 .comp-toggle-input:checked + .comp-toggle-track {
     background: linear-gradient(135deg, #479eff, #4785ff);
     /* box-shadow:
@@ -74,6 +101,10 @@
         0 2px 6px rgba(0, 0, 0, 0.85),
         0 0 0 1px rgba(0, 0, 0, 0.5);
 }
+
+    .comp-toggle-input:checked + .comp-toggle-track.comp-toggle-large .comp-toggle-thumb {
+        transform: translateX(20px);
+    }
 
 .comp-toggle-input:focus-visible + .comp-toggle-track {
     outline: 2px solid rgba(255, 255, 255, 0.9);
