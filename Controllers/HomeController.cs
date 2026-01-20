@@ -16,6 +16,7 @@ public class HomeController : Controller
 
     public IActionResult Index()
     {
+        ViewData["ForceSiteTitle"] = true;
         return View();
     }
 
@@ -31,11 +32,15 @@ public class HomeController : Controller
 
     public IActionResult Photos()
     {
+        ViewData["Title"] = "Photos";
+        ViewData["ForceSiteTitle"] = true;
         return View("Index");
     }
 
     public IActionResult Projects()
     {
+        ViewData["Title"] = "Projects";
+        ViewData["ForceSiteTitle"] = true;
         return View("Index");
     }
 

@@ -1,11 +1,52 @@
-﻿@{
+﻿@inject IConfiguration Configuration
+
+@{
     // Page-type flag used across the layout (kept in outer scope so it works inside TagHelpers like <environment/>)
     var isAppPage = (ViewData["IsAppPage"] as bool?) ?? false;
     var isIsolatedCss = (ViewData["IsolatedCss"] as bool?) ?? false;
     var enableStarfield = (ViewData["EnableStarfield"] as bool?) ?? !isAppPage;
 
-    var absolutePageUrl = $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.PathBase}{Context.Request.Path}{Context.Request.QueryString}";
-    var absoluteOgImage = $"{Context.Request.Scheme}://{Context.Request.Host}/assets/meta/card-front-opengraph.png";
+    // Prefer an explicit public base URL for canonical + OpenGraph (prevents leaking internal/origin hosts).
+    var configuredPublicBaseUrl = Configuration["Site:PublicBaseUrl"];
+
+    string ResolveBaseUrl()
+    {
+        if (!string.IsNullOrWhiteSpace(configuredPublicBaseUrl) &&
+            Uri.TryCreate(configuredPublicBaseUrl, UriKind.Absolute, out var configuredUri))
+        {
+            return configuredUri.GetLeftPart(UriPartial.Authority);
+        }
+
+        // Fallback: honor proxy headers if present (ForwardedHeaders middleware may also update Request.Host/Scheme).
+        var forwardedProto = (string?)Context.Request.Headers["X-Forwarded-Proto"];
+        var forwardedHost = (string?)Context.Request.Headers["X-Forwarded-Host"];
+
+        var scheme = !string.IsNullOrWhiteSpace(forwardedProto)
+            ? forwardedProto.Split(',')[0].Trim()
+            : Context.Request.Scheme;
+
+        var host = !string.IsNullOrWhiteSpace(forwardedHost)
+            ? forwardedHost.Split(',')[0].Trim()
+            : Context.Request.Host.Value;
+
+        return $"{scheme}://{host}";
+    }
+
+    var baseUrl = ResolveBaseUrl().TrimEnd('/');
+    var absolutePageUrl = $"{baseUrl}{Context.Request.PathBase}{Context.Request.Path}{Context.Request.QueryString}";
+    var absoluteOgImage = $"{baseUrl}/assets/meta/card-front-opengraph.png";
+
+    // Title host can be hardcoded to the public site host (so localhost doesn't show 127.0.0.1 in titles).
+    var configuredTitleHost = Configuration["Site:TitleHost"];
+    var siteHost = !string.IsNullOrWhiteSpace(configuredTitleHost)
+        ? configuredTitleHost.Trim()
+        : new Uri(baseUrl, UriKind.Absolute).Host;
+    var pageTitle = (ViewData["Title"] as string)?.Trim();
+    var fullTitle = string.IsNullOrWhiteSpace(pageTitle) ? siteHost : $"{pageTitle} \u2013 {siteHost}";
+
+    // SPA shell pages want a stable browser-tab title, but still need per-route SEO/share titles.
+    var forceSiteTitle = (ViewData["ForceSiteTitle"] as bool?) ?? false;
+    var tabTitle = forceSiteTitle ? siteHost : fullTitle;
 }
 
 <!DOCTYPE html>
@@ -18,7 +59,7 @@
     <meta name="apple-mobile-web-app-title" content="Brandon Thomas">
     <meta name="description" content="Brandon Thomas - portfolio, projects, contact info" />
     
-    <title>Brandon Thomas</title>
+    <title>@tabTitle</title>
 
     @if (!isIsolatedCss)
     {
@@ -45,7 +86,7 @@
     
     <link rel="canonical" href="@absolutePageUrl" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Brandon Thomas" />
+    <meta property="og:title" content="@fullTitle" />
     <meta property="og:description" content="Brandon Thomas - portfolio, projects, contact info" />
     <meta property="og:image" content="@absoluteOgImage" />
     <meta property="og:image:width" content="1200" />
@@ -53,6 +94,7 @@
     <meta property="og:image:alt" content="Brandon Thomas - portfolio" />
     <meta property="og:url" content="@absolutePageUrl" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="@fullTitle" />
     <meta name="twitter:image" content="@absoluteOgImage" />
 
     @if (!isAppPage)
