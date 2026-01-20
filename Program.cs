@@ -15,7 +15,7 @@ builder.Services
     .AddApplicationPart(typeof(NameTrace.Web.Controllers.NameTraceController).Assembly)
     .AddApplicationPart(typeof(RealityCheck.Web.Controllers.RealityCheckController).Assembly)
     .AddApplicationPart(typeof(ImageHexEditor.Web.Controllers.ImageHexEditorController).Assembly)
-    .AddApplicationPart(typeof(WebAmp.Web.Controllers.WebAmpController).Assembly);
+    .AddApplicationPart(typeof(WebAmp.Web.Controllers.IndexController).Assembly);
 builder.Services.AddSingleton<IAssetManifest, AssetManifest>();
 builder.Services.AddSingleton<AiDetector>();
 
@@ -25,6 +25,14 @@ builder.Services.AddHttpClient();
 builder.Services.Configure<WebAmp.Web.Spotify.SpotifyOptions>(builder.Configuration.GetSection("Spotify"));
 builder.Services.AddScoped<WebAmp.Web.Spotify.SpotifyAuthService>();
 builder.Services.AddScoped<WebAmp.Web.Spotify.SpotifyWebApiClient>();
+
+// WebAmp: SoundCloud integration (app-level client credentials for public search/streaming)
+builder.Services.Configure<WebAmp.Web.SoundCloud.SoundCloudOptions>(builder.Configuration.GetSection("SoundCloud"));
+builder.Services.AddScoped<WebAmp.Web.SoundCloud.SoundCloudAuthService>();
+builder.Services.AddScoped<WebAmp.Web.SoundCloud.SoundCloudApiClient>();
+// WebAmp: SoundCloud user integration (Authorization Code + PKCE)
+builder.Services.AddScoped<WebAmp.Web.SoundCloud.SoundCloudUserAuthService>();
+builder.Services.AddScoped<WebAmp.Web.SoundCloud.SoundCloudUserApiClient>();
 
 // Optional: persist DataProtection keys so auth cookies survive container recreation.
 // Configure with env var: DataProtection__KeyRingPath=/data/protection-keys and mount that path in Docker.
@@ -280,6 +288,18 @@ app.MapControllerRoute(
     name: "webamp-spotify-api",
     pattern: "/api/webamp/spotify/{action}",
     defaults: new { controller = "WebAmpSpotifyApi", action = "Status" });
+
+// WebAmp: SoundCloud JSON API endpoints
+app.MapControllerRoute(
+    name: "webamp-soundcloud-api",
+    pattern: "/api/webamp/soundcloud/{action}",
+    defaults: new { controller = "WebAmpSoundCloudApi", action = "Status" });
+
+// WebAmp: SoundCloud user JSON API endpoints
+app.MapControllerRoute(
+    name: "webamp-soundcloud-user-api",
+    pattern: "/api/webamp/soundclouduser/{action}",
+    defaults: new { controller = "WebAmpSoundCloudUserApi", action = "Status" });
 
 // NameTrace API endpoint
 app.MapControllerRoute(
