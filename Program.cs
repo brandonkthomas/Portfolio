@@ -287,19 +287,19 @@ app.MapControllerRoute(
 app.MapControllerRoute(
     name: "webamp-spotify-api",
     pattern: "/api/webamp/spotify/{action}",
-    defaults: new { controller = "WebAmpSpotifyApi", action = "Status" });
+    defaults: new { controller = "SpotifyApi", action = "Status" });
 
 // WebAmp: SoundCloud JSON API endpoints
 app.MapControllerRoute(
     name: "webamp-soundcloud-api",
     pattern: "/api/webamp/soundcloud/{action}",
-    defaults: new { controller = "WebAmpSoundCloudApi", action = "Status" });
+    defaults: new { controller = "SoundCloudApi", action = "Status" });
 
 // WebAmp: SoundCloud user JSON API endpoints
 app.MapControllerRoute(
     name: "webamp-soundcloud-user-api",
     pattern: "/api/webamp/soundclouduser/{action}",
-    defaults: new { controller = "WebAmpSoundCloudUserApi", action = "Status" });
+    defaults: new { controller = "SoundCloudUserApi", action = "Status" });
 
 // NameTrace API endpoint
 app.MapControllerRoute(
