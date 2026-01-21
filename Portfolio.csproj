@@ -46,7 +46,7 @@
     <ProjectReference Include="$(NameTraceWebProjectPath)" Condition="Exists('$(NameTraceWebProjectPath)')" Properties="EsbuildCli=$(EsbuildCli)" />
     <ProjectReference Include="$(RealityCheckWebProjectPath)" Condition="Exists('$(RealityCheckWebProjectPath)')" Properties="EsbuildCli=$(EsbuildCli)" />
     <ProjectReference Include="$(ImageHexEditorWebProjectPath)" Condition="Exists('$(ImageHexEditorWebProjectPath)')" Properties="EsbuildCli=$(EsbuildCli)" />
-    <ProjectReference Include="$(WebAmpWebProjectPath)" Condition="Exists('$(WebAmpWebProjectPath)')" Properties="EsbuildCli=$(EsbuildCli)" />
+    <ProjectReference Include="$(WebAmpWebProjectPath)" Condition="Exists('$(WebAmpWebProjectPath)')" Properties="EsbuildCli=$(EsbuildCli);WebAmpAppVersion=$(WebAmpAppVersion)" />
   </ItemGroup>
 
   <Target Name="ValidateModuleProjectReferences" BeforeTargets="Build" Condition="'$(SkipModuleProjectValidation)' != 'true'">
