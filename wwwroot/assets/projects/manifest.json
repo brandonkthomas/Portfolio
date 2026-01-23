@@ -17,14 +17,14 @@
       "slug": "webamp",
       "title": "WebAmp",
       "tag": "Web",
-      "footer": ".NET Core, TypeScript",
+      "footer": ".NET Core, TypeScript (no framework)",
       "gradientAngle": 210,
-      "gradientColor1": "#241c34",
-      "gradientColor2": "#0b1020",
+      "gradientColor1": "#2a2a2a",
+      "gradientColor2": "#5d5757",
       "span": "2x2",
       "url": "/webamp",
       "external": false,
-      "component": null,
+      "component": { "type": "webampKnob", "props": { "maxAngle": 45 } },
       "githubUrl": "https://github.com/brandonkthomas/WebAmp"
     },
     {

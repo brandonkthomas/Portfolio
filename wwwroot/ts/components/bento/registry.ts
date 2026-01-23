@@ -19,6 +19,7 @@ const registry: Record<string, () => Promise<any>> = {
     lineGraph: () => import('./lineGraph'),
     terminalBlink: () => import('./terminalBlink'),
     byteGrid: () => import('./byteGrid'),
+    webampKnob: () => import('./webampKnob'),
 };
 
 //==============================================================================================
