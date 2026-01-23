@@ -24,7 +24,8 @@
       "span": "2x2",
       "url": "/webamp",
       "external": false,
-      "component": null
+      "component": null,
+      "githubUrl": "https://github.com/brandonkthomas/WebAmp"
     },
     {
       "slug": "spectrometer",
