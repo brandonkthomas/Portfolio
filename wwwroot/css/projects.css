@@ -45,6 +45,25 @@
     transition-duration: 0.15s;
 }
 
+/* Bottom fade overlay when content overflows below viewport */
+.projects-container::after {
+    content: "";
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 25px; /* ~25px tall from viewport bottom */
+    pointer-events: none;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0), #1c1c1c);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 5; /* above grid tiles, below sticky footer (z-index: 6) */
+}
+
+.projects-container.has-scroll-gradient::after {
+    opacity: 1;
+}
+
 /* Gallery layout */
 .projects-gallery {
     width: 100%;
