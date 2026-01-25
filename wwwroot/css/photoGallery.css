@@ -26,8 +26,8 @@
 .photo-gallery-container.visible {
     opacity: 1;
     pointer-events: auto;
-    transform: scale(1);
-    filter: blur(0px);
+    transform: none;
+    filter: none;
 }
 
 /* Initial state loading styles */
@@ -42,6 +42,20 @@
     transform: scale(1);
     filter: blur(0px);
     transition-duration: 0.15s;
+}
+
+/* Bottom fade overlay when content overflows below viewport */
+.photo-gallery::after {
+    content: "";
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 25px; /* ~25px tall from viewport bottom */
+    pointer-events: none;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0), #1c1c1c);
+    transition: opacity 0.2s ease;
+    z-index: 5; /* above grid tiles, below sticky footer (z-index: 6) */
 }
 
 /* Gallery layout */

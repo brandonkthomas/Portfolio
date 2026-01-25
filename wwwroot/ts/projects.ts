@@ -173,18 +173,12 @@ class ProjectsGrid {
                 raf = null;
                 this.sizeAllTileVisuals();
                 this.sizeAllComponents();
-                this.updateScrollGradient();
             });
-        };
-        const onScroll = () => {
-            this.updateScrollGradient();
         };
 
         window.addEventListener('resize', onResize);
-        this.container.addEventListener('scroll', onScroll);
 
         // Initial state
-        this.updateScrollGradient();
         this.log('Event Listeners Bound');
     }
 
@@ -418,7 +412,6 @@ class ProjectsGrid {
         this.sizeAllComponents();
         this.log('Grid Rendered', { projects: this.projects.length });
         // Recompute bottom fade visibility now that content height is final
-        this.updateScrollGradient();
     }
 
     //==============================================================================================
@@ -516,24 +509,6 @@ class ProjectsGrid {
 
     //==============================================================================================
     /**
-     * Update bottom fade gradient visibility based on scroll position
-     */
-    private updateScrollGradient() {
-        if (!this.container) return;
-
-        const el = this.container;
-        const scrollable = el.scrollHeight > el.clientHeight + 1;
-        const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
-
-        if (scrollable && !atBottom) {
-            el.classList.add('has-scroll-gradient');
-        } else {
-            el.classList.remove('has-scroll-gradient');
-        }
-    }
-
-    //==============================================================================================
-    /**
      * Show the projects grid
      */
     show() {
@@ -554,7 +529,6 @@ class ProjectsGrid {
         this.container.classList.add('visible');
         this.isVisible = true;
         document.body.style.overflow = 'auto';
-        this.updateScrollGradient();
         this.log('Projects Shown');
     }
 

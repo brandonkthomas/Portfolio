@@ -45,20 +45,51 @@ export async function mount(container: HTMLElement, props: WebAmpKnobProps = {})
     overlay.src = '/assets/images/webamp/icon-WebAmp-full512-layer2.png';
     overlay.alt = '';
 
+    // Avoid CSS transition restarts that cause micro-stutter; we animate via RAF instead
+    overlay.style.willChange = 'transform';
+    overlay.style.transition = 'transform 0s';
+
     shell.append(base, overlay);
     root.appendChild(shell);
     container.appendChild(root);
 
-    const state: { maxAngle: number } = {
-        maxAngle: Number.isFinite(props.maxAngle as number) ? Math.abs(props.maxAngle as number) : 45
+    const state: { maxAngle: number; currentAngle: number; targetAngle: number } = {
+        maxAngle: Number.isFinite(props.maxAngle as number) ? Math.abs(props.maxAngle as number) : 45,
+        currentAngle: 0,
+        targetAngle: 0
     };
 
-    const setAngle = (angle: number) => {
+    const applyAngle = () => {
+        root.style.setProperty('--wak-angle', `${state.currentAngle}deg`);
+    };
+
+    const setTargetAngle = (angle: number) => {
         const clamped = Math.max(-state.maxAngle, Math.min(state.maxAngle, angle));
-        root.style.setProperty('--wak-angle', `${clamped}deg`);
+        state.targetAngle = clamped;
     };
 
-    setAngle(0);
+    // RAF-based smoothing so transitions continue smoothly while pointer moves
+    const follow = 0.18;
+    let rafId: number | null = null;
+    let destroyed = false;
+
+    const tick = () => {
+        if (destroyed) return;
+        const delta = state.targetAngle - state.currentAngle;
+        if (Math.abs(delta) > 0.01) {
+            state.currentAngle += delta * follow;
+        } else {
+            state.currentAngle = state.targetAngle;
+        }
+        applyAngle();
+        rafId = requestAnimationFrame(tick);
+    };
+
+    // Seed initial angle and start animation loop
+    state.currentAngle = 0;
+    state.targetAngle = 0;
+    applyAngle();
+    rafId = requestAnimationFrame(tick);
     logWebAmpKnob('Mounted', { maxAngle: state.maxAngle });
 
     let hovering = false;
@@ -76,18 +107,18 @@ export async function mount(container: HTMLElement, props: WebAmpKnobProps = {})
     const handlePointerMove = (ev: PointerEvent) => {
         if (!hovering) return;
         const angle = computeAngleFromPointer(ev);
-        setAngle(angle);
+        setTargetAngle(angle);
     };
 
     const handlePointerEnter = (ev: PointerEvent) => {
         hovering = true;
         const angle = computeAngleFromPointer(ev);
-        setAngle(angle);
+        setTargetAngle(angle);
     };
 
     const resetAngle = () => {
         hovering = false;
-        setAngle(0);
+        setTargetAngle(0);
     };
 
     container.addEventListener('pointerenter', handlePointerEnter);
@@ -105,7 +136,7 @@ export async function mount(container: HTMLElement, props: WebAmpKnobProps = {})
         update(nextProps: WebAmpKnobProps) {
             if (nextProps && typeof nextProps.maxAngle === 'number' && Number.isFinite(nextProps.maxAngle)) {
                 state.maxAngle = Math.max(0, Math.min(90, Math.abs(nextProps.maxAngle)));
-                setAngle(0);
+                setTargetAngle(0);
                 logWebAmpKnob('Props Updated', { maxAngle: state.maxAngle });
             }
         },
@@ -114,9 +145,12 @@ export async function mount(container: HTMLElement, props: WebAmpKnobProps = {})
             container.removeEventListener('pointermove', handlePointerMove);
             container.removeEventListener('pointerleave', resetAngle);
             container.removeEventListener('pointercancel', resetAngle);
+            destroyed = true;
+            if (rafId != null) {
+                cancelAnimationFrame(rafId);
+            }
             root.remove();
             logWebAmpKnob('Destroyed');
         }
     };
 }
-
