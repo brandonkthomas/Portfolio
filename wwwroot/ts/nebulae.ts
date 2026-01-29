@@ -3,8 +3,8 @@
  * @fileoverview Contains functions for creating and updating nebulae in the starfield
  */
 
-import { getNebulaTexture } from './textures';
-import { isErrorPage, logEvent, LogData, LogLevel } from './common';
+import { getNebulaTexture } from './textures.js';
+import { isErrorPage, logEvent, LogData, LogLevel } from './common.js';
 
 const logNebula = (event: string, data?: LogData, note?: string, level: LogLevel = 'info') => {
     logEvent('nebulae', event, data, note, level);

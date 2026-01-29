@@ -5,7 +5,7 @@
  * their cursor across the grid. Includes resize handling and center position caching for performance.
  */
 
-import { logEvent, LogData, LogLevel } from '../../common';
+import { logEvent, LogData, LogLevel } from '../../common.js';
 
 const logByteGrid = (event: string, data?: LogData, note?: string, level: LogLevel = 'info') => {
     logEvent('byteGrid', event, data, note, level);

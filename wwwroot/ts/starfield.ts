@@ -4,11 +4,11 @@
  * @description Creates an interactive starfield background with a triggerable warp effect using Three.js
  */
 
-import { isMobile, isErrorPage, logEvent, LogData, LogLevel } from './common';
-import { createCircleTexture } from './textures';
-import { createNebulae, updateNebulae, reduceNebulaOpacity, restoreNebulaOpacity } from './nebulae';
-import perf from './perfMonitor';
-import { onPhotoLightboxStateChange } from './components/photoLightbox';
+import { isMobile, isErrorPage, logEvent, LogData, LogLevel } from './common.js';
+import { createCircleTexture } from './textures.js';
+import { createNebulae, updateNebulae, reduceNebulaOpacity, restoreNebulaOpacity } from './nebulae.js';
+import perf from './perfMonitor.js';
+import { onPhotoLightboxStateChange } from './components/photoLightbox.js';
 
 // DEBUG FLAG: if true, show animated gradient instead of starfield (for testing glass material behavior/interactions)
 const DEBUG_GRADIENT = false;

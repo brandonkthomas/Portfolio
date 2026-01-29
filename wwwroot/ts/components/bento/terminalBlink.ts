@@ -3,7 +3,7 @@
  * @fileoverview Terminal component with blinking caret (for Projects view)
  */
 
-import { logEvent, LogData, LogLevel } from '../../common';
+import { logEvent, LogData, LogLevel } from '../../common.js';
 
 const logTerminal = (event: string, data?: LogData, note?: string, level: LogLevel = 'info') => {
 	logEvent('terminalBlink', event, data, note, level);

@@ -4,7 +4,7 @@
  * @description Handles text distortion effect on any element containing text
  */
 
-import { logEvent, LogData, LogLevel } from './common';
+import { logEvent, LogData, LogLevel } from './common.js';
 
 const logFuzzy = (event: string, data?: LogData, note?: string, level: LogLevel = 'info') => {
 	logEvent('fuzzyText', event, data, note, level);

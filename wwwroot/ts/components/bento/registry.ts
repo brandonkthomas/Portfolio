@@ -3,7 +3,7 @@
  * @fileoverview Component registry with dynamic imports and per-component stylesheet loader
  */
 
-import { logEvent, LogData, LogLevel } from '../../common';
+import { logEvent, LogData, LogLevel } from '../../common.js';
 
 const logRegistry = (event: string, data?: LogData, note?: string, level: LogLevel = 'info') => {
     logEvent('componentRegistry', event, data, note, level);
@@ -15,11 +15,11 @@ const loadedStyles = new Set<string>();
  * Component registry with dynamic imports and per-component stylesheet loader
  */
 const registry: Record<string, () => Promise<any>> = {
-    cardStack: () => import('./cardStack'),
-    lineGraph: () => import('./lineGraph'),
-    terminalBlink: () => import('./terminalBlink'),
-    byteGrid: () => import('./byteGrid'),
-    webampKnob: () => import('./webampKnob'),
+    cardStack: () => import('./cardStack.js'),
+    lineGraph: () => import('./lineGraph.js'),
+    terminalBlink: () => import('./terminalBlink.js'),
+    byteGrid: () => import('./byteGrid.js'),
+    webampKnob: () => import('./webampKnob.js'),
 };
 
 //==============================================================================================

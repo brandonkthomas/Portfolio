@@ -3,7 +3,7 @@
  * @fileoverview Performance monitoring and diagnostics for Three.js scenes
  */
 
-import { isDebug, logEvent, LogData, LogLevel } from './common';
+import { isDebug, logEvent, LogData, LogLevel } from './common.js';
 
 type SegmentId = number;
 

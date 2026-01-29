@@ -4,8 +4,8 @@
  * @description Handles photo grid display and image expansion
  */
 
-import PhotoLightbox from './components/photoLightbox';
-import { logEvent, LogData, LogLevel } from './common';
+import PhotoLightbox from './components/photoLightbox.js';
+import { logEvent, LogData, LogLevel } from './common.js';
 
 type PhotoItem = { url: string; width: number; height: number; aspectRatio: number; index: number };
 type ManifestImageEntry = string | { url?: string; width?: number; height?: number };

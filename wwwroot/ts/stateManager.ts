@@ -4,8 +4,8 @@
  * @description Handles view transitions between card and photo gallery views
  */
 
-import { isMobile, isErrorPage, logEvent, LogData, LogLevel } from './common';
-import { triggerStarfieldWarp } from './starfield';
+import { isMobile, isErrorPage, logEvent, LogData, LogLevel } from './common.js';
+import { triggerStarfieldWarp } from './starfield.js';
 
 //==============================================================================================
 // Early init: Hide card immediately if we're loading /photos

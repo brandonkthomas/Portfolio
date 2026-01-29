@@ -5,7 +5,7 @@
  * position across the bento card, creating the illusion of the dial rotating.
  */
 
-import { logEvent, LogData, LogLevel } from '../../common';
+import { logEvent, LogData, LogLevel } from '../../common.js';
 
 const logWebAmpKnob = (event: string, data?: LogData, note?: string, level: LogLevel = 'info') => {
     logEvent('webampKnob', event, data, note, level);

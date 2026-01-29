@@ -3,9 +3,9 @@
  * @fileoverview Glass-surface dialog UI kit (alerts, confirms, prompts)
  */
 
-import { createGlassSurface } from './glassSurface';
-import type { GlassSurfaceInstance } from './glassSurface';
-import { logEvent, LogData, LogLevel } from '../common';
+import { createGlassSurface } from './glassSurface.js';
+import type { GlassSurfaceInstance } from './glassSurface.js';
+import { logEvent, LogData, LogLevel } from '../common.js';
 
 const logDialogs = (event: string, data?: LogData, note?: string, level: LogLevel = 'info') => {
     logEvent('dialogs', event, data, note, level);

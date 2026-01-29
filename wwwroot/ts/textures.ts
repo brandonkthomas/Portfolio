@@ -3,7 +3,7 @@
  * @fileoverview Texture generation utilities for starfield and nebulae
  */
 
-import { isMobile, isErrorPage, logEvent, LogData, LogLevel } from './common';
+import { isMobile, isErrorPage, logEvent, LogData, LogLevel } from './common.js';
 
 //==============================================================================================
 /**

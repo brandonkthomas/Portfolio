@@ -4,11 +4,11 @@
  * @description Handles 3D card rendering, flip animations, and drag interactions
  */
 
-import { isMobile, logEvent, LogData, LogLevel } from './common';
-import stateManager, { ViewState } from './stateManager';
-import perf from './perfMonitor';
-import { triggerStarfieldWarp } from './starfield';
-import { onPhotoLightboxStateChange } from './components/photoLightbox';
+import { isMobile, logEvent, LogData, LogLevel } from './common.js';
+import stateManager, { ViewState } from './stateManager.js';
+import perf from './perfMonitor.js';
+import { triggerStarfieldWarp } from './starfield.js';
+import { onPhotoLightboxStateChange } from './components/photoLightbox.js';
 
 class Card {
     // DOM

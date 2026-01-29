@@ -3,10 +3,10 @@
  * @fileoverview Bento grid of personal projects with hover/tap animations
  */
 
-import { isMobile, getOperatingSystem, logEvent, LogData, LogLevel } from './common';
-import { createGlassSurface } from './components/glassSurface';
-import type { GlassSurfaceInstance } from './components/glassSurface';
-import { mountComponent } from './components/bento/registry';
+import { isMobile, getOperatingSystem, logEvent, LogData, LogLevel } from './common.js';
+import { createGlassSurface } from './components/glassSurface.js';
+import type { GlassSurfaceInstance } from './components/glassSurface.js';
+import { mountComponent } from './components/bento/registry.js';
 
 class ProjectsGrid {
     private container: HTMLElement | null;

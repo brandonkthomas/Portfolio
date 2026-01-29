@@ -3,7 +3,7 @@
  * @fileoverview Demo wiring for internal UI kit layout page
  */
 
-import { showAlert, showConfirm, showPrompt } from '../components/dialogs';
+import { showAlert, showConfirm, showPrompt } from '../components/dialogs.js';
 
 function bindDemoButtons() {
     const alertBtn = document.querySelector<HTMLElement>('[data-dialog-demo="alert"]');

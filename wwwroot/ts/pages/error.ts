@@ -4,7 +4,7 @@
  * @description Handles error page initialization and fuzzy text effect
  */
 
-import { attachFuzzyTextToElement } from '../fuzzyText';
+import { attachFuzzyTextToElement } from '../fuzzyText.js';
 
 //==============================================================================================
 /**

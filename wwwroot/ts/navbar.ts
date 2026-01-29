@@ -4,10 +4,10 @@
  * @description Handles the glass surface URL bar with responsive burger menu
  */
 
-import { createGlassSurface } from './components/glassSurface';
-import type { GlassSurfaceInstance } from './components/glassSurface';
-import { isMobile, logEvent, LogData, LogLevel } from './common';
-import stateManager, { ViewState } from './stateManager';
+import { createGlassSurface } from './components/glassSurface.js';
+import type { GlassSurfaceInstance } from './components/glassSurface.js';
+import { isMobile, logEvent, LogData, LogLevel } from './common.js';
+import stateManager, { ViewState } from './stateManager.js';
 
 class Navbar {
     private container: HTMLElement | null;

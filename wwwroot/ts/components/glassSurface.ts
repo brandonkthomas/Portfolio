@@ -4,7 +4,7 @@
  * @description Creates glass surface material with real-time distortion and lighting
  */
 
-import { supportsSVGFilters, logEvent, LogData, LogLevel } from '../common';
+import { supportsSVGFilters, logEvent, LogData, LogLevel } from '../common.js';
 
 const logGlass = (event: string, data?: LogData, note?: string, level: LogLevel = 'info') => {
     logEvent('glassSurface', event, data, note, level);
