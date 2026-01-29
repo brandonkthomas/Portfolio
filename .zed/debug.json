@@ -1,0 +1,39 @@
+[
+  {
+    "label": "App (Server)",
+    "adapter": "netcoredbg",
+    "request": "launch",
+    "program": "$ZED_WORKTREE_ROOT/bin/Debug/net8.0/Portfolio.dll",
+    "args": [],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "env": {
+      "ASPNETCORE_ENVIRONMENT": "Development",
+      "ASPNETCORE_URLS": "http://localhost:8081",
+    },
+    "build": "build",
+  },
+  {
+    "label": "Chrome (DevTools)",
+    "adapter": "JavaScript",
+    "type": "chrome",
+    "request": "launch",
+    "url": "http://localhost:8081",
+    "webRoot": "$ZED_WORKTREE_ROOT/wwwroot",
+    "sourceMapPathOverrides": {
+      "../../ts/*": "$ZED_WORKTREE_ROOT/wwwroot/ts/*",
+      "*/ts/*": "$ZED_WORKTREE_ROOT/wwwroot/ts/*",
+      "ts/*": "$ZED_WORKTREE_ROOT/wwwroot/ts/*",
+      "webpack:///./*": "$ZED_WORKTREE_ROOT/wwwroot/*",
+      "webpack:///*": "$ZED_WORKTREE_ROOT/wwwroot/*",
+      "http://localhost:8081/*": "$ZED_WORKTREE_ROOT/wwwroot/*",
+    },
+    "resolveSourceMapLocations": [
+      "$ZED_WORKTREE_ROOT/wwwroot/**",
+      "!**/node_modules/**",
+    ],
+    "runtimeArgs": ["--auto-open-devtools-for-tabs"],
+    "smartStep": true,
+    "trace": true,
+    "build": "wait:app-ready",
+  },
+]
