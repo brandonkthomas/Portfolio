@@ -27,7 +27,7 @@ git push -u origin main
 - Controller in `<NewProjectName>.Web/Controllers`:
   - Namespace: `<NewProjectName>.Web.Controllers`
   - Route: `[HttpGet("/<lowercase-route>")]` (e.g. `/webamp`)
-  - `ViewData["IsAppPage"] = true;`
+  - `ViewData["CanPinchToZoom"] = true;`
   - `return View("~/Apps/<NewProjectName>/Views/Index.cshtml");`
 - Views under `<NewProjectName>.Web/Apps/<NewProjectName>/Views/`:
   - `_ViewImports.cshtml` → `@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers`

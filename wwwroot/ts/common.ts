@@ -167,9 +167,11 @@ if (!(window as any).setDebugOverride) {
 
 document.addEventListener('DOMContentLoaded', () => {
     
-    // Minimal global pinch-zoom prevention (does not affect single-tap/double-tap)
+    // Minimal global pinch-zoom prevention (does not affect single-tap/double-tap).
+    // Skip when body has can-pinch-to-zoom so users can pinch-to-zoom on mobile Safari.
+    const canPinchToZoom = document.body.classList.contains('can-pinch-to-zoom');
     const isTouchEnv: boolean = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    if (isTouchEnv) {
+    if (isTouchEnv && !canPinchToZoom) {
         const preventIfPinch = (e: TouchEvent) => {
             if (e.touches && e.touches.length > 1) {
                 e.preventDefault();

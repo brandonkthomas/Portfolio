@@ -36,8 +36,8 @@ body {
     background-color: #1c1c1c;
 }
 
-/* App pages */
-body.app-page {
+/* Pages that allow pinch-to-zoom (e.g. WebAmp) */
+body.can-pinch-to-zoom {
     overflow-y: auto;
     overflow-x: hidden;
 }

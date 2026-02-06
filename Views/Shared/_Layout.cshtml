@@ -1,10 +1,10 @@
-﻿@inject IConfiguration Configuration
+@inject IConfiguration Configuration
 
 @{
     // Page-type flag used across the layout (kept in outer scope so it works inside TagHelpers like <environment/>)
-    var isAppPage = (ViewData["IsAppPage"] as bool?) ?? false;
+    var canPinchToZoom = (ViewData["CanPinchToZoom"] as bool?) ?? false;
     var isIsolatedCss = (ViewData["IsolatedCss"] as bool?) ?? false;
-    var enableStarfield = (ViewData["EnableStarfield"] as bool?) ?? !isAppPage;
+    var enableStarfield = (ViewData["EnableStarfield"] as bool?) ?? !canPinchToZoom;
 
     // Prefer an explicit public base URL for canonical + OpenGraph (prevents leaking internal/origin hosts).
     var configuredPublicBaseUrl = Configuration["Site:PublicBaseUrl"];
@@ -97,12 +97,12 @@
     <meta name="twitter:title" content="@fullTitle" />
     <meta name="twitter:image" content="@absoluteOgImage" />
 
-    @if (!isAppPage)
+    @if (!canPinchToZoom)
     {
         <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
     }
 </head>
-<body class="@(isAppPage ? "app-page" : "")" data-initial-state="loading" data-enable-starfield="@(enableStarfield.ToString().ToLowerInvariant())">
+<body class="@(canPinchToZoom ? "can-pinch-to-zoom" : "")" data-initial-state="loading" data-enable-starfield="@(enableStarfield.ToString().ToLowerInvariant())">
     @{
         var showLoadingOverlay = (ViewData["ShowLoadingOverlay"] as bool?) ?? true;
         var loadingLogoSrc = ViewData["LoadingOverlayLogoSrc"] as string ?? "/assets/svg/bt-logo-boxed.svg";
@@ -218,7 +218,7 @@
         {
             <script src="~/js/common.js" type="module"></script>
             <script src="~/js/navbar.js" type="module"></script>
-            @if (!isAppPage) // Only load these for the main site page -- app pages are standalone, not SPA-managed
+            @if (!canPinchToZoom) // Only load these for the main site page -- can-pinch-to-zoom pages are standalone, not SPA-managed
             {
                 <script src="~/js/stateManager.js" type="module"></script>
                 <script src="~/js/starfield.js" type="module"></script>
@@ -233,7 +233,7 @@
             @inject Portfolio.Services.IAssetManifest AssetManifest
             <script src="@AssetManifest.GetAssetPath("common.js")" type="module"></script>
             <script src="@AssetManifest.GetAssetPath("navbar.js")" type="module"></script>
-            @if (!isAppPage) // Only load these for the main site page -- app pages are standalone, not SPA-managed
+            @if (!canPinchToZoom) // Only load these for the main site page -- can-pinch-to-zoom pages are standalone, not SPA-managed
             {
                 <script src="@AssetManifest.GetAssetPath("stateManager.js")" type="module"></script>
                 <script src="@AssetManifest.GetAssetPath("starfield.js")" type="module"></script>
@@ -247,7 +247,7 @@
         window.__dotnetDebuggerAttached = @((System.Diagnostics.Debugger.IsAttached).ToString().ToLower());
     </script>
     @await RenderSectionAsync("Scripts", required: false)
-    @if (isAppPage) // For app pages without the SPA state manager, hide the loading overlay after all assets load.
+    @if (canPinchToZoom) // For can-pinch-to-zoom pages without the SPA state manager, hide the loading overlay after all assets load.
     {
         <script>
             window.addEventListener('load', () => {

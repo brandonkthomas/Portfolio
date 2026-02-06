@@ -26,7 +26,7 @@ public class HomeController : Controller
     public IActionResult UiKit()
     {
         ViewData["Title"] = "UI Kit";
-        ViewData["IsAppPage"] = true;
+        ViewData["CanPinchToZoom"] = true;
         return View();
     }
 
