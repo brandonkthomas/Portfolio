@@ -173,30 +173,46 @@ if (app.Environment.IsDevelopment())
                 ctx.Context.Response.Headers["Cache-Control"] = "public, max-age=0, must-revalidate";
             }
         });
-
-        app.MapGet("/assets/images/reel/manifest.json", () =>
-        {
-            var images = PhotoManifestGenerator.BuildEntries(devPhotoRoot, PhotoReelRequestPrefix);
-            return Results.Json(new { images });
-        });
     }
 }
 
-// Production (or when dev mapping didn't run): generate manifest from packaged wwwroot assets
-if (!app.Environment.IsDevelopment())
+
+// Photo reel manifest endpoint (resolve dev path or packaged wwwroot assets)
+app.MapGet("/assets/images/reel/manifest.json", () =>
 {
-    var webRoot = app.Environment.WebRootPath;
-    var reelPath = Path.Combine(webRoot, "assets", "images", "reel");
-    if (Directory.Exists(reelPath))
+    string? photoRoot = null;
+
+    if (app.Environment.IsDevelopment())
     {
-        var packagedReelPath = reelPath;
-        app.MapGet("/assets/images/reel/manifest.json", () =>
+        var devPhotoPath = app.Configuration["DevPhotoPath"];
+        if (!string.IsNullOrWhiteSpace(devPhotoPath) && Directory.Exists(devPhotoPath))
         {
-            var images = PhotoManifestGenerator.BuildEntries(packagedReelPath, PhotoReelRequestPrefix);
-            return Results.Json(new { images });
-        });
+            photoRoot = devPhotoPath;
+        }
     }
-}
+
+    if (photoRoot is null)
+    {
+        var webRoot = app.Environment.WebRootPath;
+        if (!string.IsNullOrWhiteSpace(webRoot))
+        {
+            var reelPath = Path.Combine(webRoot, "assets", "images", "reel");
+            if (Directory.Exists(reelPath))
+            {
+                photoRoot = reelPath;
+            }
+        }
+    }
+
+    if (photoRoot is null)
+    {
+        return Results.NotFound(new { images = Array.Empty<PhotoManifestEntry>() });
+    }
+
+    var images = PhotoManifestGenerator.BuildEntries(photoRoot, PhotoReelRequestPrefix);
+    return Results.Json(new { images });
+});
+
 
 // Simple health check endpoint
 app.MapGet("/api/health", () => Results.Ok());
