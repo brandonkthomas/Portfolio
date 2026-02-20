@@ -21,8 +21,8 @@
   },
   "homepage": "https://github.com/brandonkthomas/Portfolio#readme",
   "devDependencies": {
+    "esbuild": "^0.27.3",
     "typescript": "^5.9.3",
-    "esbuild": "^0.24.0",
     "wait-on": "^7.0.1"
   }
 }
