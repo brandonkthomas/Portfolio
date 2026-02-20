@@ -305,7 +305,7 @@ class GradNoiseCanvas {
         this.onResize();
         window.addEventListener('resize', this.onResizeBound, { passive: true });
 
-        this.setFrameCap(24); // low motion so no need for high fps
+        this.setFrameCap(20); // low motion so no need for high fps
 
         this.animateBound = this.animate.bind(this);
         requestAnimationFrame(this.animateBound);
