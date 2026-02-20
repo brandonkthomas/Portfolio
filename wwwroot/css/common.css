@@ -3,6 +3,8 @@
     Global styles and base configuration
 */
 
+@import url('/css/components/loadingOverlay.css');
+
 /* Base typography and layout */
 html {
     font-size: 14px;
@@ -110,27 +112,6 @@ body[data-initial-state="loading"] .projects-container {
         opacity 0.33s cubic-bezier(0.4, 0, 0.2, 1),
         transform 0.33s cubic-bezier(0.4, 0, 0.2, 1),
         filter 0.33s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.loading-overlay img {
-    width: 80px;
-    height: auto;
-    filter: invert(1);
-}
-
-.loading-overlay .loading-logo {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
-
-.loading-overlay img.loading-throbber {
-    position: absolute;
-    top: calc(55% + 64px);
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 28px;
 }
 
 /* Hide overlay when initial state switches to ready (same quick enter timing) */
