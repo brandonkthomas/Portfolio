@@ -1,0 +1,631 @@
+@{
+    ViewData["Title"] = "Indium UI Tests";
+    ViewData["CanPinchToZoom"] = true;
+    ViewData["IsolatedCss"] = true;
+    ViewData["HideNavbar"] = true;
+    ViewData["ShowLoadingOverlay"] = false;
+}
+
+<section class="indium-test-page">
+    <header class="indium-test-page__header">
+        <h1 class="indium-test-page__title">Indium UI Test Runner</h1>
+        <p class="indium-test-page__lede">
+            Automated browser checks for full bundle compatibility and component-only usage.
+        </p>
+        <div class="indium-test-page__actions">
+            <button type="button" class="wa-btn wa-btn--primary" data-run-all>Run All Tests</button>
+            <button type="button" class="wa-btn" data-clear-results>Clear Results</button>
+        </div>
+    </header>
+
+    <section class="indium-test-summary" aria-live="polite" data-summary>
+        <div><strong>Pending.</strong> Click <code>Run All Tests</code>.</div>
+    </section>
+
+    <ol class="indium-test-results" data-results></ol>
+
+    <div class="indium-test-fixtures" data-fixtures aria-hidden="true"></div>
+</section>
+
+@section Styles {
+    <link rel="stylesheet" href="~/apps/indium/dist/indium.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/apps/indium/dist/components/cards.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/apps/indium/dist/components/dialogs.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/apps/indium/dist/components/navbar.css" asp-append-version="true" />
+    <style>
+        .indium-test-page {
+            max-width: 1100px;
+            margin: 2rem auto;
+            padding: 1rem;
+            color: rgba(255, 255, 255, 0.92);
+        }
+
+        .indium-test-page__title {
+            margin: 0 0 0.35rem;
+            font-size: clamp(1.35rem, 2.6vw, 2rem);
+        }
+
+        .indium-test-page__lede {
+            margin: 0;
+            color: rgba(255, 255, 255, 0.75);
+        }
+
+        .indium-test-page__actions {
+            margin-top: 0.9rem;
+            display: flex;
+            gap: 0.55rem;
+            flex-wrap: wrap;
+        }
+
+        .indium-test-summary {
+            margin-top: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 0.75rem 0.85rem;
+            background: rgba(0, 0, 0, 0.22);
+        }
+
+        .indium-test-results {
+            margin: 0.9rem 0 0;
+            padding: 0;
+            list-style: none;
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        .indium-test-result {
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 12px;
+            padding: 0.7rem 0.8rem;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .indium-test-result[data-status="pass"] {
+            border-color: rgba(106, 217, 157, 0.48);
+            background: rgba(40, 118, 80, 0.2);
+        }
+
+        .indium-test-result[data-status="fail"] {
+            border-color: rgba(255, 116, 116, 0.55);
+            background: rgba(138, 42, 42, 0.24);
+        }
+
+        .indium-test-result__name {
+            font-weight: 600;
+        }
+
+        .indium-test-result__meta {
+            margin-top: 0.2rem;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.74);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .indium-test-fixtures {
+            position: fixed;
+            left: -99999px;
+            top: -99999px;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            pointer-events: none;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script type="module">
+        const PATHS = {
+            full: '/apps/indium/dist/indium.js',
+            dialogs: '/apps/indium/dist/components/dialogs.js',
+            glass: '/apps/indium/dist/components/glassSurface.js',
+            infinite: '/apps/indium/dist/components/infiniteScroll.js',
+            sidebar: '/apps/indium/dist/components/sidebar.js',
+            gradNoise: '/apps/indium/dist/components/gradNoiseCanvas.js',
+            navbar: '/apps/indium/dist/components/navbar.js'
+        };
+
+        const resultsEl = document.querySelector('[data-results]');
+        const summaryEl = document.querySelector('[data-summary]');
+        const fixturesEl = document.querySelector('[data-fixtures]');
+        const runBtn = document.querySelector('[data-run-all]');
+        const clearBtn = document.querySelector('[data-clear-results]');
+
+        const tests = [];
+
+        function addTest(name, fn) {
+            tests.push({ name, fn });
+        }
+
+        function assert(condition, message) {
+            if (!condition) {
+                throw new Error(message || 'Assertion failed.');
+            }
+        }
+
+        function wait(ms) {
+            return new Promise((resolve) => setTimeout(resolve, ms));
+        }
+
+        async function waitFor(predicate, timeoutMs = 1800, intervalMs = 25) {
+            const start = performance.now();
+            while (performance.now() - start < timeoutMs) {
+                const value = predicate();
+                if (value) return value;
+                await wait(intervalMs);
+            }
+            throw new Error('Timed out waiting for condition.');
+        }
+
+        function createFixture(tag = 'div') {
+            const el = document.createElement(tag);
+            fixturesEl.appendChild(el);
+            return el;
+        }
+
+        function resetFixtures() {
+            fixturesEl.replaceChildren();
+        }
+
+        function pushResult({ name, status, durationMs, detail }) {
+            const li = document.createElement('li');
+            li.className = 'indium-test-result';
+            li.dataset.status = status;
+
+            const title = document.createElement('div');
+            title.className = 'indium-test-result__name';
+            title.textContent = `${status === 'pass' ? 'PASS' : 'FAIL'} - ${name}`;
+
+            const meta = document.createElement('div');
+            meta.className = 'indium-test-result__meta';
+            meta.textContent = `Duration: ${durationMs.toFixed(1)}ms${detail ? `\n${detail}` : ''}`;
+
+            li.append(title, meta);
+            resultsEl.appendChild(li);
+        }
+
+        function setSummary(text) {
+            summaryEl.innerHTML = text;
+        }
+
+        async function runAllTests() {
+            resultsEl.replaceChildren();
+            resetFixtures();
+            setSummary('<div><strong>Running tests...</strong></div>');
+
+            let pass = 0;
+            let fail = 0;
+
+            for (const test of tests) {
+                resetFixtures();
+                const t0 = performance.now();
+                try {
+                    await test.fn();
+                    pass += 1;
+                    pushResult({
+                        name: test.name,
+                        status: 'pass',
+                        durationMs: performance.now() - t0,
+                        detail: ''
+                    });
+                } catch (error) {
+                    fail += 1;
+                    pushResult({
+                        name: test.name,
+                        status: 'fail',
+                        durationMs: performance.now() - t0,
+                        detail: error instanceof Error ? error.message : String(error)
+                    });
+                }
+            }
+
+            setSummary(`<div><strong>Completed:</strong> ${pass} passed, ${fail} failed, ${tests.length} total.</div>`);
+        }
+
+        addTest('Full bundle exports core APIs', async () => {
+            const mod = await import(PATHS.full);
+            assert(typeof mod.bootIndium === 'function', 'bootIndium export missing.');
+            assert(typeof mod.createSidebarController === 'function', 'createSidebarController export missing.');
+            assert(typeof mod.attachInfiniteScroll === 'function', 'attachInfiniteScroll export missing.');
+            assert(typeof mod.createNavbarController === 'function', 'createNavbarController export missing.');
+        });
+
+        addTest('Component bundles import individually', async () => {
+            const modules = await Promise.all([
+                import(PATHS.dialogs),
+                import(PATHS.glass),
+                import(PATHS.infinite),
+                import(PATHS.sidebar),
+                import(PATHS.gradNoise),
+                import(PATHS.navbar)
+            ]);
+            assert(modules.length === 6, 'Not all component modules imported.');
+        });
+
+        addTest('Config normalization applies slash rules', async () => {
+            const mod = await import(PATHS.full);
+            mod.setIndiumConfig({
+                routeRoot: 'webamp/',
+                apiBasePath: 'api/v1/',
+                assetBasePath: 'apps/indium/'
+            });
+            const cfg = mod.getIndiumConfig();
+            assert(cfg.routeRoot === '/webamp', `routeRoot normalized incorrectly: ${cfg.routeRoot}`);
+            assert(cfg.apiBasePath === '/api/v1', `apiBasePath normalized incorrectly: ${cfg.apiBasePath}`);
+            assert(cfg.assetBasePath === '/apps/indium', `assetBasePath normalized incorrectly: ${cfg.assetBasePath}`);
+
+            mod.setIndiumConfig({
+                routeRoot: '/webamp',
+                apiBasePath: '/api/webamp',
+                assetBasePath: '/apps/indium'
+            });
+        });
+
+        addTest('Dialogs alert opens and closes cleanly', async () => {
+            const { showAlert } = await import(PATHS.dialogs);
+            const promise = showAlert({ title: 'Dialog Test', message: 'Hello from test runner.' });
+            const overlay = await waitFor(() => document.querySelector('.ui-dialog-overlay'));
+            assert(overlay instanceof HTMLElement, 'Dialog overlay not found after showAlert.');
+
+            const okBtn = overlay.querySelector('.ui-dialog-button--primary, .ui-dialog-button');
+            assert(okBtn instanceof HTMLButtonElement, 'Dialog primary button not found.');
+            okBtn.click();
+
+            await promise;
+            await wait(30);
+            assert(!document.querySelector('.ui-dialog-overlay'), 'Dialog overlay still present after close.');
+        });
+
+        addTest('Glass surface can create and destroy instance', async () => {
+            const { createGlassSurface } = await import(PATHS.glass);
+            const host = createFixture();
+            const glass = createGlassSurface({ width: 200, height: 80, className: 'test-glass' });
+            host.appendChild(glass.element);
+            assert(glass.element.classList.contains('glass-surface'), 'glass-surface class missing.');
+            glass.destroy();
+            glass.element.remove();
+            assert(!host.querySelector('.glass-surface'), 'Glass surface element still mounted after destroy/remove.');
+        });
+
+        addTest('Infinite scroll uses custom throbberSrc override', async () => {
+            const { attachInfiniteScroll } = await import(PATHS.infinite);
+            const fixture = createFixture();
+            const list = document.createElement('div');
+            list.className = 'wa-list';
+            fixture.appendChild(list);
+
+            let loading = true;
+            const customThrobber = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"%3E%3Ccircle cx="5" cy="5" r="4" fill="white"/%3E%3C/svg%3E';
+
+            const controller = attachInfiniteScroll({
+                listEl: list,
+                loadMore: async () => { },
+                hasMore: () => true,
+                isLoading: () => loading,
+                throbberSrc: customThrobber
+            });
+
+            await wait(40);
+            const img = fixture.querySelector('.wa-throbber');
+            assert(img instanceof HTMLImageElement, 'Throbber image not rendered.');
+            assert(img.getAttribute('src') === customThrobber, 'Custom throbberSrc not applied.');
+
+            loading = false;
+            controller.destroy();
+            assert(!fixture.querySelector('.wa-infinite-sentinel'), 'Sentinel still exists after destroy.');
+        });
+
+        addTest('Infinite scroll default throbber respects assetBasePath', async () => {
+            const full = await import(PATHS.full);
+            const { attachInfiniteScroll } = await import(PATHS.infinite);
+
+            full.setIndiumConfig({ assetBasePath: '/apps/indium-test' });
+
+            const fixture = createFixture();
+            const list = document.createElement('div');
+            list.className = 'wa-list';
+            fixture.appendChild(list);
+
+            const controller = attachInfiniteScroll({
+                listEl: list,
+                loadMore: async () => { },
+                hasMore: () => true,
+                isLoading: () => true
+            });
+
+            await wait(40);
+            const img = fixture.querySelector('.wa-throbber');
+            assert(img instanceof HTMLImageElement, 'Default throbber image not rendered.');
+            const src = img.getAttribute('src') || '';
+            assert(src.includes('/apps/indium-test/assets/svg/throbber-ring-indef.svg'), `Default throbber path incorrect: ${src}`);
+
+            controller.destroy();
+            full.setIndiumConfig({ assetBasePath: '/apps/indium' });
+        });
+
+        addTest('Sidebar controller toggles data-wa-sidebar-open', async () => {
+            const { createSidebarController } = await import(PATHS.sidebar);
+            const appRoot = createFixture('section');
+            appRoot.setAttribute('data-wa-app', '');
+            appRoot.innerHTML = `
+                <button type="button" data-wa-sidebar-toggle>Open</button>
+                <aside data-wa-sidebar>
+                    <button type="button" data-wa-sidebar-close>Close</button>
+                    <a href="#" data-wa-nav="home">Home</a>
+                </aside>
+                <div data-wa-sidebar-overlay></div>
+            `;
+
+            const controller = createSidebarController({ appRoot });
+            assert(controller, 'createSidebarController returned null.');
+
+            const openBtn = appRoot.querySelector('[data-wa-sidebar-toggle]');
+            const closeBtn = appRoot.querySelector('[data-wa-sidebar-close]');
+            const overlay = appRoot.querySelector('[data-wa-sidebar-overlay]');
+            assert(openBtn && closeBtn && overlay, 'Sidebar fixture selectors missing.');
+
+            openBtn.click();
+            assert(appRoot.dataset.waSidebarOpen === 'true', 'Sidebar did not open on open button click.');
+
+            overlay.click();
+            assert(appRoot.dataset.waSidebarOpen !== 'true', 'Sidebar did not close on overlay click.');
+
+            openBtn.click();
+            closeBtn.click();
+            assert(appRoot.dataset.waSidebarOpen !== 'true', 'Sidebar did not close on close button click.');
+        });
+
+        addTest('Navbar controller supports setItems, active state, and open/close', async () => {
+            const { createNavbarController } = await import(PATHS.navbar);
+            const root = createFixture();
+            root.className = 'wa-navbar';
+            root.innerHTML = `
+                <div class="wa-navbar__surface-wrap">
+                    <div class="wa-navbar__content">
+                        <div class="wa-navbar__main">
+                            <span class="wa-navbar__brand">test.local</span>
+                            <button class="wa-navbar__burger" type="button" aria-expanded="false">
+                                <span class="burger-icon">
+                                    <span class="burger-line burger-line-1"></span>
+                                    <span class="burger-line burger-line-2"></span>
+                                </span>
+                            </button>
+                        </div>
+                        <nav class="wa-navbar__links--desktop"></nav>
+                        <nav class="wa-navbar__links--mobile"></nav>
+                    </div>
+                </div>
+            `;
+
+            const controller = createNavbarController({ root, enableGlass: false });
+            controller.setItems([
+                { id: 'photos', label: 'Photos', href: '/photos', mobileLabel: 'Photos' },
+                { id: 'projects', label: 'Projects', href: '/projects', mobileLabel: 'Projects' }
+            ]);
+
+            const links = root.querySelectorAll('a[data-wa-nav-id]');
+            assert(links.length === 4, `Expected 4 rendered links (desktop + mobile), got ${links.length}.`);
+
+            controller.setActive('photos');
+            const activeLinks = root.querySelectorAll('a[data-wa-active="true"]');
+            assert(activeLinks.length >= 1, 'No active navbar links after setActive.');
+
+            controller.open();
+            assert(root.classList.contains('wa-navbar--open'), 'Navbar missing wa-navbar--open after open().');
+            controller.close();
+            assert(!root.classList.contains('wa-navbar--open'), 'Navbar still open after close().');
+            controller.toggle();
+            assert(root.classList.contains('wa-navbar--open'), 'Navbar did not open after toggle().');
+            controller.destroy();
+        });
+
+        addTest('bootIndium applies branding and computes playerbar offset', async () => {
+            const { bootIndium } = await import(PATHS.full);
+            const root = createFixture('section');
+            root.id = 'indium-boot-fixture';
+            root.setAttribute('data-wa-app', '');
+            root.innerHTML = `
+                <span data-wa-brand-mark hidden>
+                    <img data-wa-brand-logo alt="" hidden />
+                </span>
+                <aside data-wa-sidebar></aside>
+                <div data-wa-sidebar-overlay></div>
+                <button data-wa-sidebar-toggle type="button"></button>
+                <button data-wa-sidebar-close type="button"></button>
+            `;
+
+            const logoSrc = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"%3E%3Ccircle cx="10" cy="10" r="8" fill="white"/%3E%3C/svg%3E';
+            const boot = bootIndium({
+                appRootSelector: '#indium-boot-fixture',
+                brandLogoSrc: logoSrc,
+                brandLogoAlt: 'Fixture Logo',
+                sidebar: false
+            });
+
+            assert(boot.appRoot === root, 'bootIndium did not return expected appRoot.');
+            const mark = root.querySelector('[data-wa-brand-mark]');
+            const logo = root.querySelector('[data-wa-brand-logo]');
+            assert(mark instanceof HTMLElement && !mark.hasAttribute('hidden'), 'Brand mark was not shown.');
+            assert(logo instanceof HTMLImageElement, 'Brand logo node missing.');
+            assert(logo.getAttribute('src') === logoSrc, 'Brand logo src not applied.');
+            assert(logo.getAttribute('alt') === 'Fixture Logo', 'Brand logo alt not applied.');
+
+            const playerbarOffset = root.style.getPropertyValue('--wa-playerbar-offset');
+            assert(playerbarOffset.trim() === '0px', `Expected 0px playerbar offset without playerbar, got ${playerbarOffset}`);
+        });
+
+        addTest('bootIndium toggles legacy window dialog globals', async () => {
+            const { bootIndium } = await import(PATHS.full);
+            bootIndium({ appRootSelector: '#missing-app-root', exposeLegacyWindowDialogs: true, sidebar: false });
+            assert(typeof window.showAlert === 'function', 'window.showAlert missing after enabling legacy dialogs.');
+            assert(typeof window.showConfirm === 'function', 'window.showConfirm missing after enabling legacy dialogs.');
+
+            bootIndium({ appRootSelector: '#missing-app-root', exposeLegacyWindowDialogs: false, sidebar: false });
+            assert(typeof window.showAlert === 'undefined', 'window.showAlert should be removed when disabling legacy dialogs.');
+            assert(typeof window.showConfirm === 'undefined', 'window.showConfirm should be removed when disabling legacy dialogs.');
+        });
+
+        addTest('Cards/list CSS renders expected structural styles', async () => {
+            const host = createFixture();
+            host.innerHTML = `
+                <div class="wa-card">
+                    <div class="wa-list">
+                        <div class="wa-listitem">
+                            <div class="wa-listitem__title">Example</div>
+                            <div class="wa-listitem__meta">Meta</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            const card = host.querySelector('.wa-card');
+            const item = host.querySelector('.wa-listitem');
+            assert(card instanceof HTMLElement && item instanceof HTMLElement, 'Card fixture not created.');
+
+            const cardStyle = getComputedStyle(card);
+            const itemStyle = getComputedStyle(item);
+            assert(cardStyle.borderTopLeftRadius !== '0px', 'Card border radius style not applied.');
+            assert(itemStyle.borderTopWidth !== '0px', 'List item border style not applied.');
+        });
+
+        addTest('Loading overlay responds to data-initial-state contract', async () => {
+            const previousState = document.body.getAttribute('data-initial-state');
+            const overlay = document.createElement('div');
+            overlay.className = 'loading-overlay';
+            overlay.textContent = 'loading';
+            document.body.appendChild(overlay);
+
+            document.body.setAttribute('data-initial-state', 'ready');
+            await wait(30);
+            const style = getComputedStyle(overlay);
+            assert(Number(style.opacity) < 0.2, `Expected overlay opacity to drop near zero, got ${style.opacity}.`);
+
+            overlay.remove();
+            if (previousState === null) {
+                document.body.removeAttribute('data-initial-state');
+            } else {
+                document.body.setAttribute('data-initial-state', previousState);
+            }
+        });
+
+        addTest('Grad noise component exports are available without runtime init', async () => {
+            const mod = await import(PATHS.gradNoise);
+            assert(typeof mod.createGradNoiseCanvas === 'function', 'createGradNoiseCanvas export missing.');
+            assert(typeof mod.setGradNoiseCanvasFrameCap === 'function', 'setGradNoiseCanvasFrameCap export missing.');
+        });
+
+        addTest('Dialogs restore focus and allow backdrop close', async () => {
+            const { showConfirm } = await import(PATHS.dialogs);
+            const trigger = document.createElement('button');
+            trigger.type = 'button';
+            trigger.textContent = 'Trigger';
+            document.body.appendChild(trigger);
+            trigger.focus();
+
+            const promise = showConfirm({
+                title: 'Close test',
+                message: 'Backdrop close should reject.',
+                allowBackdropClose: true
+            });
+
+            const overlay = await waitFor(() => document.querySelector('.ui-dialog-overlay'));
+            overlay.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+            const decision = await promise;
+            assert(decision === false, `Expected confirm result false on backdrop close, got ${String(decision)}.`);
+            await wait(30);
+            assert(document.activeElement === trigger, 'Dialog focus was not restored to trigger element.');
+
+            trigger.remove();
+        });
+
+        addTest('Glass surfaces support multiple create/destroy cycles', async () => {
+            const { createGlassSurface } = await import(PATHS.glass);
+            const host = createFixture();
+            const surfaces = [
+                createGlassSurface({ width: 120, height: 40 }),
+                createGlassSurface({ width: 140, height: 44 }),
+                createGlassSurface({ width: 160, height: 48 })
+            ];
+
+            for (const surface of surfaces) {
+                host.appendChild(surface.element);
+            }
+
+            assert(host.querySelectorAll('.glass-surface').length === 3, 'Expected 3 glass surfaces mounted.');
+
+            for (const surface of surfaces) {
+                surface.destroy();
+                surface.element.remove();
+            }
+
+            assert(host.querySelectorAll('.glass-surface').length === 0, 'Glass surfaces still mounted after destroy/remove.');
+        });
+
+        addTest('Navbar legacy selectors support onNavigate prevention, outside click, and resize close', async () => {
+            const { createNavbarController } = await import(PATHS.navbar);
+            const root = createFixture();
+            root.className = 'url-display';
+            root.innerHTML = `
+                <div class="glass-surface-wrapper">
+                    <div class="url-display-content">
+                        <div class="url-display-main">
+                            <span class="url-text">legacy.test</span>
+                            <nav class="url-nav-links desktop"></nav>
+                            <button class="burger-menu mobile" type="button" aria-expanded="false"></button>
+                        </div>
+                        <nav class="url-nav-links mobile"></nav>
+                    </div>
+                </div>
+            `;
+
+            let navigateCalls = 0;
+            const controller = createNavbarController({
+                root,
+                enableGlass: false,
+                onNavigate: () => {
+                    navigateCalls += 1;
+                    return 'prevent';
+                }
+            });
+
+            controller.setItems([
+                { id: 'photos', label: 'Photos', href: '/photos', mobileLabel: 'Photos' }
+            ]);
+
+            const link = root.querySelector('a[data-wa-nav-id="photos"]');
+            assert(link instanceof HTMLAnchorElement, 'Legacy navbar test link was not rendered.');
+
+            const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
+            const dispatchResult = link.dispatchEvent(clickEvent);
+            assert(navigateCalls === 1, `Expected 1 onNavigate call, got ${navigateCalls}.`);
+            assert(dispatchResult === false, 'Expected click to be prevented by onNavigate callback.');
+
+            controller.open();
+            assert(root.classList.contains('menu-open'), 'Legacy open class missing after open().');
+
+            const outside = document.createElement('div');
+            document.body.appendChild(outside);
+            outside.click();
+            await wait(20);
+            assert(!root.classList.contains('menu-open'), 'Navbar did not close on outside click.');
+            outside.remove();
+
+            controller.open();
+            window.dispatchEvent(new Event('resize'));
+            await wait(20);
+            assert(!root.classList.contains('menu-open'), 'Navbar did not close on resize in desktop viewport.');
+
+            controller.destroy();
+        });
+
+        runBtn?.addEventListener('click', () => {
+            void runAllTests();
+        });
+
+        clearBtn?.addEventListener('click', () => {
+            resultsEl.replaceChildren();
+            setSummary('<div><strong>Cleared.</strong> Click <code>Run All Tests</code>.</div>');
+        });
+    </script>
+}

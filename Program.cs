@@ -261,6 +261,16 @@ if (app.Environment.IsDevelopment())
         name: "ui-kit",
         pattern: "/internal/ui",
         defaults: new { controller = "Home", action = "UiKit" });
+
+    app.MapControllerRoute(
+        name: "indium-demo",
+        pattern: "/internal/indium",
+        defaults: new { controller = "Home", action = "Indium" });
+
+    app.MapControllerRoute(
+        name: "indium-tests",
+        pattern: "/internal/indium/tests",
+        defaults: new { controller = "Home", action = "IndiumTests" });
 }
 
 // Project detail route to ProjectsController Detail action

@@ -30,6 +30,31 @@ public class HomeController : Controller
         return View();
     }
 
+    /// <summary>
+    /// Internal Indium UI kit demo page with local mock data.
+    /// </summary>
+    public IActionResult Indium()
+    {
+        ViewData["Title"] = "Indium Demo";
+        ViewData["CanPinchToZoom"] = true;
+        ViewData["IsolatedCss"] = true;
+        ViewData["ShowLoadingOverlay"] = false;
+        return View();
+    }
+
+    /// <summary>
+    /// Internal automated browser test harness for Indium UI component/runtime checks.
+    /// </summary>
+    public IActionResult IndiumTests()
+    {
+        ViewData["Title"] = "Indium UI Tests";
+        ViewData["CanPinchToZoom"] = true;
+        ViewData["IsolatedCss"] = true;
+        ViewData["HideNavbar"] = true;
+        ViewData["ShowLoadingOverlay"] = false;
+        return View();
+    }
+
     public IActionResult Photos()
     {
         ViewData["Title"] = "Photos";

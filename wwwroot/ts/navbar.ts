@@ -1,37 +1,67 @@
 /**
- * navbar.js
- * @fileoverview URL display component with glass surface effect
- * @description Handles the glass surface URL bar with responsive burger menu
+ * navbar.ts
+ * Host-owned navbar orchestration that consumes the generic Indium navbar API.
  */
 
-import { createGlassSurface } from './components/glassSurface.js';
-import type { GlassSurfaceInstance } from './components/glassSurface.js';
-import { isMobile, logEvent, LogData, LogLevel } from './common.js';
+import { logEvent, type LogData, type LogLevel } from './common.js';
 import stateManager, { ViewState } from './stateManager.js';
 
+interface NavbarItem {
+    id: string;
+    label: string;
+    href: string;
+    iconSrc?: string;
+    iconAlt?: string;
+    mobileLabel?: string;
+    mobileIconSrc?: string;
+    external?: boolean;
+    target?: string;
+    rel?: string;
+    ariaLabel?: string;
+    className?: string;
+}
+
+interface NavbarNavigateContext {
+    item: NavbarItem;
+    itemId: string;
+    event: MouseEvent;
+    source: 'desktop' | 'mobile';
+}
+
+interface NavbarController {
+    readonly readyPromise: Promise<void>;
+    open(): void;
+    close(): void;
+    toggle(): void;
+    setItems(items: NavbarItem[]): void;
+    setActive(itemId: string | null): void;
+    destroy(): void;
+}
+
+type CreateNavbarController = (options: {
+    root?: HTMLElement | null;
+    enableGlass?: boolean;
+    onNavigate?: (context: NavbarNavigateContext) => 'prevent' | void;
+}) => NavbarController;
+
+const ICONS = {
+    home: '/assets/svg/bt-logo-boxed.svg',
+    photos: '/assets/svg/polaroid-filled.svg',
+    projects: '/assets/svg/project-filled.svg',
+    linkedin: '/assets/svg/linkedin-logo-filled.svg',
+    email: '/assets/svg/email-filled.svg'
+} as const;
+
 class Navbar {
-    private container: HTMLElement | null;
-    private glassSurface: GlassSurfaceInstance | null;
-    private burgerButton: HTMLElement | null;
-    private navLinks: HTMLElement | null;
-    private isMenuOpen: boolean;
-    private urlText: HTMLElement | null;
-    private mobilePhotosLinks: Element[];
-    private mobileProjectsLinks: Element[];
-    private readyPromise: Promise<void>;
-    private _resolveReady: (() => void) | null = null;
-    [key: string]: any;
+    private container: HTMLElement | null = null;
+    private controller: NavbarController | null = null;
+    private readyResolver: (() => void) | null = null;
+    private readonly unbind: Array<() => void> = [];
+    readonly readyPromise: Promise<void>;
+
     constructor() {
-        this.container = null;
-        this.glassSurface = null;
-        this.burgerButton = null;
-        this.navLinks = null;
-        this.isMenuOpen = false;
-        this.urlText = null;
-        this.mobilePhotosLinks = []; // Store mobile photos links for dynamic updates
-        this.mobileProjectsLinks = []; // Store mobile projects links for dynamic updates
-        this.readyPromise = new Promise((resolve) => { // Signal to subscribers that the navbar is ready
-            this._resolveReady = resolve;
+        this.readyPromise = new Promise((resolve) => {
+            this.readyResolver = resolve;
         });
         this.init();
     }
@@ -40,338 +70,268 @@ class Navbar {
         logEvent('navbar', event, data, note, level);
     }
 
-    //==============================================================================================
-    /**
-     * Initialize the URL display with glass surface
-     */
-    init() {
-        // Wait for DOM to be ready
+    private resolveReady() {
+        if (!this.readyResolver) return;
+        this.readyResolver();
+        this.readyResolver = null;
+    }
+
+    private init() {
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => this.setup());
-        } else {
-            this.setup();
+            document.addEventListener('DOMContentLoaded', () => {
+                void this.setup();
+            }, { once: true });
+            return;
+        }
+        void this.setup();
+    }
+
+    private async loadCreateNavbarController(): Promise<CreateNavbarController | null> {
+        try {
+            const modulePath = '/apps/indium/dist/components/navbar.js';
+            const navbarModule = await import(modulePath);
+            const createFn = (navbarModule as { createNavbarController?: unknown }).createNavbarController;
+            if (typeof createFn !== 'function') {
+                this.log('Setup Failed', { reason: 'missing-createNavbarController' }, undefined, 'error');
+                return null;
+            }
+            return createFn as CreateNavbarController;
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            this.log('Setup Failed', { reason: 'import-error' }, message, 'error');
+            return null;
         }
     }
 
-    //==============================================================================================
-    /**
-     * Setup the glass surface and event listeners
-     */
-    setup() {
+    private async setup() {
         this.container = document.querySelector('.url-display');
         if (!this.container) {
             this.log('Setup Skipped', { reason: 'container-missing' }, undefined, 'warn');
+            this.resolveReady();
             return;
         }
 
-        // Get references to elements
-        this.burgerButton = this.container.querySelector('.burger-menu');
-        this.navLinks = this.container.querySelector('.url-nav-links');
-
-        // Create glass surface wrapper
-        const glassSurfaceWrapper = this.container.querySelector('.glass-surface-wrapper');
-        if (!glassSurfaceWrapper) {
-            this.log('Setup Skipped', { reason: 'wrapper-missing' }, undefined, 'warn');
+        const createNavbarController = await this.loadCreateNavbarController();
+        if (!createNavbarController) {
+            this.resolveReady();
             return;
         }
 
-        // Get the content that should be inside the glass surface
-        const content = glassSurfaceWrapper.querySelector('.url-display-content');
-        if (!content) {
-            this.log('Setup Skipped', { reason: 'content-missing' }, undefined, 'warn');
-            return;
-        }
-
-        // Create glass surface with appropriate dimensions
-        this.glassSurface = createGlassSurface({
-            width: 'auto',
-            height: 'auto',
-            borderRadius: 24,
-            borderWidth: 0.07,
-            brightness: 50,
-            opacity: 0.93,
-            blur: 50,
-            displace: 0,
-            backgroundOpacity: 0.12,
-            saturation: 0.8,
-            distortionScale: -15,
-            redOffset: 8,
-            greenOffset: 8,
-            blueOffset: 8,
-            xChannel: 'R',
-            yChannel: 'G',
-            mixBlendMode: 'difference',
-            className: 'url-display-glass',
-            style: {
-                minHeight: '48px',
-                transition: 'height 0.3s ease'
-            }
+        this.controller = createNavbarController({
+            root: this.container,
+            enableGlass: true,
+            onNavigate: (context) => this.onNavigate(context)
         });
 
-        // Move content into glass surface
-        this.glassSurface.contentElement.appendChild(content);
+        await this.controller.readyPromise;
+        this.bindBrandClick();
+        this.bindViewUpdates();
 
-        // Replace wrapper with glass surface
-        glassSurfaceWrapper.replaceWith(this.glassSurface.element);
-        this.log('Glass Surface Initialized');
-
-        // Setup event listeners
-        this.setupEventListeners();
-        this.log('Event Listeners Bound');
-        
-        // Initial responsive check
-        this.handleResize();
-
-        // Signal to subscribers that the navbar is ready
-        if (this._resolveReady) {
-            this._resolveReady();
-            this._resolveReady = null;
-        }
+        this.refreshItems(this.getCurrentView());
         this.log('Navbar Ready');
+        this.resolveReady();
     }
 
-    //==============================================================================================
-    /**
-     * Setup event listeners for burger menu and resize
-     */
-    setupEventListeners() {
-        // Get URL text element
-        this.urlText = document.querySelector('.url-text');
-
-        // On mobile, make the entire bar clickable
-        if (this.glassSurface && this.glassSurface.element) {
-            this.glassSurface.element.addEventListener('click', (e: MouseEvent) => {
-                // Only trigger on mobile (when burger is visible)
-                if (window.innerWidth <= 768) {
-                    // Don't toggle if clicking on a link
-                    const target = e.target as Element | null;
-                    if (!target?.closest('.url-link')) {
-                        e.stopPropagation();
-                        this.toggleMenu();
-                        this.log('Mobile Bar Toggled', { isOpen: Number(this.isMenuOpen) });
-                    }
-                }
-            });
+    private getCurrentView(): string {
+        try {
+            const view = stateManager.getCurrentView();
+            if (view === ViewState.PHOTOS || view === ViewState.PROJECTS || view === ViewState.CARD) {
+                return view;
+            }
+        } catch {
+            // no-op; fallback below
         }
 
-        // Intercept photos link clicks for SPA navigation (no router, so we need to handle this ourselves)
-        const photoLinks = document.querySelectorAll('.url-link-photos');
-        photoLinks.forEach(link => {
-            // Store mobile links for later updates
-            if ((link as Element).closest('.url-nav-links.mobile')) {
-                this.mobilePhotosLinks.push(link);
-            }
+        const path = window.location.pathname.toLowerCase();
+        if (path.startsWith('/photos')) return ViewState.PHOTOS;
+        if (path.startsWith('/projects')) return ViewState.PROJECTS;
+        return ViewState.CARD;
+    }
 
-            (link as HTMLElement).addEventListener('click', (e: MouseEvent) => {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                // Close mobile navbar dropdown if open
-                if (this.isMenuOpen) {
-                    this.closeMenu();
-                }
-                
-                // Determine if SPA navigation is possible on this page
-                const hasContainers = !!document.querySelector('.photo-gallery-container') && !!document.querySelector('.card-container');
-                const canSpa = hasContainers && !!window.photoGalleryInstance && !!window.card3DInstance;
-
-                if (canSpa) {
-                    // Determine target view based on current state
-                    const currentView = stateManager.getCurrentView();
-                    const targetView = currentView === ViewState.PHOTOS ? ViewState.CARD : ViewState.PHOTOS;
-                    stateManager.navigateToView(targetView, true);
-                    this.log('Photos Link SPA', { from: currentView, to: targetView });
-                } else {
-                    // Fallback to full navigation
-                    const path = window.location.pathname;
-                    if (path.toLowerCase().startsWith('/photos')) {
-                        window.location.reload();
-                    } else {
-                        window.location.href = '/photos';
-                    }
-                    this.log('Photos Link Hard Nav', { path });
-                }
-            });
-        });
-
-        // Intercept projects link clicks
-        const projectLinks = document.querySelectorAll('.url-link-projects');
-        projectLinks.forEach(link => {
-            if ((link as Element).closest('.url-nav-links.mobile')) {
-                this.mobileProjectsLinks.push(link);
-            }
-
-            (link as HTMLElement).addEventListener('click', (e: MouseEvent) => {
-                e.preventDefault();
-                e.stopPropagation();
-
-                if (this.isMenuOpen) {
-                    this.closeMenu();
-                }
-
-                const hasContainers = !!document.querySelector('.projects-container') && !!document.querySelector('.card-container');
-                const canSpa = hasContainers && !!window.projectsInstance && !!window.card3DInstance;
-
-                if (canSpa) {
-                    const currentView = stateManager.getCurrentView();
-                    const targetView = currentView === ViewState.PROJECTS ? ViewState.CARD : ViewState.PROJECTS;
-                    stateManager.navigateToView(targetView, true);
-                    this.log('Projects Link SPA', { from: currentView, to: targetView });
-                } else {
-                    const path = window.location.pathname;
-                    if (path.toLowerCase() === '/projects') {
-                        window.location.reload();
-                    } else {
-                        window.location.href = '/projects';
-                    }
-                    this.log('Projects Link Hard Nav', { path });
-                }
-            });
-        });
-
-        // Make URL text clickable to return home (desktop only)
-        if (this.urlText) {
-            this.urlText.addEventListener('click', (e: MouseEvent) => {
-                // Only work on desktop
-                if (window.innerWidth > 768) {
-                    e.preventDefault();
-                    e.stopPropagation();
-
-                    const hasContainers = !!document.querySelector('.card-container'); // does card container exist?
-                    const canSpa = hasContainers && !!window.card3DInstance; // do card container & card3d both exist?
-
-                    if (canSpa) {
-                        // Navigate to card view
-                        stateManager.navigateToView(ViewState.CARD, true);
-                        this.log('Home Link SPA');
-                    } else {
-                        window.location.href = '/';
-                        this.log('Home Link Hard Nav');
-                    }
-                }
-            });
-        }
-
-        // Listen for view changes to update mobile nav
+    private bindViewUpdates() {
         stateManager.onViewChange((view: string) => {
-            this.updateMobileNav(view);
+            this.refreshItems(view);
             this.log('View Changed', { view });
         });
-
-        // Close menu when clicking outside
-        document.addEventListener('click', (e: MouseEvent) => {
-            if (this.isMenuOpen && !(this.container as HTMLElement).contains(e.target as Node)) {
-                this.closeMenu();
-            }
-        });
-
-        // Handle window resize
-        window.addEventListener('resize', () => this.handleResize());
     }
 
-    //==============================================================================================
-    /**
-     * Update mobile nav based on current view
-     * TODO: dont hardcode this HTML
-     * @param {ViewState} view - Current view state
-     */
-    updateMobileNav(view: string) {
-        // Update Photos link state
-        this.mobilePhotosLinks.forEach((link: Element) => {
-            if (view === ViewState.PHOTOS) {
-                link.innerHTML = `
-                    <img src="/assets/svg/bt-logo-boxed.svg" alt="" width="20" height="20" />
-                    <span>Card</span>
-                `;
-            } else {
-                link.innerHTML = `
-                    <img src="/assets/svg/polaroid-filled.svg" alt="" width="20" height="20" />
-                    <span>Photos</span>
-                `;
-            }
-        });
+    private bindBrandClick() {
+        if (!this.container) return;
+        const brand = this.container.querySelector('.url-text');
+        if (!(brand instanceof HTMLElement)) return;
 
-        // Update Projects link state
-        this.mobileProjectsLinks.forEach((link: Element) => {
-            if (view === ViewState.PROJECTS) {
-                link.innerHTML = `
-                    <img src="/assets/svg/bt-logo-boxed.svg" alt="" width="20" height="20" />
-                    <span>Card</span>
-                `;
-            } else {
-                link.innerHTML = `
-                    <img src="/assets/svg/project-filled.svg" alt="" width="20" height="20" />
-                    <span>Projects</span>
-                `;
-            }
-        });
-        this.log('Mobile Nav Updated', { view });
+        const onBrandClick = (event: MouseEvent) => {
+            if (window.innerWidth <= 768) return;
+            event.preventDefault();
+            event.stopPropagation();
+            this.navigateHome();
+        };
+
+        brand.addEventListener('click', onBrandClick);
+        this.unbind.push(() => brand.removeEventListener('click', onBrandClick));
     }
 
-    //==============================================================================================
-    /**
-     * Toggle the burger menu
-     */
-    toggleMenu() {
-        if (this.isMenuOpen) {
-            this.closeMenu();
+    private refreshItems(view: string) {
+        if (!this.controller) return;
+        this.controller.setItems(this.buildItems(view));
+
+        if (view === ViewState.PHOTOS) {
+            this.controller.setActive('photos');
+            return;
+        }
+        if (view === ViewState.PROJECTS) {
+            this.controller.setActive('projects');
+            return;
+        }
+        this.controller.setActive(null);
+    }
+
+    private buildItems(view: string): NavbarItem[] {
+        const photosMobileIsCard = view === ViewState.PHOTOS;
+        const projectsMobileIsCard = view === ViewState.PROJECTS;
+
+        return [
+            {
+                id: 'photos',
+                label: 'Photos',
+                href: '/photos',
+                iconSrc: ICONS.photos,
+                iconAlt: '',
+                mobileLabel: photosMobileIsCard ? 'Card' : 'Photos',
+                mobileIconSrc: photosMobileIsCard ? ICONS.home : ICONS.photos,
+                ariaLabel: 'Photos'
+            },
+            {
+                id: 'projects',
+                label: 'Projects',
+                href: '/projects',
+                iconSrc: ICONS.projects,
+                iconAlt: '',
+                mobileLabel: projectsMobileIsCard ? 'Card' : 'Projects',
+                mobileIconSrc: projectsMobileIsCard ? ICONS.home : ICONS.projects,
+                ariaLabel: 'Projects'
+            },
+            {
+                id: 'linkedin',
+                label: 'LinkedIn',
+                href: 'https://linkedin.com/in/brandonkthomas',
+                iconSrc: ICONS.linkedin,
+                iconAlt: '',
+                mobileIconSrc: ICONS.linkedin,
+                external: true,
+                target: '_blank',
+                rel: 'noopener noreferrer',
+                ariaLabel: 'LinkedIn'
+            },
+            {
+                id: 'contact',
+                label: 'Contact',
+                href: 'mailto:me@brandonthomas.net',
+                iconSrc: ICONS.email,
+                iconAlt: '',
+                mobileIconSrc: ICONS.email,
+                className: 'url-link url-link-external',
+                ariaLabel: 'Contact'
+            }
+        ];
+    }
+
+    private onNavigate(context: NavbarNavigateContext): 'prevent' | void {
+        if (context.itemId === 'photos') {
+            this.navigatePhotos();
+            return 'prevent';
+        }
+
+        if (context.itemId === 'projects') {
+            this.navigateProjects();
+            return 'prevent';
+        }
+    }
+
+    private navigatePhotos() {
+        if (this.tryToggleSpaPhotos()) {
+            this.log('Photos Link SPA', { to: this.getCurrentView() });
+            return;
+        }
+
+        const path = window.location.pathname.toLowerCase();
+        if (path.startsWith('/photos')) {
+            window.location.reload();
         } else {
-            this.openMenu();
+            window.location.href = '/photos';
         }
-        this.log('Menu Toggled', { isOpen: Number(this.isMenuOpen) });
+        this.log('Photos Link Hard Nav', { path });
     }
 
-    //==============================================================================================
-    /**
-     * Open the burger menu
-     */
-    openMenu() {
-        this.isMenuOpen = true;
-        (this.container as HTMLElement).classList.add('menu-open');
-        if (this.burgerButton) {
-            this.burgerButton.setAttribute('aria-expanded', 'true');
+    private navigateProjects() {
+        if (this.tryToggleSpaProjects()) {
+            this.log('Projects Link SPA', { to: this.getCurrentView() });
+            return;
         }
-        this.log('Menu Opened');
+
+        const path = window.location.pathname.toLowerCase();
+        if (path === '/projects') {
+            window.location.reload();
+        } else {
+            window.location.href = '/projects';
+        }
+        this.log('Projects Link Hard Nav', { path });
     }
 
-    //==============================================================================================
-    /**
-     * Close the burger menu
-     */
-    closeMenu() {
-        this.isMenuOpen = false;
-        (this.container as HTMLElement).classList.remove('menu-open');
-        if (this.burgerButton) {
-            this.burgerButton.setAttribute('aria-expanded', 'false');
+    private navigateHome() {
+        const hasCardContainer = !!document.querySelector('.card-container');
+        const canSpa = hasCardContainer && !!window.card3DInstance;
+
+        if (canSpa) {
+            stateManager.navigateToView(ViewState.CARD, true);
+            this.log('Home Link SPA');
+            return;
         }
-        this.log('Menu Closed');
+
+        window.location.href = '/';
+        this.log('Home Link Hard Nav');
     }
 
-    //==============================================================================================
-    /**
-     * Handle window resize
-     */
-    handleResize() {
-        // Close menu if switching from mobile to desktop
-        if (!isMobile() && this.isMenuOpen) {
-            this.closeMenu();
-            this.log('Menu Closed On Resize');
-        }
+    private tryToggleSpaPhotos(): boolean {
+        const hasContainers = !!document.querySelector('.photo-gallery-container')
+            && !!document.querySelector('.card-container');
+        const canSpa = hasContainers && !!window.photoGalleryInstance && !!window.card3DInstance;
+        if (!canSpa) return false;
+
+        const current = this.getCurrentView();
+        const target = current === ViewState.PHOTOS ? ViewState.CARD : ViewState.PHOTOS;
+        stateManager.navigateToView(target, true);
+        return true;
     }
 
-    //==============================================================================================
-    /**
-     * Cleanup
-     */
+    private tryToggleSpaProjects(): boolean {
+        const hasContainers = !!document.querySelector('.projects-container')
+            && !!document.querySelector('.card-container');
+        const canSpa = hasContainers && !!window.projectsInstance && !!window.card3DInstance;
+        if (!canSpa) return false;
+
+        const current = this.getCurrentView();
+        const target = current === ViewState.PROJECTS ? ViewState.CARD : ViewState.PROJECTS;
+        stateManager.navigateToView(target, true);
+        return true;
+    }
+
     destroy() {
-        if (this.glassSurface) {
-            this.glassSurface.destroy();
+        while (this.unbind.length > 0) {
+            const fn = this.unbind.pop();
+            try {
+                fn?.();
+            } catch {
+                // no-op
+            }
         }
+
+        this.controller?.destroy();
+        this.controller = null;
         this.log('Navbar Destroyed');
     }
 }
 
-// Initialize when module loads
 const navbarManager = new Navbar();
 (window as any).navbarManagerInstance = navbarManager;
 logEvent('navbar', 'Instance Mounted');

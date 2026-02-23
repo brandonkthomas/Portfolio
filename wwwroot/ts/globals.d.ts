@@ -10,6 +10,7 @@ declare global {
         photoGalleryInstance?: any;
         projectsInstance?: any;
         navbarManagerInstance?: any;
+        stateManagerInstance?: any;
         // Debug/diagnostics
         __dotnetDebuggerAttached?: boolean;
         __debugOverrideFlag?: boolean;

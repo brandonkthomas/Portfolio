@@ -694,5 +694,6 @@ class StateManager {
 
 // Create and export singleton instance
 const stateManager = new StateManager();
+(window as any).stateManagerInstance = stateManager;
 
 export default stateManager;

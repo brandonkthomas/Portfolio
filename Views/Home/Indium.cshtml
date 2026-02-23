@@ -1,0 +1,551 @@
+@{
+    ViewData["Title"] = ViewData["Title"] ?? "Indium Demo";
+    ViewData["CanPinchToZoom"] = true;
+    ViewData["IsolatedCss"] = true;
+    ViewData["ShowLoadingOverlay"] = false;
+}
+
+<section class="wa-app" data-wa-app>
+    <header class="wa-topbar" aria-label="Indium navigation">
+        <div class="wa-topbar__inner">
+            <div class="wa-topbar__left">
+                <button type="button" class="wa-iconbtn wa-topbar__burger" data-wa-sidebar-toggle aria-label="Open menu">
+                    <span aria-hidden="true">
+                        <img src="~/apps/indium/assets/svg/burger-menu.svg" asp-append-version="true" alt="" />
+                    </span>
+                </button>
+
+                <div class="wa-topbar__history" aria-label="History navigation">
+                    <button type="button" class="wa-btn wa-btn--icon" data-wa-nav-back aria-label="Back">
+                        <span aria-hidden="true">
+                            <img src="~/apps/indium/assets/svg/arrow-left.svg" asp-append-version="true" alt="" />
+                        </span>
+                    </button>
+                    <button type="button" class="wa-btn wa-btn--icon" data-wa-nav-forward aria-label="Forward">
+                        <span aria-hidden="true">
+                            <img src="~/apps/indium/assets/svg/arrow-right.svg" asp-append-version="true" alt="" />
+                        </span>
+                    </button>
+                </div>
+
+                <button type="button" class="wa-iconbtn wa-topbar__back" data-wa-nav-back aria-label="Back">
+                    <span aria-hidden="true">
+                        <img src="~/apps/indium/assets/svg/arrow-left.svg" asp-append-version="true" alt="" />
+                    </span>
+                </button>
+
+                <div class="wa-topbar__titleblock">
+                    <div class="wa-topbar__title" aria-label="Current section">
+                        <span data-wa-topbar-title>Indium</span>
+                    </div>
+                    <p class="wa-lede wa-breadcrumbs" data-wa-breadcrumbs>Portfolio integration demo</p>
+                </div>
+            </div>
+
+            <div class="wa-topbar__actions">
+                <a class="wa-btn wa-btn--icon wa-topbar__play" href="#" data-wa-nav="home" aria-label="Go to home view">
+                    <span class="wa-topbar__play-icon" aria-hidden="true">
+                        <img src="~/apps/indium/assets/svg/home-filled.svg" asp-append-version="true" alt="" />
+                    </span>
+                    <span class="wa-topbar__play-label">Home</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="glass-surface wa-shell" role="application" aria-label="Indium demo">
+        <div class="glass-surface__content wa-shell__content">
+            <div class="wa-layout" data-wa-layout>
+                <aside class="wa-sidebar" data-wa-sidebar aria-label="Indium navigation">
+                    <div class="wa-sidebar__inner">
+                        <div class="wa-sidebar__header">
+                            <a class="wa-brand wa-brand--sidebar" href="#" data-wa-nav="home" aria-label="Indium home">
+                                <span class="wa-brand__mark" data-wa-brand-mark hidden>
+                                    <img data-wa-brand-logo alt="" hidden />
+                                </span>
+                                <span class="wa-brand__text">Indium</span>
+                            </a>
+
+                            <button type="button" class="wa-iconbtn wa-sidebar__close" data-wa-sidebar-close aria-label="Close menu">
+                                <span aria-hidden="true">✕</span>
+                            </button>
+                        </div>
+
+                        <nav class="wa-sidenav" aria-label="Primary navigation">
+                            <a class="wa-sidenav__link" href="#" data-wa-nav="home">
+                                <img class="wa-sidenav__icon" src="~/apps/indium/assets/svg/home-filled.svg" asp-append-version="true" alt="" aria-hidden="true" />
+                                <span class="wa-sidenav__label">Home</span>
+                            </a>
+                            <a class="wa-sidenav__link" href="#" data-wa-nav="search">
+                                <img class="wa-sidenav__icon" src="~/apps/indium/assets/svg/search-filled.svg" asp-append-version="true" alt="" aria-hidden="true" />
+                                <span class="wa-sidenav__label">Search</span>
+                            </a>
+                            <a class="wa-sidenav__link" href="#" data-wa-nav="library">
+                                <img class="wa-sidenav__icon" src="~/apps/indium/assets/svg/playlist-filled.svg" asp-append-version="true" alt="" aria-hidden="true" />
+                                <span class="wa-sidenav__label">Library</span>
+                            </a>
+                        </nav>
+
+                        <div class="wa-sidebar__footer">
+                            <div class="wa-sidebar__version" data-wa-version aria-label="Indium build"></div>
+                        </div>
+                    </div>
+                </aside>
+
+                <div class="wa-content">
+                    <main class="wa-main" aria-label="Indium demo content">
+                        <div class="wa-view-host" data-wa-view-host></div>
+
+                        <template id="wa-tpl-home">
+                            <section class="wa-view wa-view--home" data-wa-view="home" aria-label="Home">
+                                <h1 class="wa-h1 wa-sr-only">Home</h1>
+
+                                <div class="wa-grid wa-grid--quick">
+                                    <a class="wa-card wa-card--link" href="#" data-wa-nav="search">
+                                        <h3 class="wa-h3 wa-homequick__title">
+                                            <img class="wa-homequick__icon" src="~/apps/indium/assets/svg/search-filled.svg" asp-append-version="true" alt="" aria-hidden="true" />
+                                            <span>Search</span>
+                                        </h3>
+                                        <p class="wa-copy wa-homequick__caption">Filter mock catalog data instantly.</p>
+                                    </a>
+                                    <a class="wa-card wa-card--link" href="#" data-wa-nav="library">
+                                        <h3 class="wa-h3 wa-homequick__title">
+                                            <img class="wa-homequick__icon" src="~/apps/indium/assets/svg/playlist-filled.svg" asp-append-version="true" alt="" aria-hidden="true" />
+                                            <span>Library</span>
+                                        </h3>
+                                        <p class="wa-copy wa-homequick__caption">Infinite-scroll demo with deterministic mock pages.</p>
+                                    </a>
+                                </div>
+
+                                <div class="wa-card wa-card--glass">
+                                    <h2 class="wa-h2">Recent</h2>
+                                    <p class="wa-copy">Home feed uses `attachInfiniteScroll` with local mock data.</p>
+                                    <div class="wa-list" data-wa-list="recent" aria-label="Recent items"></div>
+                                </div>
+
+                                <div class="wa-card wa-card--glass">
+                                    <h2 class="wa-h2">Dialogs</h2>
+                                    <p class="wa-copy">Smoke-test shared dialog component wiring.</p>
+                                    <button type="button" class="wa-btn wa-btn--primary" data-wa-demo-alert>
+                                        Show Alert
+                                    </button>
+                                </div>
+                            </section>
+                        </template>
+
+                        <template id="wa-tpl-search">
+                            <section class="wa-view wa-view--search" data-wa-view="search" aria-label="Search">
+                                <h1 class="wa-h1 wa-sr-only">Search</h1>
+
+                                <div class="wa-searchbar" role="search" aria-label="Search">
+                                    <form data-wa-search-form>
+                                        <div class="wa-searchbar__row">
+                                            <input class="wa-searchbar__input" data-wa-search-input type="search" placeholder="Search songs, artists, albums..." autocomplete="off" />
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <div class="wa-card wa-card--glass" data-wa-search-results-card style="display:none">
+                                    <div class="wa-copy" data-wa-search-status></div>
+                                    <div class="wa-list" data-wa-search-results aria-label="Search results"></div>
+                                </div>
+                            </section>
+                        </template>
+
+                        <template id="wa-tpl-library">
+                            <section class="wa-view" data-wa-view="library" aria-label="Library">
+                                <h1 class="wa-h1">Library</h1>
+                                <p class="wa-copy">Mock library rows loaded in pages to exercise list/card + infinite-scroll behavior.</p>
+                                <div class="wa-card wa-card--glass">
+                                    <div class="wa-list" data-wa-list="library" aria-label="Library items"></div>
+                                </div>
+                            </section>
+                        </template>
+                    </main>
+                </div>
+            </div>
+
+            <div class="wa-sidebar-overlay" data-wa-sidebar-overlay aria-hidden="true"></div>
+        </div>
+    </div>
+</section>
+
+@section Styles {
+    <link rel="stylesheet" href="~/apps/indium/dist/indium.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script type="module">
+        (async function () {
+            const {
+                attachInfiniteScroll,
+                bootIndium,
+                showAlert
+            } = await import('/apps/indium/dist/indium.js');
+
+            const VIEW_LABELS = {
+                home: 'Home',
+                search: 'Search',
+                library: 'Library'
+            };
+
+            const BREADCRUMB_PATHS = {
+                home: ['home'],
+                search: ['home', 'search'],
+                library: ['home', 'library']
+            };
+
+            const boot = bootIndium({
+                routeRoot: '/internal/indium',
+                assetBasePath: '/apps/indium',
+                brandLogoSrc: '/apps/indium/assets/branding/icon-Indium.png',
+                brandLogoAlt: 'Indium logo'
+            });
+
+            const appRoot = boot.appRoot;
+            if (!appRoot) return;
+
+            const versionEl = appRoot.querySelector('[data-wa-version]');
+            if (versionEl) {
+                versionEl.textContent = `v${boot.config.version}`;
+            }
+
+            const viewHost = appRoot.querySelector('[data-wa-view-host]');
+            if (!viewHost) return;
+
+            const recentItems = Array.from({ length: 120 }, (_, i) => ({
+                title: `Recent Track ${String(i + 1).padStart(3, '0')}`,
+                meta: `Artist ${((i % 12) + 1)} · ${2020 + (i % 6)}`
+            }));
+
+            const libraryItems = Array.from({ length: 180 }, (_, i) => ({
+                title: `Library Item ${String(i + 1).padStart(3, '0')}`,
+                meta: `Playlist ${((i % 15) + 1)} · ${20 + (i % 40)} tracks`
+            }));
+
+            const searchable = [...recentItems, ...libraryItems];
+            const state = {
+                currentView: 'home',
+                recentCursor: 0,
+                recentLoading: false,
+                libraryCursor: 0,
+                libraryLoading: false,
+                recentController: null,
+                libraryController: null,
+                history: ['home'],
+                historyIndex: 0
+            };
+
+            function chunk(source, start, size) {
+                return source.slice(start, Math.min(start + size, source.length));
+            }
+
+            function createListItem(item) {
+                const row = document.createElement('div');
+                row.className = 'wa-listitem';
+
+                const title = document.createElement('div');
+                title.className = 'wa-listitem__title';
+                title.textContent = item.title;
+
+                const meta = document.createElement('div');
+                meta.className = 'wa-listitem__meta';
+                meta.textContent = item.meta;
+
+                row.append(title, meta);
+                return row;
+            }
+
+            function setHistoryButtonState() {
+                const canGoBack = state.historyIndex > 0;
+                const canGoForward = state.historyIndex < state.history.length - 1;
+
+                appRoot.querySelectorAll('[data-wa-nav-back]').forEach((el) => {
+                    if (el instanceof HTMLButtonElement) {
+                        el.disabled = !canGoBack;
+                    }
+                });
+
+                appRoot.querySelectorAll('[data-wa-nav-forward]').forEach((el) => {
+                    if (el instanceof HTMLButtonElement) {
+                        el.disabled = !canGoForward;
+                    }
+                });
+            }
+
+            function renderBreadcrumbs(view) {
+                const crumbs = appRoot.querySelector('[data-wa-breadcrumbs]');
+                if (!(crumbs instanceof HTMLElement)) return;
+
+                crumbs.replaceChildren();
+                const path = BREADCRUMB_PATHS[view] || [view];
+
+                path.forEach((segment, index) => {
+                    const isCurrent = index === path.length - 1;
+                    const label = VIEW_LABELS[segment] || segment;
+
+                    const item = document.createElement('button');
+                    item.type = 'button';
+                    item.className = `wa-breadcrumbs__item ${isCurrent ? 'wa-breadcrumbs__item--current' : 'wa-breadcrumbs__item--link'}`;
+                    item.textContent = label;
+
+                    if (!isCurrent) {
+                        item.setAttribute('data-wa-breadcrumb-target', segment);
+                    } else {
+                        item.disabled = true;
+                    }
+
+                    crumbs.appendChild(item);
+
+                    if (!isCurrent) {
+                        const sep = document.createElement('span');
+                        sep.className = 'wa-breadcrumbs__sep';
+                        sep.textContent = '/';
+                        crumbs.appendChild(sep);
+                    }
+                });
+            }
+
+            function setActiveNav(view) {
+                appRoot.querySelectorAll('[data-wa-nav]').forEach((el) => {
+                    if (!(el instanceof HTMLElement)) return;
+                    const active = el.getAttribute('data-wa-nav') === view;
+                    if (el.classList.contains('wa-sidenav__link')) {
+                        if (active) el.setAttribute('data-wa-active', 'true');
+                        else el.removeAttribute('data-wa-active');
+                    }
+                });
+
+                const titleEl = appRoot.querySelector('[data-wa-topbar-title]');
+                if (titleEl) {
+                    titleEl.textContent = VIEW_LABELS[view] || view;
+                }
+
+                renderBreadcrumbs(view);
+            }
+
+            function mountView(view, animate = true) {
+                const target = ['home', 'search', 'library'].includes(view) ? view : 'home';
+                const tpl = document.getElementById(`wa-tpl-${target}`);
+                if (!(tpl instanceof HTMLTemplateElement)) return;
+
+                state.recentController?.destroy?.();
+                state.libraryController?.destroy?.();
+                state.recentController = null;
+                state.libraryController = null;
+
+                const fragment = tpl.content.cloneNode(true);
+                const mount = document.createElement('div');
+                mount.className = 'wa-view-mount';
+                if (animate) {
+                    mount.classList.add('wa-view-mount--initial');
+                }
+                mount.appendChild(fragment);
+                viewHost.replaceChildren(mount);
+
+                if (animate) {
+                    requestAnimationFrame(() => {
+                        mount.classList.add('wa-view-mount--enter');
+                        mount.classList.remove('wa-view-mount--initial');
+                    });
+                }
+
+                appRoot.setAttribute('data-wa-view', target);
+                state.currentView = target;
+                setActiveNav(target);
+
+                if (target === 'home') initHome();
+                if (target === 'search') initSearch();
+                if (target === 'library') initLibrary();
+            }
+
+            function navigateTo(view, options = {}) {
+                const target = ['home', 'search', 'library'].includes(view) ? view : 'home';
+                const pushHistory = options.pushHistory !== false;
+                const animate = options.animate !== false;
+
+                if (pushHistory) {
+                    const current = state.history[state.historyIndex];
+                    if (current !== target) {
+                        state.history = state.history.slice(0, state.historyIndex + 1);
+                        state.history.push(target);
+                        state.historyIndex = state.history.length - 1;
+                    }
+                }
+
+                mountView(target, animate);
+                setHistoryButtonState();
+            }
+
+            function navigateBack() {
+                if (state.historyIndex <= 0) return;
+                state.historyIndex -= 1;
+                navigateTo(state.history[state.historyIndex], { pushHistory: false });
+            }
+
+            function navigateForward() {
+                if (state.historyIndex >= state.history.length - 1) return;
+                state.historyIndex += 1;
+                navigateTo(state.history[state.historyIndex], { pushHistory: false });
+            }
+
+            function initHome() {
+                const root = viewHost.querySelector('[data-wa-view="home"]');
+                const listEl = root?.querySelector('[data-wa-list="recent"]');
+                const alertBtn = root?.querySelector('[data-wa-demo-alert]');
+                if (!(listEl instanceof HTMLElement)) return;
+
+                state.recentCursor = 0;
+                state.recentLoading = false;
+                listEl.replaceChildren();
+
+                if (alertBtn instanceof HTMLElement) {
+                    alertBtn.addEventListener('click', () => {
+                        showAlert({
+                            title: 'Indium Demo',
+                            message: 'Dialog component is loaded from the Indium package.',
+                            variant: 'info'
+                        });
+                    });
+                }
+
+                const pageSize = 20;
+                const loadMore = async () => {
+                    if (state.recentLoading) return;
+                    state.recentLoading = true;
+                    await new Promise((resolve) => setTimeout(resolve, 120));
+                    const next = chunk(recentItems, state.recentCursor, pageSize);
+                    state.recentCursor += next.length;
+                    for (const item of next) {
+                        listEl.appendChild(createListItem(item));
+                    }
+                    state.recentLoading = false;
+                };
+
+                state.recentController = attachInfiniteScroll({
+                    listEl,
+                    loadMore,
+                    hasMore: () => state.recentCursor < recentItems.length,
+                    isLoading: () => state.recentLoading
+                });
+
+                void loadMore();
+            }
+
+            function initSearch() {
+                const root = viewHost.querySelector('[data-wa-view="search"]');
+                const input = root?.querySelector('[data-wa-search-input]');
+                const status = root?.querySelector('[data-wa-search-status]');
+                const resultCard = root?.querySelector('[data-wa-search-results-card]');
+                const resultList = root?.querySelector('[data-wa-search-results]');
+
+                if (!(input instanceof HTMLInputElement)
+                    || !(status instanceof HTMLElement)
+                    || !(resultCard instanceof HTMLElement)
+                    || !(resultList instanceof HTMLElement)) {
+                    return;
+                }
+
+                const render = () => {
+                    const query = input.value.trim().toLowerCase();
+                    resultList.replaceChildren();
+
+                    if (!query) {
+                        resultCard.style.display = 'none';
+                        status.textContent = '';
+                        return;
+                    }
+
+                    const matches = searchable
+                        .filter((item) =>
+                            item.title.toLowerCase().includes(query)
+                            || item.meta.toLowerCase().includes(query))
+                        .slice(0, 40);
+
+                    status.textContent = `${matches.length} result(s) for "${query}"`;
+                    resultCard.style.display = 'block';
+                    for (const item of matches) {
+                        resultList.appendChild(createListItem(item));
+                    }
+                };
+
+                input.addEventListener('input', render);
+                input.focus();
+            }
+
+            function initLibrary() {
+                const root = viewHost.querySelector('[data-wa-view="library"]');
+                const listEl = root?.querySelector('[data-wa-list="library"]');
+                if (!(listEl instanceof HTMLElement)) return;
+
+                state.libraryCursor = 0;
+                state.libraryLoading = false;
+                listEl.replaceChildren();
+
+                const pageSize = 24;
+                const loadMore = async () => {
+                    if (state.libraryLoading) return;
+                    state.libraryLoading = true;
+                    await new Promise((resolve) => setTimeout(resolve, 120));
+                    const next = chunk(libraryItems, state.libraryCursor, pageSize);
+                    state.libraryCursor += next.length;
+                    for (const item of next) {
+                        listEl.appendChild(createListItem(item));
+                    }
+                    state.libraryLoading = false;
+                };
+
+                state.libraryController = attachInfiniteScroll({
+                    listEl,
+                    loadMore,
+                    hasMore: () => state.libraryCursor < libraryItems.length,
+                    isLoading: () => state.libraryLoading
+                });
+
+                void loadMore();
+            }
+
+            appRoot.addEventListener('click', (event) => {
+                const backBtn = event.target instanceof Element
+                    ? event.target.closest('[data-wa-nav-back]')
+                    : null;
+                if (backBtn) {
+                    event.preventDefault();
+                    navigateBack();
+                    return;
+                }
+
+                const forwardBtn = event.target instanceof Element
+                    ? event.target.closest('[data-wa-nav-forward]')
+                    : null;
+                if (forwardBtn) {
+                    event.preventDefault();
+                    navigateForward();
+                    return;
+                }
+
+                const breadcrumb = event.target instanceof Element
+                    ? event.target.closest('[data-wa-breadcrumb-target]')
+                    : null;
+                if (breadcrumb) {
+                    event.preventDefault();
+                    const nextView = breadcrumb.getAttribute('data-wa-breadcrumb-target') || 'home';
+                    navigateTo(nextView);
+                    return;
+                }
+
+                const target = event.target instanceof Element
+                    ? event.target.closest('[data-wa-nav]')
+                    : null;
+                if (!target) return;
+
+                event.preventDefault();
+                const nextView = target.getAttribute('data-wa-nav') || 'home';
+                navigateTo(nextView);
+            });
+
+            navigateTo('home', { pushHistory: false, animate: false });
+        })();
+    </script>
+}
