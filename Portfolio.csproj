@@ -17,6 +17,7 @@
     <RealityCheckWebProjectPath Condition="'$(RealityCheckWebProjectPath)' == ''">Submodules/RealityCheck/RealityCheck.Web/RealityCheck.Web.csproj</RealityCheckWebProjectPath>
     <ImageHexEditorWebProjectPath Condition="'$(ImageHexEditorWebProjectPath)' == ''">Submodules/ImageHexEditor/ImageHexEditor.Web/ImageHexEditor.Web.csproj</ImageHexEditorWebProjectPath>
     <WebAmpWebProjectPath Condition="'$(WebAmpWebProjectPath)' == ''">Submodules/WebAmp/WebAmp.Web/WebAmp.Web.csproj</WebAmpWebProjectPath>
+    <IndiumProjectPath Condition="'$(IndiumProjectPath)' == ''">Submodules/Indium/Indium.csproj</IndiumProjectPath>
 
     <!--
       Tooling:
@@ -47,6 +48,7 @@
     <ProjectReference Include="$(RealityCheckWebProjectPath)" Condition="Exists('$(RealityCheckWebProjectPath)')" Properties="EsbuildCli=$(EsbuildCli)" />
     <ProjectReference Include="$(ImageHexEditorWebProjectPath)" Condition="Exists('$(ImageHexEditorWebProjectPath)')" Properties="EsbuildCli=$(EsbuildCli)" />
     <ProjectReference Include="$(WebAmpWebProjectPath)" Condition="Exists('$(WebAmpWebProjectPath)')" Properties="EsbuildCli=$(EsbuildCli);WebAmpAppVersion=$(WebAmpAppVersion)" />
+    <ProjectReference Include="$(IndiumProjectPath)" Condition="Exists('$(IndiumProjectPath)')" />
   </ItemGroup>
 
   <Target Name="ValidateModuleProjectReferences" BeforeTargets="Build" Condition="'$(SkipModuleProjectValidation)' != 'true'">
