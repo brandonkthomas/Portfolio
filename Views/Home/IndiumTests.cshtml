@@ -350,7 +350,9 @@
             await wait(40);
             const img = fixture.querySelector('.wa-throbber');
             assert(img instanceof HTMLImageElement, 'Throbber image not rendered.');
-            assert(img.getAttribute('src') === customThrobber, 'Custom throbberSrc not applied.');
+            const src = img.getAttribute('src') || '';
+            assert(src.startsWith('data:image/svg+xml'), `Custom throbberSrc not applied. Got: ${src}`);
+            assert(!src.includes('throbber-ring-indef.svg'), `Expected custom throbber data URI, got default asset path: ${src}`);
 
             loading = false;
             controller.destroy();
@@ -695,8 +697,10 @@
             outside.remove();
 
             controller.open();
-            window.dispatchEvent(new Event('resize'));
-            await wait(20);
+            await withWindowWidth(1200, async () => {
+                window.dispatchEvent(new Event('resize'));
+                await wait(20);
+            });
             assert(!root.classList.contains('menu-open'), 'Navbar did not close on resize in desktop viewport.');
 
             controller.destroy();
@@ -815,7 +819,16 @@
                     </div>
                 `;
 
-                const controller = createNavbarController({ root, enableGlass: false, mobileBreakpoint: 768 });
+                let navigateCalls = 0;
+                const controller = createNavbarController({
+                    root,
+                    enableGlass: false,
+                    mobileBreakpoint: 768,
+                    onNavigate: () => {
+                        navigateCalls += 1;
+                        return 'prevent';
+                    }
+                });
                 controller.setItems([
                     { id: 'photos', label: 'Photos', href: '/photos', mobileLabel: 'Photos' }
                 ]);
@@ -831,6 +844,7 @@
 
                 mobileLink.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
                 await wait(20);
+                assert(navigateCalls === 1, `Expected 1 onNavigate callback, got ${navigateCalls}.`);
                 assert(!root.classList.contains('wa-navbar--open'), 'Navbar did not close after mobile link click.');
                 assert(burger.getAttribute('aria-expanded') === 'false', 'Burger aria-expanded should be false after close.');
 
