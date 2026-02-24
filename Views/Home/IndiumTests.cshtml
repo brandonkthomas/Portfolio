@@ -158,6 +158,23 @@
             throw new Error('Timed out waiting for condition.');
         }
 
+        async function withWindowWidth(width, fn) {
+            const original = Object.getOwnPropertyDescriptor(window, 'innerWidth');
+            Object.defineProperty(window, 'innerWidth', {
+                configurable: true,
+                value: width
+            });
+            try {
+                return await fn();
+            } finally {
+                if (original) {
+                    Object.defineProperty(window, 'innerWidth', original);
+                } else {
+                    delete window.innerWidth;
+                }
+            }
+        }
+
         function createFixture(tag = 'div') {
             const el = document.createElement(tag);
             fixturesEl.appendChild(el);
@@ -254,6 +271,30 @@
             assert(cfg.routeRoot === '/webamp', `routeRoot normalized incorrectly: ${cfg.routeRoot}`);
             assert(cfg.apiBasePath === '/api/v1', `apiBasePath normalized incorrectly: ${cfg.apiBasePath}`);
             assert(cfg.assetBasePath === '/apps/indium', `assetBasePath normalized incorrectly: ${cfg.assetBasePath}`);
+
+            mod.setIndiumConfig({
+                routeRoot: '/webamp',
+                apiBasePath: '/api/webamp',
+                assetBasePath: '/apps/indium'
+            });
+        });
+
+        addTest('Path helpers compose normalized roots and preserve absolute URLs', async () => {
+            const mod = await import(PATHS.full);
+            mod.setIndiumConfig({
+                routeRoot: '/wa',
+                apiBasePath: '/api/v2',
+                assetBasePath: '/static/indium'
+            });
+
+            assert(mod.routePath('home') === '/wa/home', `routePath failed for relative path: ${mod.routePath('home')}`);
+            assert(mod.routePath('/search') === '/wa/search', `routePath failed for absolute path: ${mod.routePath('/search')}`);
+            assert(mod.apiPath('tracks') === '/api/v2/tracks', `apiPath failed for relative path: ${mod.apiPath('tracks')}`);
+            assert(mod.apiPath('/tracks') === '/api/v2/tracks', `apiPath failed for absolute path: ${mod.apiPath('/tracks')}`);
+            assert(mod.assetPath('assets/svg/logo.svg') === '/static/indium/assets/svg/logo.svg', `assetPath failed for relative path: ${mod.assetPath('assets/svg/logo.svg')}`);
+
+            const external = 'https://cdn.example.com/file.svg';
+            assert(mod.assetPath(external) === external, 'assetPath should preserve absolute URLs.');
 
             mod.setIndiumConfig({
                 routeRoot: '/webamp',
@@ -539,6 +580,48 @@
             trigger.remove();
         });
 
+        addTest('Dialogs settle replaced dialog promises', async () => {
+            const { showAlert, showConfirm } = await import(PATHS.dialogs);
+
+            const firstPromise = showConfirm({
+                title: 'First dialog',
+                message: 'This should be rejected when replaced.'
+            });
+
+            await waitFor(() => document.querySelector('.ui-dialog-overlay'));
+
+            const secondPromise = showAlert({
+                title: 'Second dialog',
+                message: 'Replacement dialog.'
+            });
+
+            const firstDecision = await firstPromise;
+            assert(firstDecision === false, `Expected replaced confirm to resolve false, got ${String(firstDecision)}.`);
+
+            const overlay = await waitFor(() => document.querySelector('.ui-dialog-overlay'));
+            const okBtn = overlay.querySelector('.ui-dialog-button--primary, .ui-dialog-button');
+            assert(okBtn instanceof HTMLButtonElement, 'Replacement dialog primary button not found.');
+            okBtn.click();
+            await secondPromise;
+        });
+
+        addTest('Dialogs destroyActive settles pending prompt as null', async () => {
+            const { dialogManager, showPrompt } = await import(PATHS.dialogs);
+
+            const promptPromise = showPrompt({
+                title: 'Prompt',
+                message: 'Pending prompt should settle on destroy.'
+            });
+
+            await waitFor(() => document.querySelector('.ui-dialog-overlay'));
+            dialogManager.destroyActive();
+
+            const value = await promptPromise;
+            assert(value === null, `Expected prompt to resolve null on destroyActive, got ${String(value)}.`);
+            await wait(20);
+            assert(!document.querySelector('.ui-dialog-overlay'), 'Dialog overlay still present after destroyActive().');
+        });
+
         addTest('Glass surfaces support multiple create/destroy cycles', async () => {
             const { createGlassSurface } = await import(PATHS.glass);
             const host = createFixture();
@@ -617,6 +700,142 @@
             assert(!root.classList.contains('menu-open'), 'Navbar did not close on resize in desktop viewport.');
 
             controller.destroy();
+        });
+
+        addTest('Sidebar closes on nav click + Escape and destroy removes bindings', async () => {
+            const { createSidebarController } = await import(PATHS.sidebar);
+            const appRoot = createFixture('section');
+            appRoot.setAttribute('data-wa-app', '');
+            appRoot.innerHTML = `
+                <button type="button" data-wa-sidebar-toggle>Open</button>
+                <aside data-wa-sidebar>
+                    <button type="button" data-wa-sidebar-close>Close</button>
+                    <a href="#" data-wa-nav="home">Home</a>
+                </aside>
+                <div data-wa-sidebar-overlay></div>
+            `;
+
+            const controller = createSidebarController({ appRoot });
+            assert(controller, 'createSidebarController returned null.');
+
+            const openBtn = appRoot.querySelector('[data-wa-sidebar-toggle]');
+            const navLink = appRoot.querySelector('[data-wa-nav="home"]');
+            assert(openBtn instanceof HTMLButtonElement, 'Sidebar open button missing.');
+            assert(navLink instanceof HTMLAnchorElement, 'Sidebar nav link missing.');
+
+            openBtn.click();
+            assert(appRoot.dataset.waSidebarOpen === 'true', 'Sidebar did not open before nav click test.');
+            navLink.click();
+            assert(appRoot.dataset.waSidebarOpen !== 'true', 'Sidebar did not close on nav click.');
+
+            openBtn.click();
+            assert(appRoot.dataset.waSidebarOpen === 'true', 'Sidebar did not reopen before Escape test.');
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+            assert(appRoot.dataset.waSidebarOpen !== 'true', 'Sidebar did not close on Escape key.');
+
+            controller.destroy();
+            openBtn.click();
+            assert(appRoot.dataset.waSidebarOpen !== 'true', 'Sidebar reopened after destroy; bindings were not removed.');
+        });
+
+        addTest('Infinite scroll does not call loadMore when hasMore is false', async () => {
+            const { attachInfiniteScroll } = await import(PATHS.infinite);
+            const fixture = createFixture();
+            const list = document.createElement('div');
+            list.className = 'wa-list';
+            fixture.appendChild(list);
+
+            let loadCalls = 0;
+            const controller = attachInfiniteScroll({
+                listEl: list,
+                loadMore: async () => { loadCalls += 1; },
+                hasMore: () => false,
+                isLoading: () => false
+            });
+
+            await wait(80);
+            assert(loadCalls === 0, `Expected 0 load calls when hasMore=false, got ${loadCalls}.`);
+            controller.destroy();
+        });
+
+        addTest('Navbar external rel normalization + active reset contract', async () => {
+            const { createNavbarController } = await import(PATHS.navbar);
+            const root = createFixture();
+            root.className = 'wa-navbar';
+            root.innerHTML = `
+                <div class="wa-navbar__surface-wrap">
+                    <div class="wa-navbar__content">
+                        <div class="wa-navbar__main">
+                            <span class="wa-navbar__brand">test.local</span>
+                            <button class="wa-navbar__burger" type="button" aria-expanded="false"></button>
+                        </div>
+                        <nav class="wa-navbar__links--desktop"></nav>
+                        <nav class="wa-navbar__links--mobile"></nav>
+                    </div>
+                </div>
+            `;
+
+            const controller = createNavbarController({ root, enableGlass: false });
+            controller.setItems([
+                { id: 'photos', label: 'Photos', href: '/photos', mobileLabel: 'Photos' },
+                { id: 'external', label: 'Docs', href: 'https://example.com/docs', external: true, rel: 'ugc' }
+            ]);
+
+            const extLink = root.querySelector('a[data-wa-nav-id="external"]');
+            assert(extLink instanceof HTMLAnchorElement, 'External navbar link missing.');
+            assert(extLink.target === '_blank', `Expected external target _blank, got ${extLink.target}.`);
+            assert(extLink.rel.includes('noopener'), `Expected rel to include noopener, got ${extLink.rel}.`);
+            assert(extLink.rel.includes('noreferrer'), `Expected rel to include noreferrer, got ${extLink.rel}.`);
+            assert(extLink.rel.includes('ugc'), `Expected rel to preserve existing token, got ${extLink.rel}.`);
+
+            controller.setActive('photos');
+            assert(root.querySelectorAll('a[data-wa-active="true"]').length >= 1, 'Missing active links after setActive("photos").');
+            controller.setActive(null);
+            assert(root.querySelectorAll('a[data-wa-active="true"]').length === 0, 'Active links were not cleared by setActive(null).');
+
+            controller.destroy();
+        });
+
+        addTest('Navbar mobile click closes open menu and updates aria-expanded', async () => {
+            const { createNavbarController } = await import(PATHS.navbar);
+
+            await withWindowWidth(640, async () => {
+                const root = createFixture();
+                root.className = 'wa-navbar';
+                root.innerHTML = `
+                    <div class="wa-navbar__surface-wrap">
+                        <div class="wa-navbar__content">
+                            <div class="wa-navbar__main">
+                                <span class="wa-navbar__brand">test.local</span>
+                                <button class="wa-navbar__burger" type="button" aria-expanded="false"></button>
+                            </div>
+                            <nav class="wa-navbar__links--desktop"></nav>
+                            <nav class="wa-navbar__links--mobile"></nav>
+                        </div>
+                    </div>
+                `;
+
+                const controller = createNavbarController({ root, enableGlass: false, mobileBreakpoint: 768 });
+                controller.setItems([
+                    { id: 'photos', label: 'Photos', href: '/photos', mobileLabel: 'Photos' }
+                ]);
+
+                const burger = root.querySelector('.wa-navbar__burger');
+                const mobileLink = root.querySelector('.wa-navbar__links--mobile a[data-wa-nav-id="photos"]');
+                assert(burger instanceof HTMLButtonElement, 'Navbar burger missing.');
+                assert(mobileLink instanceof HTMLAnchorElement, 'Mobile navbar link missing.');
+
+                controller.open();
+                assert(root.classList.contains('wa-navbar--open'), 'Navbar did not open before mobile link click.');
+                assert(burger.getAttribute('aria-expanded') === 'true', 'Burger aria-expanded should be true when open.');
+
+                mobileLink.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+                await wait(20);
+                assert(!root.classList.contains('wa-navbar--open'), 'Navbar did not close after mobile link click.');
+                assert(burger.getAttribute('aria-expanded') === 'false', 'Burger aria-expanded should be false after close.');
+
+                controller.destroy();
+            });
         });
 
         runBtn?.addEventListener('click', () => {
