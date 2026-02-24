@@ -2,7 +2,7 @@
     ViewData["Title"] = ViewData["Title"] ?? "Indium Demo";
     ViewData["CanPinchToZoom"] = true;
     ViewData["IsolatedCss"] = true;
-    ViewData["ShowLoadingOverlay"] = false;
+    ViewData["ShowLoadingOverlay"] = true;
 }
 
 <section class="wa-app" data-wa-app>
@@ -118,17 +118,17 @@
                                 </div>
 
                                 <div class="wa-card wa-card--glass">
-                                    <h2 class="wa-h2">Recent</h2>
-                                    <p class="wa-copy">Home feed uses `attachInfiniteScroll` with local mock data.</p>
-                                    <div class="wa-list" data-wa-list="recent" aria-label="Recent items"></div>
-                                </div>
-
-                                <div class="wa-card wa-card--glass">
                                     <h2 class="wa-h2">Dialogs</h2>
                                     <p class="wa-copy">Smoke-test shared dialog component wiring.</p>
                                     <button type="button" class="wa-btn wa-btn--primary" data-wa-demo-alert>
                                         Show Alert
                                     </button>
+                                </div>
+
+                                <div class="wa-card wa-card--glass">
+                                    <h2 class="wa-h2">Recent</h2>
+                                    <p class="wa-copy">Home feed uses `attachInfiniteScroll` with local mock data.</p>
+                                    <div class="wa-list" data-wa-list="recent" aria-label="Recent items"></div>
                                 </div>
                             </section>
                         </template>
@@ -197,7 +197,7 @@
             };
 
             const boot = bootIndium({
-                routeRoot: '/internal/indium',
+                routeRoot: '/indium',
                 assetBasePath: '/apps/indium',
                 brandLogoSrc: '/apps/indium/assets/branding/icon-Indium.png',
                 brandLogoAlt: 'Indium logo'

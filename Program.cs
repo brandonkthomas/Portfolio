@@ -254,7 +254,7 @@ app.MapControllerRoute(
     pattern: "/projects",
     defaults: new { controller = "Home", action = "Projects" });
 
-// Internal UI kit test page (not linked from navigation)
+// Development-only UI kit demo/test pages (not linked from navigation)
 if (app.Environment.IsDevelopment())
 {
     app.MapControllerRoute(
@@ -264,7 +264,7 @@ if (app.Environment.IsDevelopment())
 
     app.MapControllerRoute(
         name: "indium-demo",
-        pattern: "/internal/indium",
+        pattern: "/indium",
         defaults: new { controller = "Home", action = "Indium" });
 
     app.MapControllerRoute(

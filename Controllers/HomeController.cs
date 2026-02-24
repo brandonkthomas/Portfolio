@@ -31,14 +31,14 @@ public class HomeController : Controller
     }
 
     /// <summary>
-    /// Internal Indium UI kit demo page with local mock data.
+    /// Indium UI kit demo page with local mock data.
     /// </summary>
     public IActionResult Indium()
     {
         ViewData["Title"] = "Indium Demo";
         ViewData["CanPinchToZoom"] = true;
         ViewData["IsolatedCss"] = true;
-        ViewData["ShowLoadingOverlay"] = false;
+        ViewData["ShowLoadingOverlay"] = true;
         return View();
     }
 
