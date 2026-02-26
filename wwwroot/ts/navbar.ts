@@ -104,7 +104,7 @@ class Navbar {
     }
 
     private async setup() {
-        this.container = document.querySelector('.url-display');
+        this.container = document.querySelector('.wa-navbar');
         if (!this.container) {
             this.log('Setup Skipped', { reason: 'container-missing' }, undefined, 'warn');
             this.resolveReady();
@@ -157,7 +157,7 @@ class Navbar {
 
     private bindBrandClick() {
         if (!this.container) return;
-        const brand = this.container.querySelector('.url-text');
+        const brand = this.container.querySelector('.wa-navbar__brand');
         if (!(brand instanceof HTMLElement)) return;
 
         const onBrandClick = (event: MouseEvent) => {
@@ -230,7 +230,7 @@ class Navbar {
                 iconSrc: ICONS.email,
                 iconAlt: '',
                 mobileIconSrc: ICONS.email,
-                className: 'url-link url-link-external',
+                className: 'wa-navbar__link wa-navbar__link--external',
                 ariaLabel: 'Contact'
             }
         ];
