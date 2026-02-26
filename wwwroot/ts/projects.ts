@@ -4,9 +4,30 @@
  */
 
 import { isMobile, getOperatingSystem, logEvent, LogData, LogLevel } from './common.js';
-import { createGlassSurface } from './components/glassSurface.js';
-import type { GlassSurfaceInstance } from './components/glassSurface.js';
 import { mountComponent } from './components/bento/registry.js';
+interface GlassSurfaceInstance {
+    element: HTMLDivElement;
+    contentElement: HTMLDivElement;
+    updateDisplacementMap: () => void;
+    destroy: () => void;
+}
+
+let createGlassSurfaceLoader: ((options?: Record<string, unknown>) => GlassSurfaceInstance) | null = null;
+
+async function loadCreateGlassSurface(): Promise<((options?: Record<string, unknown>) => GlassSurfaceInstance) | null> {
+    if (createGlassSurfaceLoader) return createGlassSurfaceLoader;
+
+    try {
+        const modulePath = '/apps/indium/dist/components/glassSurface.js';
+        const glassModule = await import(modulePath);
+        const createFn = (glassModule as { createGlassSurface?: unknown }).createGlassSurface;
+        if (typeof createFn !== 'function') return null;
+        createGlassSurfaceLoader = createFn as (options?: Record<string, unknown>) => GlassSurfaceInstance;
+        return createGlassSurfaceLoader;
+    } catch {
+        return null;
+    }
+}
 
 class ProjectsGrid {
     private container: HTMLElement | null;
@@ -87,22 +108,28 @@ class ProjectsGrid {
         this.footerEl = this.container!.querySelector('.projects-footer') as HTMLElement | null;
 
         // Build footer content
-        this.createFooter();
+        void this.createFooter();
     }
 
     //==============================================================================================
     /**
      * Create bottom GitHub footer with glass surface
      */
-    createFooter() {
+    async createFooter() {
         if (!this.footerEl) {
-            this.log('Footer Skipped', {}, 'Footer element missing', 'warn');
+            this.log("Footer Skipped", {}, "Footer element missing", "warn");
+            return;
+        }
+
+        const createGlassSurface = await loadCreateGlassSurface();
+        if (!createGlassSurface) {
+            this.log("Footer Skipped", {}, "Indium createGlassSurface import failed", "warn");
             return;
         }
 
         // Create glass surface for footer
         this.footerGlass = createGlassSurface({
-            width: 'auto',
+            width: "auto",
             height: 44,
             borderRadius: 16,
             borderWidth: 0.07,
@@ -111,49 +138,49 @@ class ProjectsGrid {
             blur: 28,
             displace: 0,
             backgroundOpacity: 0.12,
-            saturation: 0.8, // 0.9
-            distortionScale: -15, // -12
-            redOffset: 8, // 6
-            greenOffset: 8, // 6
-            blueOffset: 8, // 6
-            xChannel: 'R',
-            yChannel: 'G',
-            mixBlendMode: 'difference',
-            className: 'projects-footer-glass',
+            saturation: 0.8,
+            distortionScale: -15,
+            redOffset: 8,
+            greenOffset: 8,
+            blueOffset: 8,
+            xChannel: "R",
+            yChannel: "G",
+            mixBlendMode: "difference",
+            className: "projects-footer-glass",
             style: {
-                padding: '6px 10px',
-                gap: '8px',
-                justifyContent: 'center',
-                alignItems: 'center',
-                minWidth: '240px'
+                padding: "6px 10px",
+                gap: "8px",
+                justifyContent: "center",
+                alignItems: "center",
+                minWidth: "240px"
             }
         });
 
         // Build anchor link that wraps the entire glass surface (whole element clickable)
-        const link = document.createElement('a');
-        link.className = 'projects-footer-link';
-        link.href = 'https://github.com/brandonkthomas';
-        link.rel = 'noopener noreferrer';
-        link.setAttribute('aria-label', 'GitHub profile');
+        const link = document.createElement("a");
+        link.className = "projects-footer-link";
+        link.href = "https://github.com/brandonkthomas";
+        link.rel = "noopener noreferrer";
+        link.setAttribute("aria-label", "GitHub profile");
 
         // Icon + text inside the glass surface content
-        const icon = document.createElement('img');
-        icon.src = '/assets/svg/github-logo-roundrect-filled.svg';
+        const icon = document.createElement("img");
+        icon.src = "/assets/svg/github-logo-roundrect-filled.svg";
         icon.width = 20;
         icon.height = 20;
-        icon.alt = '';
+        icon.alt = "";
 
-        const text = document.createElement('span');
-        text.textContent = 'github.com/brandonkthomas';
+        const text = document.createElement("span");
+        text.textContent = "github.com/brandonkthomas";
 
         // Space content nicely inside the glass content container
-        this.footerGlass!.contentElement.style.gap = '8px';
-        this.footerGlass!.contentElement.appendChild(icon);
-        this.footerGlass!.contentElement.appendChild(text);
+        this.footerGlass.contentElement.style.gap = "8px";
+        this.footerGlass.contentElement.appendChild(icon);
+        this.footerGlass.contentElement.appendChild(text);
 
         // Wrap glass surface inside the anchor, so entire element is clickable
-        link.appendChild(this.footerGlass!.element);
-        this.footerEl!.appendChild(link);
+        link.appendChild(this.footerGlass.element);
+        this.footerEl.appendChild(link);
     }
 
     //==============================================================================================

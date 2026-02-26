@@ -21,16 +21,6 @@ public class HomeController : Controller
     }
 
     /// <summary>
-    /// Internal UI kit test layout (not linked from navigation)
-    /// </summary>
-    public IActionResult UiKit()
-    {
-        ViewData["Title"] = "UI Kit";
-        ViewData["CanPinchToZoom"] = true;
-        return View();
-    }
-
-    /// <summary>
     /// Indium UI kit demo page with local mock data.
     /// </summary>
     public IActionResult Indium()
