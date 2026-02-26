@@ -186,7 +186,7 @@ class StateManager {
                 });
             });
         } else {
-            // Default to card view; do not rewrite URL for non-SPA routes (i.e. /projects/slug)
+            // Default to card view; do not rewrite URL for non-SPA routes.
             this.currentView = (ViewState as any).CARD;
             
             if (path === '/' || path === '') {

@@ -252,7 +252,8 @@ class ProjectsGrid {
         }
         this.gridEl.innerHTML = '';
 
-        const ensureUrl = (p: any) => p.url || `/projects/${encodeURIComponent(p.slug || p.title?.toLowerCase().replace(/\s+/g, '-') || 'project')}`;
+        // Placeholder /projects/{slug} fallback is disabled; cards without explicit URLs are non-navigable.
+        const ensureUrl = (p: any) => p.url || '#';
         const isExternalUrl = (u: string) => {
             try {
                 const url = new URL(u, window.location.origin);

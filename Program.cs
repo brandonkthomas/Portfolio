@@ -254,25 +254,26 @@ app.MapControllerRoute(
     pattern: "/projects",
     defaults: new { controller = "Home", action = "Projects" });
 
+// Indium demo page
+app.MapControllerRoute(
+    name: "indium-demo",
+    pattern: "/indium",
+    defaults: new { controller = "Home", action = "Indium" });
+
 // Development-only Indium demo/test pages (not linked from navigation)
 if (app.Environment.IsDevelopment())
 {
-    app.MapControllerRoute(
-        name: "indium-demo",
-        pattern: "/indium",
-        defaults: new { controller = "Home", action = "Indium" });
-
     app.MapControllerRoute(
         name: "indium-tests",
         pattern: "/internal/indium/tests",
         defaults: new { controller = "Home", action = "IndiumTests" });
 }
 
-// Project detail route to ProjectsController Detail action
-app.MapControllerRoute(
-    name: "project-detail",
-    pattern: "/projects/{slug}",
-    defaults: new { controller = "Projects", action = "Detail" });
+// Placeholder project detail route intentionally disabled.
+// app.MapControllerRoute(
+//     name: "project-detail",
+//     pattern: "/projects/{slug}",
+//     defaults: new { controller = "Projects", action = "Detail" });
 
 // NameTrace landing page
 app.MapControllerRoute(

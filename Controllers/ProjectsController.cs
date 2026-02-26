@@ -3,6 +3,9 @@ using System.Globalization;
 
 namespace Portfolio.Controllers;
 
+// Placeholder /projects/{slug} endpoint intentionally disabled.
+// Keep this implementation commented for quick restore if needed.
+/*
 public class ProjectsController : Controller
 {
     [HttpGet("/projects/{slug}")]
@@ -14,3 +17,4 @@ public class ProjectsController : Controller
         return View();
     }
 }
+*/
