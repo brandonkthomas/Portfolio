@@ -20,6 +20,7 @@ const registry: Record<string, () => Promise<any>> = {
     terminalBlink: () => import('./terminalBlink.js'),
     byteGrid: () => import('./byteGrid.js'),
     webampKnob: () => import('./webampKnob.js'),
+    indiumSkeleton: () => import('./indiumSkeleton.js'),
 };
 
 //==============================================================================================

@@ -1,0 +1,87 @@
+/*
+    indiumSkeleton.css
+    Indium-themed skeleton preview tile for Portfolio projects grid
+*/
+
+.comp-indium-skeleton {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    padding: 0.72rem;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.indium-skel__row {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    width: 100%;
+    min-width: 0;
+}
+
+.indium-skel__logo {
+    width: 4rem;
+    height: 4rem;
+    flex-shrink: 0;
+    filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.5));
+}
+
+.indium-skel__block {
+    position: relative;
+    overflow: hidden;
+    height: 3.9rem;
+    min-width: 0;
+    border-radius: 0.48rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.045));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.indium-skel__block--long {
+    flex: 2 1 0;
+}
+
+.indium-skel__block--short {
+    flex: 1 1 0;
+}
+
+.indium-skel__block::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-135%);
+    background: linear-gradient(
+        100deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.42) 45%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    opacity: 0;
+    pointer-events: none;
+}
+
+.bento-item:hover .comp-indium-skeleton .indium-skel__block::after {
+    animation: indium-skeleton-sheen 720ms cubic-bezier(0.2, 0.7, 0.2, 1) var(--sheen-delay, 0ms) 1;
+}
+
+@keyframes indium-skeleton-sheen {
+    0% {
+        transform: translateX(-135%);
+        opacity: 0;
+    }
+    10% {
+        opacity: 0.92;
+    }
+    100% {
+        transform: translateX(135%);
+        opacity: 0;
+    }
+}

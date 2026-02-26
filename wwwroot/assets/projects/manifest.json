@@ -4,28 +4,55 @@
       "slug": "portfolio",
       "title": "Portfolio",
       "tag": "Web",
-      "footer": ".NET Core, TypeScript (no framework), Three.js",
+      "footer": ".NET Core, TypeScript, Three.js",
       "gradientAngle": 24,
       "gradientColor1": "#1f1f1f",
       "gradientColor2": "#2f2f2f",
       "span": "2x2",
       "url": "https://github.com/brandonkthomas/Portfolio",
       "external": true,
-      "component": { "type": "cardStack", "props": { "layers": 3 } }
+      "component": {
+        "type": "cardStack",
+        "props": {
+          "layers": 3
+        }
+      }
     },
     {
       "slug": "webamp",
       "title": "WebAmp",
       "tag": "Web",
-      "footer": ".NET Core, TypeScript (no framework)",
+      "footer": ".NET Core, TypeScript",
       "gradientAngle": 210,
       "gradientColor1": "#2a2a2a",
       "gradientColor2": "#5d5757",
       "span": "2x2",
       "url": "/webamp",
       "external": false,
-      "component": { "type": "webampKnob", "props": { "maxAngle": 45 } },
+      "component": {
+        "type": "webampKnob",
+        "props": {
+          "maxAngle": 45
+        }
+      },
       "githubUrl": "https://github.com/brandonkthomas/WebAmp"
+    },
+    {
+      "slug": "indium",
+      "title": "Indium",
+      "tag": "Web",
+      "footer": "TypeScript, CSS, Razor",
+      "gradientAngle": 210,
+      "gradientColor1": "#2a2a2a",
+      "gradientColor2": "#5d5757",
+      "span": "2x1",
+      "url": "/indium",
+      "external": false,
+      "component": {
+        "type": "indiumSkeleton",
+        "props": {}
+      },
+      "githubUrl": "https://github.com/brandonkthomas/Indium"
     },
     {
       "slug": "spectrometer",
@@ -38,7 +65,10 @@
       "span": "2x1",
       "url": "https://github.com/brandonkthomas/Spectrometer",
       "external": true,
-      "component": { "type": "lineGraph", "props": {} },
+      "component": {
+        "type": "lineGraph",
+        "props": {}
+      },
       "downloadOperatingSystem": "Windows",
       "downloadUrl": "https://github.com/brandonkthomas/Spectrometer/releases/latest/download/Spectrometer.exe"
     },
@@ -52,7 +82,12 @@
       "span": "1x1",
       "url": "https://github.com/brandonkthomas/scripts",
       "external": true,
-      "component": { "type": "terminalBlink", "props": { "prompt": "brandonthomas@mbp ~ %" } }
+      "component": {
+        "type": "terminalBlink",
+        "props": {
+          "prompt": "brandonthomas@mbp ~ %"
+        }
+      }
     },
     {
       "slug": "imagehexeditor",
@@ -65,7 +100,10 @@
       "span": "1x1",
       "url": "/imagehexeditor",
       "external": false,
-      "component": { "type": "byteGrid", "props": {} },
+      "component": {
+        "type": "byteGrid",
+        "props": {}
+      },
       "githubUrl": "https://github.com/brandonkthomas/ImageHexEditor"
     },
     {
