@@ -143,7 +143,7 @@ app.UseStaticFiles(new StaticFileOptions
                 ctx.Context.Response.Headers["Cache-Control"] = "public, max-age=0, must-revalidate";
             }
         }
-        else if (n.EndsWith(".json"))
+        else if (n.EndsWith(".json") || n.EndsWith(".webmanifest", StringComparison.OrdinalIgnoreCase))
         {
             // Manifest and other JSON: allow revalidation
             ctx.Context.Response.Headers["Cache-Control"] = "public, max-age=0, must-revalidate";

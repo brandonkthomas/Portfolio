@@ -1,0 +1,23 @@
+{
+  "name": "WebAmp",
+  "short_name": "WebAmp",
+  "id": "/webamp/",
+  "start_url": "/webamp/",
+  "scope": "/webamp/",
+  "display": "standalone",
+  "background_color": "#121317",
+  "theme_color": "#121317",
+  "description": "WebAmp music player.",
+  "icons": [
+    {
+      "src": "/apps/webamp/assets/icons/icon-WebAmp-full256.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    },
+    {
+      "src": "/apps/webamp/assets/icons/icon-WebAmp-full512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

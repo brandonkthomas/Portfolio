@@ -47,6 +47,10 @@
     // SPA shell pages want a stable browser-tab title, but still need per-route SEO/share titles.
     var forceSiteTitle = (ViewData["ForceSiteTitle"] as bool?) ?? false;
     var tabTitle = forceSiteTitle ? siteHost : fullTitle;
+    var themeColor = (ViewData["ThemeColor"] as string)?.Trim();
+    if (string.IsNullOrWhiteSpace(themeColor)) themeColor = "#1c1c1c";
+    var appleMobileWebAppTitle = (ViewData["AppleMobileWebAppTitle"] as string)?.Trim();
+    if (string.IsNullOrWhiteSpace(appleMobileWebAppTitle)) appleMobileWebAppTitle = "Brandon Thomas";
 }
 
 <!DOCTYPE html>
@@ -54,12 +58,14 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#1c1c1c">
+    <meta name="theme-color" content="@themeColor">
 
-    <meta name="apple-mobile-web-app-title" content="Brandon Thomas">
+    <meta name="apple-mobile-web-app-title" content="@appleMobileWebAppTitle">
     <meta name="description" content="Brandon Thomas - portfolio, projects, contact info" />
     
     <title>@tabTitle</title>
+
+    @await RenderSectionAsync("Head", required: false)
 
     @if (!isIsolatedCss)
     {
