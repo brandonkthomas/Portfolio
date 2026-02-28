@@ -51,6 +51,7 @@
     if (string.IsNullOrWhiteSpace(themeColor)) themeColor = "#1c1c1c";
     var appleMobileWebAppTitle = (ViewData["AppleMobileWebAppTitle"] as string)?.Trim();
     if (string.IsNullOrWhiteSpace(appleMobileWebAppTitle)) appleMobileWebAppTitle = "Brandon Thomas";
+    var useCustomAppIcons = (ViewData["UseCustomAppIcons"] as bool?) ?? false;
 }
 
 <!DOCTYPE html>
@@ -82,13 +83,16 @@
 
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
 
-    <link rel="icon" href="~/assets/images/branding/favicon.ico" asp-append-version="true" />
-    <link rel="apple-touch-icon" sizes="180x180" href="~/assets/images/branding/apple-touch-icon-180x180.png" asp-append-version="true" />
-    <link rel="apple-touch-icon" sizes="167x167" href="~/assets/images/branding/apple-touch-icon-167x167.png" asp-append-version="true" />
-    <link rel="apple-touch-icon" sizes="152x152" href="~/assets/images/branding/apple-touch-icon-152x152.png" asp-append-version="true" />
-    <link rel="apple-touch-icon" sizes="144x144" href="~/assets/images/branding/apple-touch-icon-144x144.png" asp-append-version="true" />
-    <link rel="apple-touch-icon" sizes="120x120" href="~/assets/images/branding/apple-touch-icon-120x120.png" asp-append-version="true" />
-    <link rel="mask-icon" href="~/assets/meta/safari-pinned-tab.svg" color="#1c1c1c" asp-append-version="true">
+    @if (!useCustomAppIcons)
+    {
+        <link rel="icon" href="~/assets/images/branding/favicon.ico" asp-append-version="true" />
+        <link rel="apple-touch-icon" sizes="180x180" href="~/assets/images/branding/apple-touch-icon-180x180.png" asp-append-version="true" />
+        <link rel="apple-touch-icon" sizes="167x167" href="~/assets/images/branding/apple-touch-icon-167x167.png" asp-append-version="true" />
+        <link rel="apple-touch-icon" sizes="152x152" href="~/assets/images/branding/apple-touch-icon-152x152.png" asp-append-version="true" />
+        <link rel="apple-touch-icon" sizes="144x144" href="~/assets/images/branding/apple-touch-icon-144x144.png" asp-append-version="true" />
+        <link rel="apple-touch-icon" sizes="120x120" href="~/assets/images/branding/apple-touch-icon-120x120.png" asp-append-version="true" />
+        <link rel="mask-icon" href="~/assets/meta/safari-pinned-tab.svg" color="#1c1c1c" asp-append-version="true">
+    }
     
     <link rel="canonical" href="@absolutePageUrl" />
     <meta property="og:type" content="website" />

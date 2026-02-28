@@ -10,12 +10,12 @@
   "description": "WebAmp music player.",
   "icons": [
     {
-      "src": "/apps/webamp/assets/icons/icon-WebAmp-full256.png",
+      "src": "/apps/webamp/assets/branding/icon-WebAmp-full256.png",
       "sizes": "256x256",
       "type": "image/png"
     },
     {
-      "src": "/apps/webamp/assets/icons/icon-WebAmp-full512.png",
+      "src": "/apps/webamp/assets/branding/icon-WebAmp-full512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
