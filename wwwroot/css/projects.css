@@ -330,7 +330,7 @@
 
 .projects-footer-link {
     display: inline-block; /* wraps glass surface so full area is clickable */
-    color: rgba(255,255,255,0.92);
+    color: var(--wa-color-text-strong, rgba(255,255,255,0.92));
     text-decoration: none;
     font-family: ui-monospace, SFMono-Regular, "SF Mono", monospace;
     font-size: 13px;
@@ -339,7 +339,7 @@
 .projects-footer-link img {
     width: 20px;
     height: auto;
-    filter: brightness(0) invert(1);
+    filter: var(--wa-icon-filter-strong, brightness(0) invert(1));
 }
 
 /* WebAmp knob (fallback styles so component still works even if per-component CSS fails to load) */

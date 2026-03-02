@@ -122,6 +122,11 @@
 
         // By default, isolated pages hide the navbar unless explicitly overridden.
         var hideNavbar = (ViewData["HideNavbar"] as bool?) ?? isIsolatedCss;
+        var navbarTheme = (ViewData["NavbarTheme"] as string)?.Trim().ToLowerInvariant();
+        if (navbarTheme != "dark" && navbarTheme != "light")
+        {
+            navbarTheme = null;
+        }
     }
     @if (showLoadingOverlay)
     {
@@ -132,7 +137,7 @@
     }
     @if (!hideNavbar)
     {
-    <div class="wa-navbar">
+    <div class="wa-navbar" data-wa-theme="@navbarTheme">
         <div class="wa-navbar__surface-wrap">
             <div class="wa-navbar__content">
                 <div class="wa-navbar__main">

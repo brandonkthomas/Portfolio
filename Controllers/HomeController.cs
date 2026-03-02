@@ -17,6 +17,7 @@ public class HomeController : Controller
     public IActionResult Index()
     {
         ViewData["ForceSiteTitle"] = true;
+        ViewData["NavbarTheme"] = "dark";
         return View();
     }
 
@@ -49,6 +50,7 @@ public class HomeController : Controller
     {
         ViewData["Title"] = "Photos";
         ViewData["ForceSiteTitle"] = true;
+        ViewData["NavbarTheme"] = "dark";
         return View("Index");
     }
 
@@ -56,6 +58,7 @@ public class HomeController : Controller
     {
         ViewData["Title"] = "Projects";
         ViewData["ForceSiteTitle"] = true;
+        ViewData["NavbarTheme"] = "dark";
         return View("Index");
     }
 
