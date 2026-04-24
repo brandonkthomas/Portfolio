@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="../../Libraries/ImageHexEditor/ImageHexEditor.Web/ImageHexEditor.Web.csproj" />
+  <Project Path="../../Libraries/Indium/Indium.csproj" />
+  <Project Path="../../Libraries/NameTrace/NameTrace.Web/NameTrace.Web.csproj" />
+  <Project Path="../../Libraries/RealityCheck/RealityCheck.Web/RealityCheck.Web.csproj" />
+  <Project Path="../../Libraries/RealityCheck/RealityCheck/RealityCheck.csproj" />
+  <Project Path="../WebAmp/WebAmp.Web/WebAmp.Web.csproj" />
+  <Project Path="Portfolio.csproj" />
+</Solution>
