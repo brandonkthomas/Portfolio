@@ -1,5 +1,6 @@
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
+FROM mcr.microsoft.com/dotnet/runtime-deps:10.0
+ARG TARGETARCH
 WORKDIR /app
-COPY publish/ ./
+COPY publish/linux-${TARGETARCH}/ ./
 EXPOSE 8081
-ENTRYPOINT ["dotnet", "Portfolio.dll"]
+ENTRYPOINT ["./Portfolio"]
