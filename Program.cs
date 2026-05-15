@@ -64,7 +64,7 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
-const string PhotoReelRequestPrefix = "/assets/images/reel/";
+const string photoReelRequestPrefix = "/assets/images/reel/";
 
 // Configure routing
 builder.Services.Configure<RouteOptions>(options =>
@@ -209,7 +209,7 @@ app.MapGet("/assets/images/reel/manifest.json", () =>
         return Results.NotFound(new { images = Array.Empty<PhotoManifestEntry>() });
     }
 
-    var images = PhotoManifestGenerator.BuildEntries(photoRoot, PhotoReelRequestPrefix);
+    var images = PhotoManifestGenerator.BuildEntries(photoRoot, photoReelRequestPrefix);
     return Results.Json(new { images });
 });
 
