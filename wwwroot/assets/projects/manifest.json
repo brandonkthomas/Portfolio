@@ -56,7 +56,7 @@
     },
     {
       "slug": "blinkbridge",
-      "title": "BlinkBridge",
+      "title": "LocalDrop",
       "tag": "Web",
       "footer": "TypeScript, QR",
       "gradientAngle": 210,

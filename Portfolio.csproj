@@ -17,7 +17,7 @@
     <RealityCheckWebProjectPath Condition="'$(RealityCheckWebProjectPath)' == ''">Submodules/RealityCheck/RealityCheck.Web/RealityCheck.Web.csproj</RealityCheckWebProjectPath>
     <ImageHexEditorWebProjectPath Condition="'$(ImageHexEditorWebProjectPath)' == ''">Submodules/ImageHexEditor/ImageHexEditor.Web/ImageHexEditor.Web.csproj</ImageHexEditorWebProjectPath>
     <WebAmpWebProjectPath Condition="'$(WebAmpWebProjectPath)' == ''">Submodules/WebAmp/WebAmp.Web/WebAmp.Web.csproj</WebAmpWebProjectPath>
-    <BlinkBridgeWebProjectPath Condition="'$(BlinkBridgeWebProjectPath)' == ''">Submodules/BlinkBridge/BlinkBridge.Web/BlinkBridge.Web.csproj</BlinkBridgeWebProjectPath>
+    <LocalDropWebProjectPath Condition="'$(LocalDropWebProjectPath)' == ''">Submodules/LocalDrop/LocalDrop.Web/LocalDrop.Web.csproj</LocalDropWebProjectPath>
     <IndiumProjectPath Condition="'$(IndiumProjectPath)' == ''">Submodules/Indium/Indium.csproj</IndiumProjectPath>
 
     <!--
@@ -60,7 +60,7 @@
     <ProjectReference Include="$(RealityCheckWebProjectPath)" Condition="Exists('$(RealityCheckWebProjectPath)')" Properties="EsbuildCli=$(EsbuildCli)" />
     <ProjectReference Include="$(ImageHexEditorWebProjectPath)" Condition="Exists('$(ImageHexEditorWebProjectPath)')" Properties="EsbuildCli=$(EsbuildCli)" />
     <ProjectReference Include="$(WebAmpWebProjectPath)" Condition="Exists('$(WebAmpWebProjectPath)')" Properties="EsbuildCli=$(EsbuildCli);WebAmpAppVersion=$(WebAmpAppVersion)" />
-    <ProjectReference Include="$(BlinkBridgeWebProjectPath)" Condition="Exists('$(BlinkBridgeWebProjectPath)')" />
+    <ProjectReference Include="..\LocalDrop.Web\LocalDrop.Web.csproj" />
     <ProjectReference Include="$(IndiumProjectPath)" Condition="Exists('$(IndiumProjectPath)')" />
   </ItemGroup>
 
@@ -69,7 +69,7 @@
     <Error Condition="!Exists('$(RealityCheckWebProjectPath)')" Text="Missing RealityCheck module project. Set RealityCheckWebProjectPath (e.g. via Directory.Build.props.local) or init submodule Submodules/RealityCheck." />
     <Error Condition="!Exists('$(ImageHexEditorWebProjectPath)')" Text="Missing ImageHexEditor module project. Set ImageHexEditorWebProjectPath (e.g. via Directory.Build.props.local) or init submodule Submodules/ImageHexEditor." />
     <Error Condition="!Exists('$(WebAmpWebProjectPath)')" Text="Missing WebAmp module project. Set WebAmpWebProjectPath (e.g. via Directory.Build.props.local) or init submodule Submodules/WebAmp." />
-    <Error Condition="!Exists('$(BlinkBridgeWebProjectPath)')" Text="Missing BlinkBridge module project. Set BlinkBridgeWebProjectPath (e.g. via Directory.Build.props.local) or init submodule Submodules/BlinkBridge." />
+    <Error Condition="!Exists('$(LocalDropWebProjectPath)')" Text="Missing LocalDrop module project. Set LocalDropWebProjectPath (e.g. via Directory.Build.props.local) or init submodule Submodules/LocalDrop." />
   </Target>
 
 </Project>

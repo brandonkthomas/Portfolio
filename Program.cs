@@ -15,7 +15,7 @@ builder.Services
     .AddApplicationPart(typeof(RealityCheck.Web.Controllers.RealityCheckController).Assembly)
     .AddApplicationPart(typeof(ImageHexEditor.Web.Controllers.ImageHexEditorController).Assembly)
     .AddApplicationPart(typeof(WebAmp.Web.Controllers.IndexController).Assembly)
-    .AddApplicationPart(typeof(BlinkBridge.Web.Controllers.BlinkBridgeController).Assembly);
+    .AddApplicationPart(typeof(LocalDrop.Web.Controllers.LocalDropController).Assembly);
 builder.Services.AddSingleton<IAssetManifest, AssetManifest>();
 builder.Services.AddSingleton<AiDetector>();
 
@@ -81,8 +81,12 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 
-// Configure the application to use port 8081
-builder.WebHost.UseUrls("http://*:8081");
+// In development, allow launch profiles / ASPNETCORE_URLS to control HTTP+HTTPS bindings.
+// Outside development, keep the fixed HTTP listener expected behind the reverse proxy.
+if (!builder.Environment.IsDevelopment())
+{
+    builder.WebHost.UseUrls("http://*:8081");
+}
 
 var app = builder.Build();
 
@@ -117,7 +121,7 @@ if (!app.Environment.IsDevelopment())
     });
 }
 
-// app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 
 // Static files with ETag-based caching for JS/CSS
 app.UseStaticFiles(new StaticFileOptions
@@ -299,11 +303,11 @@ app.MapControllerRoute(
     pattern: "/webamp",
     defaults: new { controller = "WebAmp", action = "Index" });
 
-// BlinkBridge landing page
+// LocalDrop landing page
 app.MapControllerRoute(
     name: "blinkbridge",
     pattern: "/blinkbridge",
-    defaults: new { controller = "BlinkBridge", action = "Index" });
+    defaults: new { controller = "LocalDrop", action = "Index" });
 
 // WebAmp SPA deep links (client-side router). Must come after the exact /webamp route.
 app.MapControllerRoute(
