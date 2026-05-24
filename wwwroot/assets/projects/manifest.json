@@ -55,7 +55,7 @@
       "githubUrl": "https://github.com/brandonkthomas/Indium"
     },
     {
-      "slug": "blinkbridge",
+      "slug": "localdrop",
       "title": "LocalDrop",
       "tag": "Web",
       "footer": "TypeScript, QR",
@@ -63,7 +63,7 @@
       "gradientColor1": "#23707a",
       "gradientColor2": "#be893e",
       "span": "1x1",
-      "url": "/blinkbridge",
+      "url": "/localdrop",
       "external": false,
       "component": null
     },

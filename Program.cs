@@ -305,8 +305,8 @@ app.MapControllerRoute(
 
 // LocalDrop landing page
 app.MapControllerRoute(
-    name: "blinkbridge",
-    pattern: "/blinkbridge",
+    name: "localdrop",
+    pattern: "/localdrop",
     defaults: new { controller = "LocalDrop", action = "Index" });
 
 // WebAmp SPA deep links (client-side router). Must come after the exact /webamp route.
