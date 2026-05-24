@@ -55,6 +55,19 @@
       "githubUrl": "https://github.com/brandonkthomas/Indium"
     },
     {
+      "slug": "blinkbridge",
+      "title": "BlinkBridge",
+      "tag": "Web",
+      "footer": "TypeScript, QR",
+      "gradientAngle": 210,
+      "gradientColor1": "#23707a",
+      "gradientColor2": "#be893e",
+      "span": "1x1",
+      "url": "/blinkbridge",
+      "external": false,
+      "component": null
+    },
+    {
       "slug": "spectrometer",
       "title": "Spectrometer",
       "tag": "Windows",
@@ -119,19 +132,6 @@
       "external": false,
       "component": null,
       "githubUrl": "https://github.com/brandonkthomas/NameTrace"
-    },
-    {
-      "slug": "realitycheck",
-      "title": "AI Image Detector (Preview)",
-      "tag": "Web",
-      "footer": ".NET Core, TypeScript",
-      "gradientAngle": 210,
-      "gradientColor1": "#1c1f2a",
-      "gradientColor2": "#1a2420",
-      "span": "1x1",
-      "url": "/realitycheck",
-      "external": false,
-      "component": null
     }
   ]
 }

@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.Routing;
 using Portfolio.Services;
 using Microsoft.Extensions.FileProviders;
 using RealityCheck;
@@ -15,7 +14,8 @@ builder.Services
     .AddApplicationPart(typeof(NameTrace.Web.Controllers.NameTraceController).Assembly)
     .AddApplicationPart(typeof(RealityCheck.Web.Controllers.RealityCheckController).Assembly)
     .AddApplicationPart(typeof(ImageHexEditor.Web.Controllers.ImageHexEditorController).Assembly)
-    .AddApplicationPart(typeof(WebAmp.Web.Controllers.IndexController).Assembly);
+    .AddApplicationPart(typeof(WebAmp.Web.Controllers.IndexController).Assembly)
+    .AddApplicationPart(typeof(BlinkBridge.Web.Controllers.BlinkBridgeController).Assembly);
 builder.Services.AddSingleton<IAssetManifest, AssetManifest>();
 builder.Services.AddSingleton<AiDetector>();
 
@@ -298,6 +298,12 @@ app.MapControllerRoute(
     name: "webamp",
     pattern: "/webamp",
     defaults: new { controller = "WebAmp", action = "Index" });
+
+// BlinkBridge landing page
+app.MapControllerRoute(
+    name: "blinkbridge",
+    pattern: "/blinkbridge",
+    defaults: new { controller = "BlinkBridge", action = "Index" });
 
 // WebAmp SPA deep links (client-side router). Must come after the exact /webamp route.
 app.MapControllerRoute(

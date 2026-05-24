@@ -4,6 +4,7 @@
   <Project Path="../../Libraries/NameTrace/NameTrace.Web/NameTrace.Web.csproj" />
   <Project Path="../../Libraries/RealityCheck/RealityCheck.Web/RealityCheck.Web.csproj" />
   <Project Path="../../Libraries/RealityCheck/RealityCheck/RealityCheck.csproj" />
+  <Project Path="../BlinkBridge.Web/BlinkBridge.Web.csproj" />
   <Project Path="../WebAmp/WebAmp.Web/WebAmp.Web.csproj" />
   <Project Path="Portfolio.csproj" />
 </Solution>
