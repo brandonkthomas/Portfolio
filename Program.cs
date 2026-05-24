@@ -121,7 +121,10 @@ if (!app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 // Static files with ETag-based caching for JS/CSS
 app.UseStaticFiles(new StaticFileOptions
