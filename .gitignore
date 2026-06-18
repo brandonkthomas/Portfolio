@@ -25,3 +25,5 @@ Submodules/RealityCheck/RealityCheck.Web/wwwroot/dist/js/realitycheck.js
 Directory.Build.props.local
 Portfolio.local.code-workspace
 Portfolio.sln.DotSettings.user
+
+Dockerfile
