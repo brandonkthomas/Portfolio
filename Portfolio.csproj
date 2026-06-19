@@ -8,17 +8,17 @@
 
   <!--
     Module project paths:
-      - Defaults point to git submodules under `Submodules/*`.
+      - Defaults point to sibling repositories under the parent source directory.
       - Locally, you can override these in `Directory.Build.props.local` to point at canonical repos
-        elsewhere on disk (and skip checking out submodule working trees in this repo).
+        elsewhere on disk.
   -->
   <PropertyGroup>
-    <NameTraceWebProjectPath Condition="'$(NameTraceWebProjectPath)' == ''">Submodules/NameTrace/NameTrace.Web/NameTrace.Web.csproj</NameTraceWebProjectPath>
-    <RealityCheckWebProjectPath Condition="'$(RealityCheckWebProjectPath)' == ''">Submodules/RealityCheck/RealityCheck.Web/RealityCheck.Web.csproj</RealityCheckWebProjectPath>
-    <ImageHexEditorWebProjectPath Condition="'$(ImageHexEditorWebProjectPath)' == ''">Submodules/ImageHexEditor/ImageHexEditor.Web/ImageHexEditor.Web.csproj</ImageHexEditorWebProjectPath>
-    <WebAmpWebProjectPath Condition="'$(WebAmpWebProjectPath)' == ''">Submodules/WebAmp/WebAmp.Web/WebAmp.Web.csproj</WebAmpWebProjectPath>
-    <LocalDropWebProjectPath Condition="'$(LocalDropWebProjectPath)' == ''">Submodules/LocalDrop/LocalDrop.Web/LocalDrop.Web.csproj</LocalDropWebProjectPath>
-    <IndiumProjectPath Condition="'$(IndiumProjectPath)' == ''">Submodules/Indium/Indium.csproj</IndiumProjectPath>
+    <NameTraceWebProjectPath Condition="'$(NameTraceWebProjectPath)' == ''">../NameTrace/NameTrace.Web/NameTrace.Web.csproj</NameTraceWebProjectPath>
+    <RealityCheckWebProjectPath Condition="'$(RealityCheckWebProjectPath)' == ''">../RealityCheck/RealityCheck.Web/RealityCheck.Web.csproj</RealityCheckWebProjectPath>
+    <ImageHexEditorWebProjectPath Condition="'$(ImageHexEditorWebProjectPath)' == ''">../ImageHexEditor/ImageHexEditor.Web/ImageHexEditor.Web.csproj</ImageHexEditorWebProjectPath>
+    <WebAmpWebProjectPath Condition="'$(WebAmpWebProjectPath)' == ''">../WebAmp/WebAmp.Web/WebAmp.Web.csproj</WebAmpWebProjectPath>
+    <LocalDropWebProjectPath Condition="'$(LocalDropWebProjectPath)' == ''">../LocalDrop.Web/LocalDrop.Web.csproj</LocalDropWebProjectPath>
+    <IndiumProjectPath Condition="'$(IndiumProjectPath)' == ''">../Indium/Indium.csproj</IndiumProjectPath>
 
     <!--
       Tooling:
@@ -60,16 +60,16 @@
     <ProjectReference Include="$(RealityCheckWebProjectPath)" Condition="Exists('$(RealityCheckWebProjectPath)')" Properties="EsbuildCli=$(EsbuildCli)" />
     <ProjectReference Include="$(ImageHexEditorWebProjectPath)" Condition="Exists('$(ImageHexEditorWebProjectPath)')" Properties="EsbuildCli=$(EsbuildCli)" />
     <ProjectReference Include="$(WebAmpWebProjectPath)" Condition="Exists('$(WebAmpWebProjectPath)')" Properties="EsbuildCli=$(EsbuildCli);WebAmpAppVersion=$(WebAmpAppVersion)" />
-    <ProjectReference Include="..\LocalDrop.Web\LocalDrop.Web.csproj" />
+    <ProjectReference Include="$(LocalDropWebProjectPath)" Condition="Exists('$(LocalDropWebProjectPath)')" Properties="EsbuildCli=$(EsbuildCli)" />
     <ProjectReference Include="$(IndiumProjectPath)" Condition="Exists('$(IndiumProjectPath)')" />
   </ItemGroup>
 
   <Target Name="ValidateModuleProjectReferences" BeforeTargets="Build" Condition="'$(SkipModuleProjectValidation)' != 'true'">
-    <Error Condition="!Exists('$(NameTraceWebProjectPath)')" Text="Missing NameTrace module project. Set NameTraceWebProjectPath (e.g. via Directory.Build.props.local) or init submodule Submodules/NameTrace." />
-    <Error Condition="!Exists('$(RealityCheckWebProjectPath)')" Text="Missing RealityCheck module project. Set RealityCheckWebProjectPath (e.g. via Directory.Build.props.local) or init submodule Submodules/RealityCheck." />
-    <Error Condition="!Exists('$(ImageHexEditorWebProjectPath)')" Text="Missing ImageHexEditor module project. Set ImageHexEditorWebProjectPath (e.g. via Directory.Build.props.local) or init submodule Submodules/ImageHexEditor." />
-    <Error Condition="!Exists('$(WebAmpWebProjectPath)')" Text="Missing WebAmp module project. Set WebAmpWebProjectPath (e.g. via Directory.Build.props.local) or init submodule Submodules/WebAmp." />
-    <Error Condition="!Exists('$(LocalDropWebProjectPath)')" Text="Missing LocalDrop module project. Set LocalDropWebProjectPath (e.g. via Directory.Build.props.local) or init submodule Submodules/LocalDrop." />
+    <Error Condition="!Exists('$(NameTraceWebProjectPath)')" Text="Missing NameTrace module project. Set NameTraceWebProjectPath, for example via Directory.Build.props.local." />
+    <Error Condition="!Exists('$(RealityCheckWebProjectPath)')" Text="Missing RealityCheck module project. Set RealityCheckWebProjectPath, for example via Directory.Build.props.local." />
+    <Error Condition="!Exists('$(ImageHexEditorWebProjectPath)')" Text="Missing ImageHexEditor module project. Set ImageHexEditorWebProjectPath, for example via Directory.Build.props.local." />
+    <Error Condition="!Exists('$(WebAmpWebProjectPath)')" Text="Missing WebAmp module project. Set WebAmpWebProjectPath, for example via Directory.Build.props.local." />
+    <Error Condition="!Exists('$(LocalDropWebProjectPath)')" Text="Missing LocalDrop module project. Set LocalDropWebProjectPath, for example via Directory.Build.props.local." />
   </Target>
 
 </Project>
