@@ -86,8 +86,8 @@
       "downloadUrl": "https://github.com/brandonkthomas/Spectrometer/releases/latest/download/Spectrometer.exe"
     },
     {
-      "slug": "utility-scripts",
-      "title": "Utility Scripts",
+      "slug": "deployment-scripts",
+      "title": "Deployment Scripts",
       "tag": "CLI",
       "footer": "Bash",
       "gradientColor1": "#1c1f2a",
