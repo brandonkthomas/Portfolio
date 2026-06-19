@@ -93,7 +93,7 @@
       "gradientColor1": "#1c1f2a",
       "gradientColor2": "#2a1f24",
       "span": "1x1",
-      "url": "https://github.com/brandonkthomas/scripts",
+      "url": "https://github.com/brandonkthomas/deployment-scripts",
       "external": true,
       "component": {
         "type": "terminalBlink",

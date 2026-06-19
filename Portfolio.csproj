@@ -14,7 +14,6 @@
   -->
   <PropertyGroup>
     <NameTraceWebProjectPath Condition="'$(NameTraceWebProjectPath)' == ''">../NameTrace/NameTrace.Web/NameTrace.Web.csproj</NameTraceWebProjectPath>
-    <RealityCheckWebProjectPath Condition="'$(RealityCheckWebProjectPath)' == ''">../RealityCheck/RealityCheck.Web/RealityCheck.Web.csproj</RealityCheckWebProjectPath>
     <ImageHexEditorWebProjectPath Condition="'$(ImageHexEditorWebProjectPath)' == ''">../ImageHexEditor/ImageHexEditor.Web/ImageHexEditor.Web.csproj</ImageHexEditorWebProjectPath>
     <WebAmpWebProjectPath Condition="'$(WebAmpWebProjectPath)' == ''">../WebAmp/WebAmp.Web/WebAmp.Web.csproj</WebAmpWebProjectPath>
     <LocalDropWebProjectPath Condition="'$(LocalDropWebProjectPath)' == ''">../LocalDrop.Web/LocalDrop.Web.csproj</LocalDropWebProjectPath>
@@ -57,7 +56,6 @@
 
   <ItemGroup>
     <ProjectReference Include="$(NameTraceWebProjectPath)" Condition="Exists('$(NameTraceWebProjectPath)')" Properties="EsbuildCli=$(EsbuildCli)" />
-    <ProjectReference Include="$(RealityCheckWebProjectPath)" Condition="Exists('$(RealityCheckWebProjectPath)')" Properties="EsbuildCli=$(EsbuildCli)" />
     <ProjectReference Include="$(ImageHexEditorWebProjectPath)" Condition="Exists('$(ImageHexEditorWebProjectPath)')" Properties="EsbuildCli=$(EsbuildCli)" />
     <ProjectReference Include="$(WebAmpWebProjectPath)" Condition="Exists('$(WebAmpWebProjectPath)')" Properties="EsbuildCli=$(EsbuildCli);WebAmpAppVersion=$(WebAmpAppVersion)" />
     <ProjectReference Include="$(LocalDropWebProjectPath)" Condition="Exists('$(LocalDropWebProjectPath)')" Properties="EsbuildCli=$(EsbuildCli)" />
@@ -66,7 +64,6 @@
 
   <Target Name="ValidateModuleProjectReferences" BeforeTargets="Build" Condition="'$(SkipModuleProjectValidation)' != 'true'">
     <Error Condition="!Exists('$(NameTraceWebProjectPath)')" Text="Missing NameTrace module project. Set NameTraceWebProjectPath, for example via Directory.Build.props.local." />
-    <Error Condition="!Exists('$(RealityCheckWebProjectPath)')" Text="Missing RealityCheck module project. Set RealityCheckWebProjectPath, for example via Directory.Build.props.local." />
     <Error Condition="!Exists('$(ImageHexEditorWebProjectPath)')" Text="Missing ImageHexEditor module project. Set ImageHexEditorWebProjectPath, for example via Directory.Build.props.local." />
     <Error Condition="!Exists('$(WebAmpWebProjectPath)')" Text="Missing WebAmp module project. Set WebAmpWebProjectPath, for example via Directory.Build.props.local." />
     <Error Condition="!Exists('$(LocalDropWebProjectPath)')" Text="Missing LocalDrop module project. Set LocalDropWebProjectPath, for example via Directory.Build.props.local." />

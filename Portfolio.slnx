@@ -2,8 +2,6 @@
   <Project Path="../ImageHexEditor/ImageHexEditor.Web/ImageHexEditor.Web.csproj" />
   <Project Path="../Indium/Indium.csproj" />
   <Project Path="../NameTrace/NameTrace.Web/NameTrace.Web.csproj" />
-  <Project Path="../RealityCheck/RealityCheck.Web/RealityCheck.Web.csproj" />
-  <Project Path="../RealityCheck/RealityCheck/RealityCheck.csproj" />
   <Project Path="../WebAmp/WebAmp.Web/WebAmp.Web.csproj" />
   <Project Path="../LocalDrop.Web/LocalDrop.Web.csproj" />
   <Project Path="Portfolio.csproj" />
