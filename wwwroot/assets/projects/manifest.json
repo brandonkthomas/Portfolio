@@ -38,23 +38,6 @@
       "githubUrl": "https://github.com/brandonkthomas/WebAmp"
     },
     {
-      "slug": "indium",
-      "title": "Indium",
-      "tag": "Web",
-      "footer": "TypeScript, CSS, Razor",
-      "gradientAngle": 210,
-      "gradientColor1": "#2a2a2a",
-      "gradientColor2": "#5d5757",
-      "span": "2x1",
-      "url": "/indium",
-      "external": false,
-      "component": {
-        "type": "indiumSkeleton",
-        "props": {}
-      },
-      "githubUrl": "https://github.com/brandonkthomas/Indium"
-    },
-    {
       "slug": "localdrop",
       "title": "LocalDrop",
       "tag": "Web",

@@ -242,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Lazy-load error page
     if (isErrorPage()) {
-        import('./pages/error').then(mod => {
+        import('./pages/error.js').then(mod => {
             const init = (mod as any).default as (() => void) | undefined;
             if (typeof init === 'function') {
                 init();
