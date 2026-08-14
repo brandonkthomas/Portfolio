@@ -67,6 +67,8 @@ class Card {
     // Animation helpers
     private lastTimestamp: number | undefined;
     private minFrameIntervalMs: number;
+    private animationFrameId: number | null;
+    private renderingActive: boolean;
     private _showTapTimeout: any | null;
     private _hideTapTimeout: any | null;
 
@@ -109,10 +111,6 @@ class Card {
         this.hasInteracted = false; // once true, CTA should never reappear this session
 
         // Signal to subscribers that the card is ready
-        this.readyPromise = new Promise((resolve) => {
-            this._resolveReady = resolve;
-        });
-
         this.readyPromise = new Promise((resolve) => {
             this._resolveReady = resolve;
         });
@@ -179,6 +177,8 @@ class Card {
         this.flipStartTime = null; // only start timing on user click
 
         this.minFrameIntervalMs = 0; // uncapped by default
+        this.animationFrameId = null;
+        this.renderingActive = false;
 
         this.init();
 
@@ -233,7 +233,7 @@ class Card {
         this.setupEventListeners();
 
         // Start animation
-        requestAnimationFrame(this.animate.bind(this));
+        this.startRendering();
         this.log('Initialized');
     }
 
@@ -624,6 +624,9 @@ class Card {
      * @param {number} timestamp - Current animation timestamp
      */
     animate(timestamp: number) {
+        this.animationFrameId = null;
+        if (!this.renderingActive) return;
+
         // first frame: seed lastTimestamp so it's never undefined
         if (this.lastTimestamp === undefined) {
             this.lastTimestamp = timestamp;
@@ -631,7 +634,7 @@ class Card {
 
         const elapsed = timestamp - this.lastTimestamp;
         if (this.minFrameIntervalMs > 0 && elapsed < this.minFrameIntervalMs) {
-            requestAnimationFrame(this.animate.bind(this));
+            this.queueNextFrame();
             return;
         }
         this.lastTimestamp = timestamp;
@@ -694,7 +697,36 @@ class Card {
         // Perf: frame end
         perf.loopFrameEnd('card');
 
-        requestAnimationFrame(this.animate.bind(this));
+        this.queueNextFrame();
+    }
+
+    private queueNextFrame() {
+        if (this.renderingActive && this.animationFrameId == null) {
+            this.animationFrameId = requestAnimationFrame((timestamp) => this.animate(timestamp));
+        }
+    }
+
+    private startRendering() {
+        if (this.renderingActive) return;
+        this.renderingActive = true;
+        this.lastTimestamp = undefined;
+        this.queueNextFrame();
+    }
+
+    private stopRendering() {
+        this.renderingActive = false;
+        if (this.animationFrameId != null) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
+        }
+
+        // A direct navigation can hide the card before its first animation frame.
+        // The renderer is already initialized at this point, so do not leave the
+        // application-wide readiness gate waiting on a frame we just cancelled.
+        if (this._resolveReady) {
+            this._resolveReady();
+            this._resolveReady = null;
+        }
     }
 
     //==============================================================================================
@@ -880,6 +912,7 @@ class Card {
         }
         
         this.container.classList.add('hidden');
+        this.stopRendering();
 
         // Cancel CTA and hide indicators when leaving card view
         this._clearCtaTimers();
@@ -898,6 +931,7 @@ class Card {
         }
 
         this.container.classList.remove('hidden');
+        this.startRendering();
 
         // Start CTA timer now that card view is active
         this._startCtaTimer();

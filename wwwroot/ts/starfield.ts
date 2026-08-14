@@ -22,6 +22,7 @@ class Starfield {
     private starCount: number;
     private starField: any;
     private starSize: number;
+    private activeStarCount: number;
     private starDirection: number;
     private cardContainer: HTMLElement | null;
 
@@ -102,6 +103,7 @@ class Starfield {
         // Star configuration
         this.stars = [];
         this.starCount = isMobile() ? 1500 : 2000;
+        this.activeStarCount = this.starCount;
         this.starField = null;
         this.warpIntensity = 0;
         this.starDirection = 1; // 1 for forward, -1 for reverse
@@ -378,6 +380,9 @@ class Starfield {
         const positions = this.starField.geometry.attributes.position;
         const colors = this.starField.geometry.attributes.color;
         const targetCount = Math.floor(this.starCount * 0.3);
+        this.activeStarCount = targetCount;
+        this.starField.geometry.setDrawRange(0, targetCount);
+        this.trailGeometry?.setDrawRange(0, targetCount * 2);
 
         // Fade out stars beyond target count
         for (let i = targetCount; i < positions.count; i++) {
@@ -401,6 +406,9 @@ class Starfield {
         if (!this.starField) return;
 
         const colors = this.starField.geometry.attributes.color;
+        this.activeStarCount = this.starCount;
+        this.starField.geometry.setDrawRange(0, this.starCount);
+        this.trailGeometry?.setDrawRange(0, this.starCount * 2);
 
         // Restore all stars
         for (let i = 0; i < colors.count; i++) {
@@ -605,7 +613,8 @@ class Starfield {
 
         // Stars update loop segment start
         const segStars = perf.segmentStart('starfield', 'update-stars');
-        for (let i = 0; i < positions.count; i++) {
+        const activeStarCount = Math.min(this.activeStarCount, positions.count);
+        for (let i = 0; i < activeStarCount; i++) {
             // Calculate warp speed (up to 50x faster when warping)
             const absWarpIntensity = Math.abs(this.warpIntensity);
             const warpSpeed = originalSpeeds.array[i] * (1 + absWarpIntensity * 299);
@@ -726,7 +735,7 @@ class Starfield {
         // Update subtle trails during warp pulse
         const segTrails = perf.segmentStart('starfield', 'update-trails');
         const trailPositions = this.trailGeometry.attributes.position.array;
-        for (let i = 0; i < positions.count; i++) {
+        for (let i = 0; i < activeStarCount; i++) {
             const base3 = i * 3;
             const base6 = i * 6;
             const x = positions.array[base3];

@@ -164,12 +164,17 @@
         rgba(255, 255, 255, 0.03) 100%
     );
     background-size: 200% 100%;
-    animation: skeleton-shimmer 1.5s ease-in-out infinite;
+    background-position: 200% 0;
     border-radius: inherit;
     z-index: 1;
     opacity: 1;
     transition: opacity 0.3s ease;
     will-change: opacity;
+}
+
+/* Keep paint work bounded: only the 2–3 images currently transferring/decoding shimmer. */
+.photo-item--active-load .photo-skeleton {
+    animation: skeleton-shimmer 1.5s ease-in-out infinite;
 }
 
 @keyframes skeleton-shimmer {

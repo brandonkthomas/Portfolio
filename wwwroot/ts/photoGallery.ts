@@ -11,7 +11,10 @@ type PhotoItem = { url: string; width: number; height: number; aspectRatio: numb
 type ManifestImageEntry = string | { url?: string; width?: number; height?: number };
 type LightboxController = { init(): void; destroy(): void };
 type PhotoLoadRequest = {
+    generation: number;
     img: HTMLImageElement;
+    photoItem: HTMLElement;
+    photo: PhotoItem;
     url: string;
     approximateTop: number;
     columnIndex: number;
@@ -37,8 +40,15 @@ class PhotoGallery {
     private currentColumnCount: number;
     private photosGenerated: boolean;
     private lightboxInstance: LightboxController | null;
-    private preloadHintNodes: HTMLLinkElement[];
     private listenersBound: boolean;
+    private imageObserver: IntersectionObserver | null;
+    private imageRequests: Map<HTMLImageElement, PhotoLoadRequest>;
+    private imageLoadQueue: PhotoLoadRequest[];
+    private queuedImages: WeakSet<HTMLImageElement>;
+    private activeImageLoads: number;
+    private imageLoadingEnabled: boolean;
+    private imageLoadingTimer: number | null;
+    private renderGeneration: number;
 
     //==============================================================================================
     // Constructor
@@ -50,8 +60,15 @@ class PhotoGallery {
         this.currentColumnCount = 0; // Track current column count for resize handling
         this.photosGenerated = false; // Track if photos have been generated
         this.lightboxInstance = null;
-        this.preloadHintNodes = [];
         this.listenersBound = false;
+        this.imageObserver = null;
+        this.imageRequests = new Map();
+        this.imageLoadQueue = [];
+        this.queuedImages = new WeakSet();
+        this.activeImageLoads = 0;
+        this.imageLoadingEnabled = false;
+        this.imageLoadingTimer = null;
+        this.renderGeneration = 0;
         
         this.init();
     }
@@ -254,8 +271,6 @@ class PhotoGallery {
             return;
         }
 
-        const measurementQueue: PhotoItem[] = [];
-
         try {
             const response = await fetch('/assets/images/reel/manifest.json', { cache: 'no-cache' });
             if (!response.ok) throw new Error(`Failed to load manifest: ${response.status}`);
@@ -264,21 +279,17 @@ class PhotoGallery {
 
             const normalizedPhotos: PhotoItem[] = [];
             entries.forEach((entry: ManifestImageEntry, index: number) => {
-                const { photo, hasDimensions } = this.createPhotoFromManifestEntry(entry, index);
+                const { photo } = this.createPhotoFromManifestEntry(entry, index);
                 if (!photo) {
                     return;
                 }
                 normalizedPhotos.push(photo);
-                if (!hasDimensions) {
-                    measurementQueue.push(photo);
-                }
             });
 
             this.photos = normalizedPhotos;
             this.log('Manifest Loaded', {
                 entries: entries.length,
-                normalized: normalizedPhotos.length,
-                measurementQueue: measurementQueue.length
+                normalized: normalizedPhotos.length
             });
         } catch (err) {
             this.log(
@@ -290,24 +301,22 @@ class PhotoGallery {
             this.photos = [];
         }
 
-        this.renderPhotoGrid();
-
-        if (measurementQueue.length) {
-            this.log('Measurement Queue Dispatched', { items: measurementQueue.length });
-            measurementQueue.forEach((photo: PhotoItem) => this.backfillPhotoDimensions(photo));
-        }
+        await this.renderPhotoGrid();
     }
 
     //==============================================================================================
     /**
      * Render photo grid with column layout (round-robin distribution)
      */
-    renderPhotoGrid() {
+    async renderPhotoGrid() {
         const grid = this.container!.querySelector('.photo-grid') as HTMLElement | null;
         if (!grid) {
             this.log('Render Skipped', {}, 'Photo grid missing', 'warn');
             return;
         }
+
+        const generation = ++this.renderGeneration;
+        this.resetImageLoader();
 
         // Clear existing content
         grid.innerHTML = '';
@@ -327,8 +336,6 @@ class PhotoGallery {
 
         // Distribute photos across columns by predicted (and then actual) column height
         const getColumnGapPx = () => {
-            const parentStyles = window.getComputedStyle(grid);
-
             // row-gap is defined on the column, but using the grid's column gap here is fine for estimate
             const columnStyles = columns[0] ? window.getComputedStyle(columns[0]) : null;
             const rowGap = columnStyles ? parseFloat(columnStyles.rowGap || '0') : 0;
@@ -342,12 +349,18 @@ class PhotoGallery {
         const { rowGap, paddingTop, paddingBottom } = getColumnGapPx();
 
         // Track predicted heights to avoid bias from yet-to-load images
-        const predictedHeights = columns.map(col => col.offsetHeight + paddingTop + paddingBottom);
+        const predictedHeights = columns.map(() => paddingTop + paddingBottom);
+        // Read layout once. Reading targetColumn.clientWidth inside the photo loop forced a full layout
+        // for every item and was the largest synchronous render cost on a cold gallery load.
+        const columnWidths = columns.map(column => column.clientWidth);
 
         // Track ordered queue of images to load (we want to load DOM from top down)
         const loadQueue: PhotoLoadRequest[] = [];
 
-        this.photos.forEach((photo: PhotoItem) => {
+        const batchSize = window.innerWidth < 768 ? 8 : 16;
+        for (let photoPosition = 0; photoPosition < this.photos.length; photoPosition++) {
+            if (generation !== this.renderGeneration) return;
+            const photo = this.photos[photoPosition];
             // Create photo item with skeleton
             const photoItem = document.createElement('div');
             photoItem.className = 'photo-item photo-item--loading';
@@ -378,27 +391,6 @@ class PhotoGallery {
             trigger.setAttribute('aria-label', `View photo ${photo.index + 1}`);
             trigger.addEventListener('contextmenu', (event) => event.preventDefault());
 
-            // After load, update actual aspect ratio for better layout stability
-            img.addEventListener('load', () => {
-                photoItem.classList.remove('photo-item--loading');
-                photoItem.classList.add('photo-item--loaded');
-                if (img.naturalWidth && img.naturalHeight) {
-                    photo.width = img.naturalWidth;
-                    photo.height = img.naturalHeight;
-                    photo.aspectRatio = img.naturalWidth / img.naturalHeight;
-                    photoItem.style.aspectRatio = `${photo.width} / ${photo.height}`;
-                }
-            });
-
-            // Handle image error
-            img.addEventListener('error', () => {
-                photoItem.classList.remove('photo-item--loading');
-                photoItem.classList.add('photo-item--error');
-                this.log('Image Load Failed', {
-                    photoIndex: photo.index
-                }, photo.url, 'warn');
-            });
-
             trigger.appendChild(skeleton);
             trigger.appendChild(img);
             photoItem.appendChild(trigger);
@@ -418,7 +410,7 @@ class PhotoGallery {
 
             // Update prediction by adding this item's estimated rendered height
             // The item width equals the column content width
-            const columnWidth = targetColumn.clientWidth; // excludes scrollbar
+            const columnWidth = columnWidths[targetIndex] || 1;
             const estimatedItemHeight = Math.round(columnWidth / (photo.width / photo.height));
             
             // Include the row gap only if not the very first item in that column (heuristic)
@@ -427,18 +419,24 @@ class PhotoGallery {
 
             // Add to load queue for later processing
             loadQueue.push({
+                generation,
                 img,
+                photoItem,
+                photo,
                 url: photo.url,
                 approximateTop,
                 columnIndex: targetIndex,
                 photoIndex: photo.index
             });
 
-            // When image actually loads and aspect ratio updates, no need to reflow everything;
-            // we rely on CSS aspect-ratio to minimize jumps
-        });
+            this.observeImageRequest(loadQueue[loadQueue.length - 1]);
 
-        this.prioritizeImageRequests(loadQueue);
+            // Yield after a small amount of DOM work so the transition and starfield get a paint.
+            if ((photoPosition + 1) % batchSize === 0 && photoPosition + 1 < this.photos.length) {
+                await this.yieldToNextFrame();
+            }
+        }
+
         this.initPhotoLightbox();
         this.log('Grid Rendered', {
             columns: columnCount,
@@ -448,104 +446,150 @@ class PhotoGallery {
     }
 
     //==============================================================================================
-    /**
-     * Remove any preload hints created for previous renders
-     */
-    clearPreloadHints() {
-        if (!this.preloadHintNodes.length) {
-            return;
-        }
-        const removed = this.preloadHintNodes.length;
-        this.preloadHintNodes.forEach(link => link.remove());
-        this.preloadHintNodes = [];
-        this.log('Preload Hints Cleared', { removed });
+    /** Yield gallery construction so animation and input get a frame between DOM batches. */
+    yieldToNextFrame(): Promise<void> {
+        return new Promise(resolve => requestAnimationFrame(() => resolve()));
     }
 
     //==============================================================================================
-    /**
-     * Preload the highest-priority images (top-most rows)
-     * @param {PhotoLoadRequest[]} loadQueue
-     */
-    updatePreloadHints(loadQueue: PhotoLoadRequest[]) {
-        this.clearPreloadHints();
-        if (!loadQueue.length) {
-            return;
-        }
-
-        const headEl = document.head;
-        if (!headEl) {
-            return;
-        }
-
-        const itemsPerRow = Math.max(1, this.currentColumnCount || 1);
-        const preloadLimit = Math.min(loadQueue.length, itemsPerRow * 2);
-
-        for (let i = 0; i < preloadLimit; i++) {
-            const request = loadQueue[i];
-            const link = document.createElement('link');
-            link.rel = 'preload';
-            link.as = 'image';
-            link.href = request.url;
-            link.setAttribute('data-photo-preload', 'true');
-            headEl.appendChild(link);
-            this.preloadHintNodes.push(link);
-        }
-        this.log('Preload Hints Updated', { added: this.preloadHintNodes.length });
+    /** Reset observer and queue state before a responsive grid rebuild. */
+    resetImageLoader() {
+        this.imageObserver?.disconnect();
+        this.imageObserver = null;
+        this.imageRequests.clear();
+        this.imageLoadQueue = [];
+        this.queuedImages = new WeakSet();
+        this.activeImageLoads = 0;
     }
 
     //==============================================================================================
-    /**
-     * Schedule image requests based on approximate viewport order
-     * @param {PhotoLoadRequest[]} loadQueue
-     */
-    prioritizeImageRequests(loadQueue: PhotoLoadRequest[]) {
-        if (!loadQueue.length) {
+    /** Observe an image until it is within one viewport of the gallery viewport. */
+    observeImageRequest(request: PhotoLoadRequest) {
+        this.imageRequests.set(request.img, request);
+
+        if (!('IntersectionObserver' in window)) {
+            this.enqueueImageRequest(request);
             return;
         }
 
-        // Sort queue by approximate top position (closest to viewport first)
-        const sortedQueue = loadQueue.slice().sort((a, b) => {
-            if (a.approximateTop !== b.approximateTop) {
-                return a.approximateTop - b.approximateTop;
+        if (!this.imageObserver) {
+            this.imageObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (!entry.isIntersecting) return;
+                    const img = entry.target as HTMLImageElement;
+                    const queuedRequest = this.imageRequests.get(img);
+                    if (!queuedRequest) return;
+                    this.imageObserver?.unobserve(img);
+                    this.enqueueImageRequest(queuedRequest);
+                });
+            }, {
+                root: this.container,
+                rootMargin: '100% 0px',
+                threshold: 0.01
+            });
+        }
+
+        this.imageObserver.observe(request.img);
+    }
+
+    //==============================================================================================
+    /** Add a visible/near-visible image to the priority queue exactly once. */
+    enqueueImageRequest(request: PhotoLoadRequest) {
+        if (request.img.dataset.photoSrcAssigned === 'true' || this.queuedImages.has(request.img)) return;
+        this.queuedImages.add(request.img);
+        this.imageLoadQueue.push(request);
+        this.sortImageQueue();
+        this.drainImageQueue();
+    }
+
+    sortImageQueue() {
+        const viewportCenter = (this.container?.scrollTop || 0) + (this.container?.clientHeight || window.innerHeight) / 2;
+        this.imageLoadQueue.sort((a, b) => {
+            const distanceA = Math.abs(a.approximateTop - viewportCenter);
+            const distanceB = Math.abs(b.approximateTop - viewportCenter);
+            return distanceA - distanceB || a.photoIndex - b.photoIndex;
+        });
+    }
+
+    //==============================================================================================
+    /** Start only a small number of network/decode jobs at once. */
+    drainImageQueue() {
+        if (!this.imageLoadingEnabled || !this.isVisible) return;
+        const maxConcurrent = window.innerWidth < 768 ? 2 : 3;
+        this.sortImageQueue();
+
+        while (this.activeImageLoads < maxConcurrent && this.imageLoadQueue.length) {
+            const request = this.imageLoadQueue.shift()!;
+            if (!request.img.isConnected || request.generation !== this.renderGeneration) continue;
+            this.startImageLoad(request);
+        }
+    }
+
+    startImageLoad(request: PhotoLoadRequest) {
+        const { img, photoItem, photo } = request;
+        this.activeImageLoads += 1;
+        img.dataset.photoSrcAssigned = 'true';
+        img.loading = 'eager';
+        const viewportBottom = (this.container?.scrollTop || 0) + (this.container?.clientHeight || window.innerHeight);
+        img.fetchPriority = request.approximateTop <= viewportBottom ? 'high' : 'auto';
+        photoItem.classList.add('photo-item--active-load');
+
+        let settled = false;
+        const finish = async (loaded: boolean) => {
+            if (settled) return;
+            settled = true;
+            if (request.generation !== this.renderGeneration) return;
+
+            if (loaded) {
+                try {
+                    await img.decode();
+                } catch {
+                    // The load event is authoritative; decode() may reject for valid browser-managed images.
+                }
             }
-            if (a.columnIndex !== b.columnIndex) {
-                return a.columnIndex - b.columnIndex;
+
+            await this.yieldToNextFrame();
+            if (request.generation !== this.renderGeneration) return;
+
+            photoItem.classList.remove('photo-item--active-load', 'photo-item--loading');
+            if (loaded) {
+                photoItem.classList.add('photo-item--loaded');
+                if (img.naturalWidth && img.naturalHeight) {
+                    photo.width = img.naturalWidth;
+                    photo.height = img.naturalHeight;
+                    photo.aspectRatio = img.naturalWidth / img.naturalHeight;
+                    photoItem.style.aspectRatio = `${photo.width} / ${photo.height}`;
+                }
+            } else {
+                photoItem.classList.add('photo-item--error');
+                this.log('Image Load Failed', { photoIndex: photo.index }, photo.url, 'warn');
             }
-            return a.photoIndex - b.photoIndex;
+
+            this.activeImageLoads = Math.max(0, this.activeImageLoads - 1);
+            this.drainImageQueue();
+        };
+
+        img.addEventListener('load', () => { void finish(true); }, { once: true });
+        img.addEventListener('error', () => { void finish(false); }, { once: true });
+        img.src = request.url;
+        this.log('Image Load Started', {
+            photoIndex: request.photoIndex,
+            active: this.activeImageLoads,
+            queued: this.imageLoadQueue.length
         });
+    }
 
-        // Update preload hints for the sorted queue
-        this.updatePreloadHints(sortedQueue);
-
-        // Determine thresholds for eager/lazy loading based on column count
-        const firstRowThreshold = Math.max(1, this.currentColumnCount || 1);
-
-        const eagerDistance = Math.max(
-            window.innerHeight,
-            this.container?.clientHeight || 0
-        ) * 2;
-
-        // Assign every source synchronously and let the browser's native image scheduler decide when
-        // lazy images should transfer. Deferring src itself to idle callbacks can starve requests while
-        // a mobile user is actively scrolling and makes already-visited slots appear to "reload".
-        sortedQueue.forEach((item, orderIndex) => {
-            item.img.dataset.photoLoadOrder = `${orderIndex}`;
-            const isNearViewport = item.approximateTop <= eagerDistance;
-            item.img.loading = isNearViewport ? 'eager' : 'lazy';
-
-            const priority = orderIndex < firstRowThreshold
-                ? 'high'
-                : 'auto';
-            item.img.setAttribute('fetchpriority', priority);
-            item.img.dataset.photoSrcAssigned = 'true';
-            item.img.src = item.url;
-        });
-
-        this.log('Image Sources Assigned', {
-            queued: sortedQueue.length,
-            columns: this.currentColumnCount,
-            eagerDistance
-        });
+    //==============================================================================================
+    /** Hold decode work until the SPA transition has had time to finish painting. */
+    scheduleImageLoading() {
+        this.imageLoadingEnabled = false;
+        if (this.imageLoadingTimer != null) window.clearTimeout(this.imageLoadingTimer);
+        this.imageLoadingTimer = window.setTimeout(() => {
+            this.imageLoadingTimer = null;
+            if (!this.isVisible) return;
+            this.imageLoadingEnabled = true;
+            this.drainImageQueue();
+        }, 350);
     }
 
     //==============================================================================================
@@ -591,7 +635,7 @@ class PhotoGallery {
                 from: this.currentColumnCount,
                 to: newColumnCount
             });
-            this.renderPhotoGrid();
+            void this.renderPhotoGrid();
         }
     }
 
@@ -668,6 +712,7 @@ class PhotoGallery {
         this.container.setAttribute('aria-hidden', 'false');
         this.container.removeAttribute('inert');
         this.isVisible = true;
+        this.scheduleImageLoading();
         
         // Enable scrolling
         document.body.style.overflow = 'auto';
@@ -688,12 +733,14 @@ class PhotoGallery {
         this.container.setAttribute('aria-hidden', 'true');
         this.container.setAttribute('inert', '');
         this.isVisible = false;
+        this.imageLoadingEnabled = false;
+        if (this.imageLoadingTimer != null) {
+            window.clearTimeout(this.imageLoadingTimer);
+            this.imageLoadingTimer = null;
+        }
         
         // Disable scrolling
         document.body.style.overflow = 'hidden';
-
-        // Clear all image preload hints
-        this.clearPreloadHints();
 
         // Lightbox UI (photoLightbox) manages its own visibility; we're done here
         this.log('Gallery Hidden');
