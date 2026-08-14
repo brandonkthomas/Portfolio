@@ -76,7 +76,7 @@ export async function mount(container: HTMLElement, props: ByteGridProps = {}) {
 
         for (let r = 0; r < rows; r++) {
             const rowEl = document.createElement('div');
-            rowEl.className = 'bg-row';
+            rowEl.className = 'bg-byte-row';
             inner.appendChild(rowEl);
 
             const rowCells: Cell[] = [];
@@ -145,6 +145,7 @@ export async function mount(container: HTMLElement, props: ByteGridProps = {}) {
 
     let lastX: number | null = null;
     let lastY: number | null = null;
+    let active = true;
 
     // ============================================================================================
     /**
@@ -168,7 +169,7 @@ export async function mount(container: HTMLElement, props: ByteGridProps = {}) {
 
     // ============================================================================================
     function handlePointerMove(ev: PointerEvent): void {
-        if (!cellsFlat.length) return;
+        if (!active || !cellsFlat.length) return;
 
         const x = ev.clientX;
         const y = ev.clientY;
@@ -215,8 +216,26 @@ export async function mount(container: HTMLElement, props: ByteGridProps = {}) {
         lastY = null;
     }
 
-    inner.addEventListener('pointermove', handlePointerMove);
-    inner.addEventListener('pointerleave', handlePointerLeave);
+    const handlePointerEnter = (ev: PointerEvent) => {
+        // Cached viewport coordinates can change after a container scroll or SPA transition.
+        markCentersDirty();
+        handlePointerMove(ev);
+    };
+
+    // Listen on the untransformed tile-sized root. The visual grid is rotated/scaled and can extend
+    // well beyond its layout box, which made its event target disagree with the visible card area.
+    root.addEventListener('pointerenter', handlePointerEnter);
+    root.addEventListener('pointermove', handlePointerMove);
+    root.addEventListener('pointerleave', handlePointerLeave);
+
+    const scrollContainer = container.closest('.projects-container');
+    const onScroll = () => markCentersDirty();
+    scrollContainer?.addEventListener('scroll', onScroll, { passive: true });
+
+    const resizeObserver = 'ResizeObserver' in window
+        ? new ResizeObserver(() => markCentersDirty())
+        : null;
+    resizeObserver?.observe(root);
 
     const onResize = () => {
         const rect = container.getBoundingClientRect();
@@ -243,9 +262,17 @@ export async function mount(container: HTMLElement, props: ByteGridProps = {}) {
             // Currently no dynamic prop changes; hook reserved for future density tweaks.
             void nextProps;
         },
+        setActive(nextActive: boolean) {
+            active = nextActive;
+            handlePointerLeave();
+            if (active) markCentersDirty();
+        },
         destroy() {
-            inner.removeEventListener('pointermove', handlePointerMove);
-            inner.removeEventListener('pointerleave', handlePointerLeave);
+            root.removeEventListener('pointerenter', handlePointerEnter);
+            root.removeEventListener('pointermove', handlePointerMove);
+            root.removeEventListener('pointerleave', handlePointerLeave);
+            scrollContainer?.removeEventListener('scroll', onScroll);
+            resizeObserver?.disconnect();
             window.removeEventListener('resize', onResize);
             root.remove();
             logByteGrid('Destroyed');
