@@ -128,21 +128,36 @@ export async function mount(container: HTMLElement, props: Record<string, unknow
     const follow = 0.14;
     let rafId: number | null = null;
     let destroyed = false;
+    let active = true;
 
     const tick = () => {
+        rafId = null;
+        if (destroyed || !active) return;
+
         // Animate current values toward targets
+        let unsettled = false;
         for (const layer of layers) {
             layer.currentX += (layer.targetX - layer.currentX) * follow;
             layer.currentY += (layer.targetY - layer.currentY) * follow;
             layer.currentRot += (layer.targetRot - layer.currentRot) * follow;
             layer.currentScale += (layer.targetScale - layer.currentScale) * follow;
+            unsettled = unsettled
+                || Math.abs(layer.targetX - layer.currentX) > 0.01
+                || Math.abs(layer.targetY - layer.currentY) > 0.01
+                || Math.abs(layer.targetRot - layer.currentRot) > 0.01
+                || Math.abs(layer.targetScale - layer.currentScale) > 0.001;
             applyTransform(layer);
         }
-        if (!destroyed) {
+        if (unsettled) {
             rafId = requestAnimationFrame(tick);
         }
     };
-    rafId = requestAnimationFrame(tick);
+
+    const startAnimation = () => {
+        if (!destroyed && active && rafId == null) {
+            rafId = requestAnimationFrame(tick);
+        }
+    };
 
     const setTargetsFromPointer = (dx: number, dy: number) => {
         // Compute target pose for each layer from normalized pointer dx/dy
@@ -152,6 +167,7 @@ export async function mount(container: HTMLElement, props: Record<string, unknow
             layer.targetRot = layer.baseRot + dx * layer.rotMult;
             layer.targetScale = layer.baseScale;
         }
+        startAnimation();
     };
 
     // Pointer driven parallax (updates targets only-- RAF handles easing)
@@ -172,6 +188,7 @@ export async function mount(container: HTMLElement, props: Record<string, unknow
             layer.targetRot = layer.baseRot;
             layer.targetScale = layer.baseScale;
         }
+        startAnimation();
     };
 
     // Add event listeners for pointer movement, leave, and cancel
@@ -185,6 +202,7 @@ export async function mount(container: HTMLElement, props: Record<string, unknow
         mid.targetY = -6;
         mid.targetRot = 6;
         mid.targetScale = 1.04;
+        startAnimation();
         logCardStack('Touch Nudge');
     }, { passive: true });
     root.addEventListener('touchend', resetPointer, { passive: true });
@@ -195,6 +213,14 @@ export async function mount(container: HTMLElement, props: Record<string, unknow
         },
         update(nextProps: Record<string, unknown>) {
             // No-op for now; would update based on props
+        },
+        setActive(nextActive: boolean) {
+            active = nextActive;
+            if (!active && rafId != null) {
+                cancelAnimationFrame(rafId);
+                rafId = null;
+            }
+            if (active) startAnimation();
         },
         destroy() {
             container.removeEventListener('pointermove', handlePointer);
