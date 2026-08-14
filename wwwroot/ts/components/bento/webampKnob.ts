@@ -37,13 +37,38 @@ export async function mount(container: HTMLElement, props: WebAmpKnobProps = {})
 
     const base = document.createElement('img');
     base.className = 'wak-layer wak-layer-base';
-    base.src = '/assets/images/webamp/icon-WebAmp-full512-layer1.png';
     base.alt = '';
+    base.decoding = 'async';
+    base.loading = 'eager';
+    base.fetchPriority = 'high';
 
     const overlay = document.createElement('img');
     overlay.className = 'wak-layer wak-layer-overlay';
-    overlay.src = '/assets/images/webamp/icon-WebAmp-full512-layer2.png';
     overlay.alt = '';
+    overlay.decoding = 'async';
+    overlay.loading = 'eager';
+    overlay.fetchPriority = 'high';
+
+    const waitForImage = (image: HTMLImageElement, src: string): Promise<void> => new Promise((resolve) => {
+        let settled = false;
+        const finish = () => {
+            if (settled) return;
+            settled = true;
+            window.clearTimeout(timeoutId);
+            resolve();
+        };
+        const timeoutId = window.setTimeout(finish, 3000);
+        image.addEventListener('load', finish, { once: true });
+        // Preserve the component fallback even if an optional visual asset is unavailable.
+        image.addEventListener('error', finish, { once: true });
+        image.src = src;
+        if (image.complete) resolve();
+    });
+
+    await Promise.all([
+        waitForImage(base, '/assets/images/webamp/icon-WebAmp-full512-layer1.png'),
+        waitForImage(overlay, '/assets/images/webamp/icon-WebAmp-full512-layer2.png')
+    ]);
 
     // Avoid CSS transition restarts that cause micro-stutter; we animate via RAF instead
     overlay.style.willChange = 'transform';
@@ -72,24 +97,32 @@ export async function mount(container: HTMLElement, props: WebAmpKnobProps = {})
     const follow = 0.18;
     let rafId: number | null = null;
     let destroyed = false;
+    let active = true;
 
     const tick = () => {
-        if (destroyed) return;
+        rafId = null;
+        if (destroyed || !active) return;
         const delta = state.targetAngle - state.currentAngle;
         if (Math.abs(delta) > 0.01) {
             state.currentAngle += delta * follow;
+            applyAngle();
+            rafId = requestAnimationFrame(tick);
         } else {
             state.currentAngle = state.targetAngle;
+            applyAngle();
         }
-        applyAngle();
-        rafId = requestAnimationFrame(tick);
+    };
+
+    const startAnimation = () => {
+        if (!destroyed && active && rafId == null) {
+            rafId = requestAnimationFrame(tick);
+        }
     };
 
     // Seed initial angle and start animation loop
     state.currentAngle = 0;
     state.targetAngle = 0;
     applyAngle();
-    rafId = requestAnimationFrame(tick);
     logWebAmpKnob('Mounted', { maxAngle: state.maxAngle });
 
     let hovering = false;
@@ -108,17 +141,20 @@ export async function mount(container: HTMLElement, props: WebAmpKnobProps = {})
         if (!hovering) return;
         const angle = computeAngleFromPointer(ev);
         setTargetAngle(angle);
+        startAnimation();
     };
 
     const handlePointerEnter = (ev: PointerEvent) => {
         hovering = true;
         const angle = computeAngleFromPointer(ev);
         setTargetAngle(angle);
+        startAnimation();
     };
 
     const resetAngle = () => {
         hovering = false;
         setTargetAngle(0);
+        startAnimation();
     };
 
     container.addEventListener('pointerenter', handlePointerEnter);
@@ -137,7 +173,19 @@ export async function mount(container: HTMLElement, props: WebAmpKnobProps = {})
             if (nextProps && typeof nextProps.maxAngle === 'number' && Number.isFinite(nextProps.maxAngle)) {
                 state.maxAngle = Math.max(0, Math.min(90, Math.abs(nextProps.maxAngle)));
                 setTargetAngle(0);
+                startAnimation();
                 logWebAmpKnob('Props Updated', { maxAngle: state.maxAngle });
+            }
+        },
+        setActive(nextActive: boolean) {
+            active = nextActive;
+            if (!active) {
+                hovering = false;
+                if (rafId != null) cancelAnimationFrame(rafId);
+                rafId = null;
+                state.targetAngle = 0;
+                state.currentAngle = 0;
+                applyAngle();
             }
         },
         destroy() {
