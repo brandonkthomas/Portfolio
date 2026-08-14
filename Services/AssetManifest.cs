@@ -32,8 +32,7 @@ namespace Portfolio.Services
                     return mapped;
                 }
 
-                // Fallbacks if manifest key is missing (should not happen in Production)
-                // Prefer original dev path to avoid 404s
+                // Fall back to the unbundled compiled module when the deployment manifest is absent.
                 if (assetFileName.EndsWith(".js", StringComparison.OrdinalIgnoreCase))
                 {
                     return "/js/" + assetFileName;
@@ -43,7 +42,7 @@ namespace Portfolio.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error resolving asset path for {Asset}", assetFileName);
-                // Safe fallback to unbundled asset
+                // Fall back to the unbundled compiled module.
                 return "/js/" + assetFileName;
             }
         }
@@ -90,5 +89,4 @@ namespace Portfolio.Services
         }
     }
 }
-
 

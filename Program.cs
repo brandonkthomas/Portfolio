@@ -46,6 +46,20 @@ if (!string.IsNullOrWhiteSpace(keyRingPath))
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+    {
+        var partitionKey = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 120,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                AutoReplenishment = true
+            });
+    });
 });
 
 const string photoReelRequestPrefix = "/assets/images/reel/";
@@ -85,18 +99,14 @@ if (!app.Environment.IsDevelopment())
 // Use forwarded headers - place this early in the pipeline
 app.UseForwardedHeaders();
 
-// In prod, block direct access to original sources (/js/*) and source maps (*.map) via devtools/direct request
+// In prod, block source maps. The deployment normally removes /js, but it remains a valid
+// fallback when the hashed asset manifest is unavailable in another production setup.
 if (!app.Environment.IsDevelopment())
 {
     app.Use(async (ctx, next) =>
     {
         var pathValue = ctx.Request.Path.Value ?? string.Empty;
         if (pathValue.EndsWith(".map", StringComparison.OrdinalIgnoreCase))
-        {
-            ctx.Response.StatusCode = 404;
-            return;
-        }
-        if (pathValue.StartsWith("/js/", StringComparison.OrdinalIgnoreCase))
         {
             ctx.Response.StatusCode = 404;
             return;
@@ -141,8 +151,8 @@ app.UseStaticFiles(new StaticFileOptions
         }
         else if (n.EndsWith(".jpg") || n.EndsWith(".jpeg") || n.EndsWith(".png") || n.EndsWith(".webp") || n.EndsWith(".gif"))
         {
-            // Images can be immutable (filenames stable across deploy content) or use cache age
-            ctx.Context.Response.Headers["Cache-Control"] = "public, max-age=31536000, immutable";
+            // Image URLs are stable and their contents can change between deploys.
+            ctx.Context.Response.Headers["Cache-Control"] = "public, max-age=86400, must-revalidate";
         }
     }
 });

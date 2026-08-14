@@ -26,6 +26,7 @@
         - Pass an explicit EsbuildCli path down to ProjectReferences to keep builds consistent.
     -->
     <EsbuildCli Condition="'$(EsbuildCli)' == ''">$(MSBuildProjectDirectory)/node_modules/esbuild/bin/esbuild</EsbuildCli>
+    <PortfolioTscCli Condition="'$(PortfolioTscCli)' == ''">$(MSBuildProjectDirectory)/node_modules/typescript/bin/tsc</PortfolioTscCli>
   </PropertyGroup>
 
   <!-- Prevent the host project from accidentally compiling nested module source (and their obj/bin)
@@ -42,6 +43,16 @@
     <EmbeddedResource Remove="publish/**" />
     <None Remove="publish/**" />
   </ItemGroup>
+
+  <!-- Production host assets are bundled and hashed by _Deploy/Portfolio/build-and-push.sh.
+       Debug builds emit the unbundled /wwwroot/js modules consumed by the development layout. -->
+  <Target
+    Name="BuildPortfolioClient"
+    BeforeTargets="Build"
+    Condition="'$(Configuration)' == 'Debug' and '$(DesignTimeBuild)' != 'true'">
+    <Error Condition="!Exists('$(PortfolioTscCli)')" Text="Missing TypeScript CLI. Run npm install in Portfolio or set PortfolioTscCli." />
+    <Exec Command="node &quot;$(PortfolioTscCli)&quot; -p &quot;$(MSBuildProjectDirectory)/tsconfig.json&quot; --pretty false" />
+  </Target>
 
   <ItemGroup>
     <None Update="package.json;package-lock.json;tsconfig.json">
