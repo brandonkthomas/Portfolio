@@ -1,4 +1,5 @@
 @inject IConfiguration Configuration
+@inject Microsoft.AspNetCore.Mvc.ViewFeatures.IFileVersionProvider FileVersionProvider
 
 @{
     // Page-type flag used across the layout (kept in outer scope so it works inside TagHelpers like <environment/>)
@@ -57,6 +58,8 @@
     var appleMobileWebAppTitle = (ViewData["AppleMobileWebAppTitle"] as string)?.Trim();
     if (string.IsNullOrWhiteSpace(appleMobileWebAppTitle)) appleMobileWebAppTitle = "Brandon Thomas";
     var useCustomAppIcons = (ViewData["UseCustomAppIcons"] as bool?) ?? false;
+
+    string VersionedPath(string path) => FileVersionProvider.AddFileVersionToPath(Context.Request.PathBase, path);
 }
 
 <!DOCTYPE html>
@@ -82,13 +85,13 @@ else
 
     @if (!isIsolatedCss)
     {
-        <link rel="stylesheet" href="~/css/common.css" asp-append-version="true" />
-        <link rel="stylesheet" href="~/apps/indium/dist/components/navbar.css" asp-append-version="true" />
-        <link rel="stylesheet" href="~/css/starfield.css" asp-append-version="true" />
-        <link rel="stylesheet" href="~/apps/indium/dist/components/glassSurface.css" asp-append-version="true" />
-        <link rel="stylesheet" href="~/css/photoGallery.css" asp-append-version="true" />
-        <link rel="stylesheet" href="~/css/projects.css" asp-append-version="true" />
-        <link rel="stylesheet" href="~/apps/indium/dist/components/dialogs.css" asp-append-version="true" />
+        <link rel="stylesheet" href="@(VersionedPath("/css/common.css"))" />
+        <link rel="stylesheet" href="@(VersionedPath("/apps/indium/dist/components/navbar.css"))" />
+        <link rel="stylesheet" href="@(VersionedPath("/css/starfield.css"))" />
+        <link rel="stylesheet" href="@(VersionedPath("/apps/indium/dist/components/glassSurface.css"))" />
+        <link rel="stylesheet" href="@(VersionedPath("/css/photoGallery.css"))" />
+        <link rel="stylesheet" href="@(VersionedPath("/css/projects.css"))" />
+        <link rel="stylesheet" href="@(VersionedPath("/apps/indium/dist/components/dialogs.css"))" />
     }
 
     @await RenderSectionAsync("Styles", required: false)
@@ -100,13 +103,13 @@ else
 
     @if (!useCustomAppIcons)
     {
-        <link rel="icon" href="~/assets/images/branding/favicon.ico" asp-append-version="true" />
-        <link rel="apple-touch-icon" sizes="180x180" href="~/assets/images/branding/apple-touch-icon-180x180.png" asp-append-version="true" />
-        <link rel="apple-touch-icon" sizes="167x167" href="~/assets/images/branding/apple-touch-icon-167x167.png" asp-append-version="true" />
-        <link rel="apple-touch-icon" sizes="152x152" href="~/assets/images/branding/apple-touch-icon-152x152.png" asp-append-version="true" />
-        <link rel="apple-touch-icon" sizes="144x144" href="~/assets/images/branding/apple-touch-icon-144x144.png" asp-append-version="true" />
-        <link rel="apple-touch-icon" sizes="120x120" href="~/assets/images/branding/apple-touch-icon-120x120.png" asp-append-version="true" />
-        <link rel="mask-icon" href="~/assets/meta/safari-pinned-tab.svg" color="#1c1c1c" asp-append-version="true">
+        <link rel="icon" href="@(VersionedPath("/assets/images/branding/favicon.ico"))" />
+        <link rel="apple-touch-icon" sizes="180x180" href="@(VersionedPath("/assets/images/branding/apple-touch-icon-180x180.png"))" />
+        <link rel="apple-touch-icon" sizes="167x167" href="@(VersionedPath("/assets/images/branding/apple-touch-icon-167x167.png"))" />
+        <link rel="apple-touch-icon" sizes="152x152" href="@(VersionedPath("/assets/images/branding/apple-touch-icon-152x152.png"))" />
+        <link rel="apple-touch-icon" sizes="144x144" href="@(VersionedPath("/assets/images/branding/apple-touch-icon-144x144.png"))" />
+        <link rel="apple-touch-icon" sizes="120x120" href="@(VersionedPath("/assets/images/branding/apple-touch-icon-120x120.png"))" />
+        <link rel="mask-icon" href="@(VersionedPath("/assets/meta/safari-pinned-tab.svg"))" color="#1c1c1c">
     }
     
     <link rel="canonical" href="@absolutePageUrl" />
