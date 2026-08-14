@@ -36,6 +36,7 @@ export async function mount(container: HTMLElement, props: { width?: number; hei
 
     // Animation state
     let running = false;
+    let active = true;
     let lastW = width, lastH = height;
     let t = 0;
     const wave = genWaveFn();
@@ -45,7 +46,7 @@ export async function mount(container: HTMLElement, props: { width?: number; hei
 
     // Animate only on hover of the tile
     const tile = (container.closest('.bento-item') as HTMLElement) || root;
-    const onEnter = () => { if (!running) { running = true; requestAnimationFrame(loop); } };
+    const onEnter = () => { if (active && !running) { running = true; requestAnimationFrame(loop); } };
     const onLeave = () => { running = false; drawFrame(); };
     const onEnterLogged = () => {
         onEnter();
@@ -119,6 +120,7 @@ export async function mount(container: HTMLElement, props: { width?: number; hei
     return {
         setSize({ width, height }: { width: number; height: number }) { resize({ width, height }); drawFrame(); },
         update(nextProps: Record<string, unknown>) { /* future */ },
+        setActive(nextActive: boolean) { active = nextActive; if (!active) running = false; },
         destroy() { running = false; tile.removeEventListener('pointerenter', onEnterLogged); tile.removeEventListener('pointerleave', onLeave); root.remove(); logLineGraph('Destroyed'); }
     };
 }

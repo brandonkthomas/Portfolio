@@ -519,48 +519,32 @@ class PhotoGallery {
 
         // Determine thresholds for eager/lazy loading based on column count
         const firstRowThreshold = Math.max(1, this.currentColumnCount || 1);
-        const secondRowThreshold = firstRowThreshold * 2;
 
-        // Schedule image assignment with idle callback or timeout
-        const scheduleAssignment = (callback: () => void, delayMs: number) => {
-            if ('requestIdleCallback' in window) {
-                requestIdleCallback(callback, { timeout: 100 + delayMs });
-            } else {
-                window.setTimeout(callback, delayMs);
-            }
-        };
+        const eagerDistance = Math.max(
+            window.innerHeight,
+            this.container?.clientHeight || 0
+        ) * 2;
 
-        // Assign images to the DOM with eager/lazy loading based on row index
+        // Assign every source synchronously and let the browser's native image scheduler decide when
+        // lazy images should transfer. Deferring src itself to idle callbacks can starve requests while
+        // a mobile user is actively scrolling and makes already-visited slots appear to "reload".
         sortedQueue.forEach((item, orderIndex) => {
             item.img.dataset.photoLoadOrder = `${orderIndex}`;
-            const rowIndex = this.currentColumnCount > 0
-                ? Math.floor(orderIndex / this.currentColumnCount)
-                : 0;
-            const isFirstRow = rowIndex === 0;
-            const isSecondRow = rowIndex === 1;
-            item.img.loading = isFirstRow ? 'eager' : 'lazy';
+            const isNearViewport = item.approximateTop <= eagerDistance;
+            item.img.loading = isNearViewport ? 'eager' : 'lazy';
 
             const priority = orderIndex < firstRowThreshold
                 ? 'high'
-                : orderIndex < secondRowThreshold
-                    ? 'auto'
-                    : 'low';
+                : 'auto';
             item.img.setAttribute('fetchpriority', priority);
-
-            const assignSrc = () => {
-                if (item.img.dataset.photoSrcAssigned === 'true' || !item.img.isConnected) {
-                    return;
-                }
-                item.img.dataset.photoSrcAssigned = 'true';
-                item.img.src = item.url;
-            };
-
-            scheduleAssignment(assignSrc, orderIndex * 12);
+            item.img.dataset.photoSrcAssigned = 'true';
+            item.img.src = item.url;
         });
 
-        this.log('Image Queue Scheduled', {
+        this.log('Image Sources Assigned', {
             queued: sortedQueue.length,
-            columns: this.currentColumnCount
+            columns: this.currentColumnCount,
+            eagerDistance
         });
     }
 
@@ -674,22 +658,15 @@ class PhotoGallery {
         // Generate photos on first show (lazy initialization)
         if (!this.photosGenerated) {
             this.photosGenerated = true;
-            
-            // Load manifest and render
-            if ('requestIdleCallback' in window) {
-                requestIdleCallback(() => {
-                    this.retrievePhotos();
-                }, { timeout: 100 });
-                this.log('Manifest Load Scheduled', { strategy: 'idle' });
-            } else {
-                setTimeout(() => {
-                    this.retrievePhotos();
-                }, 0);
-                this.log('Manifest Load Scheduled', { strategy: 'timeout' });
-            }
+
+            // The user has entered the gallery, so its manifest is critical navigation work.
+            void this.retrievePhotos();
+            this.log('Manifest Load Started', { strategy: 'immediate' });
         }
         
         this.container.classList.add('visible');
+        this.container.setAttribute('aria-hidden', 'false');
+        this.container.removeAttribute('inert');
         this.isVisible = true;
         
         // Enable scrolling
@@ -708,6 +685,8 @@ class PhotoGallery {
         }
         
         this.container.classList.remove('visible');
+        this.container.setAttribute('aria-hidden', 'true');
+        this.container.setAttribute('inert', '');
         this.isVisible = false;
         
         // Disable scrolling

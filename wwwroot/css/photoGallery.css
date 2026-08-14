@@ -12,22 +12,26 @@
     height: 100%;
     z-index: 5;
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
     transform: scale(1.15);
     filter: blur(20px);
     transition: 
         opacity 0.33s cubic-bezier(0.4, 0, 0.2, 1),
         transform 0.33s cubic-bezier(0.4, 0, 0.2, 1),
-        filter 0.33s cubic-bezier(0.4, 0, 0.2, 1);
+        filter 0.33s cubic-bezier(0.4, 0, 0.2, 1),
+        visibility 0s linear 0.33s;
     overflow-y: auto;
     overflow-x: hidden;
 }
 
 .photo-gallery-container.visible {
     opacity: 1;
+    visibility: visible;
     pointer-events: auto;
     transform: none;
     filter: none;
+    transition-delay: 0s;
 }
 
 /* Initial state loading styles */
