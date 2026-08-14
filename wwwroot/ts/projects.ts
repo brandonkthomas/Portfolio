@@ -4,7 +4,7 @@
  */
 
 import { isMobile, getOperatingSystem, logEvent, LogData, LogLevel } from './common.js';
-import { mountComponent } from './components/bento/registry.js';
+import { mountComponent, preloadComponents } from './components/bento/registry.js';
 interface GlassSurfaceInstance {
     element: HTMLDivElement;
     contentElement: HTMLDivElement;
@@ -238,19 +238,38 @@ class ProjectsGrid {
             );
         }
 
-        this.renderGrid();
+        const componentTypes = this.projects
+            .map((project: any) => project?.component?.type)
+            .filter((type: unknown): type is string => typeof type === 'string' && type.length > 0);
+
+        try {
+            await preloadComponents(componentTypes);
+        } catch (error) {
+            this.log(
+                'Component Preload Failed',
+                {},
+                error instanceof Error ? error.message : String(error),
+                'warn'
+            );
+        }
+
+        await this.renderGrid();
     }
 
     //==============================================================================================
     /**
      * Render the projects grid
      */
-    renderGrid() {
+    async renderGrid() {
         if (!this.gridEl) {
             this.log('Render Skipped', {}, 'Grid element missing', 'warn');
             return;
         }
         this.gridEl.innerHTML = '';
+        this.gridEl.classList.remove('projects-grid--ready');
+        this.gridEl.classList.add('projects-grid--loading');
+        this.gridEl.setAttribute('aria-busy', 'true');
+        const componentMounts: Promise<void>[] = [];
 
         // Placeholder /projects/{slug} fallback is disabled; cards without explicit URLs are non-navigable.
         const ensureUrl = (p: any) => p.url || '#';
@@ -319,32 +338,23 @@ class ProjectsGrid {
 
         // On mobile, force single column; spans are normalized via CSS
         this.projects.forEach((proj: any, index: number) => {
+            const tile = document.createElement('div');
+            tile.className = `bento-item ${ensureSpanClass(proj)}`;
+
             const link = document.createElement('a');
-            link.className = `bento-item ${ensureSpanClass(proj)}`;
+            link.className = 'bento-link';
             link.href = ensureUrl(proj);
             link.setAttribute('aria-label', proj.title || `Project ${index + 1}`);
-            link.classList.add('bento-link');
 
             // Optional external navigation support via manifest flag or URL scheme
             const externalFlag = Boolean(proj.external);
             const candidateUrl = proj.url || link.getAttribute('href') || '';
             if (externalFlag || isExternalUrl(candidateUrl)) {
-                // link.target = '_blank';
-                // link.rel = 'noopener noreferrer';
                 link.dataset.external = 'true';
-                // Robust open to avoid accidental relative navigation
-                link.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const href = proj.url || link.getAttribute('href');
-                    if (href) {
-                        window.location.href = href;
-                    }
-                });
             }
 
             // Background: subtle multi-point gradient
-            link.style.background = computeGradient(proj);
+            tile.style.background = computeGradient(proj);
 
             const wrapper = document.createElement('div');
             wrapper.className = 'bento-content';
@@ -362,7 +372,7 @@ class ProjectsGrid {
 
             // Component: mount inner visual based on manifest (default: none)
             const comp = proj.component || null;
-            this.attachComponentToTile(link, wrapper, comp).catch(() => { /* no-op fallback */ });
+            componentMounts.push(this.attachComponentToTile(tile, wrapper, comp));
 
             // Footer chip
             if (proj.footer) {
@@ -397,7 +407,7 @@ class ProjectsGrid {
                         window.location.href = href;
                     }
                 });
-                wrapper.appendChild(dlBtn);
+                tile.appendChild(dlBtn);
             }
 
             // optional GitHub button (bottom right) -- used for projects w/ both live demos and source code
@@ -423,21 +433,29 @@ class ProjectsGrid {
                 githubBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                 });
-                wrapper.appendChild(githubBtn);
+                tile.appendChild(githubBtn);
             }
 
             link.appendChild(wrapper);
-            (this.gridEl as HTMLElement).appendChild(link);
+            tile.prepend(link);
+            (this.gridEl as HTMLElement).appendChild(tile);
 
             // Size visuals to tile height using CSS var --stack-h
-            this.sizeTileVisuals(link);
+            this.sizeTileVisuals(tile);
 
             // Guard double-tap zoom on mobile
             this.addDoubleTapGuard(link);
         });
+
+        // Component modules, styles, and critical component images settle before the grid is revealed.
+        // This avoids independent component pop-in during SPA navigation.
+        await Promise.allSettled(componentMounts);
         // Ensure all tiles sized (for any late layout changes)
         this.sizeAllTileVisuals();
         this.sizeAllComponents();
+        this.gridEl.classList.remove('projects-grid--loading');
+        this.gridEl.classList.add('projects-grid--ready');
+        this.gridEl.setAttribute('aria-busy', 'false');
         this.log('Grid Rendered', { projects: this.projects.length });
         // Recompute bottom fade visibility now that content height is final
     }
@@ -507,6 +525,7 @@ class ProjectsGrid {
         try {
             const instance = await mountComponent(comp.type, contentEl, comp.props || {});
             this.tileInstances.set(tileEl, instance);
+            instance.setActive?.(this.isVisible);
             const rect = tileEl.getBoundingClientRect();
             instance.setSize?.({ width: rect.width, height: rect.height });
         } catch (err) {
@@ -536,6 +555,15 @@ class ProjectsGrid {
     }
 
     //==============================================================================================
+    /** Pause/resume component animation work with the SPA view lifecycle. */
+    setComponentsActive(active: boolean) {
+        if (!this.gridEl) return;
+        this.gridEl.querySelectorAll('.bento-item').forEach((tile: Element) => {
+            this.tileInstances.get(tile)?.setActive?.(active);
+        });
+    }
+
+    //==============================================================================================
     /**
      * Show the projects grid
      */
@@ -546,16 +574,15 @@ class ProjectsGrid {
         }
         if (!this.projectsGenerated) {
             this.projectsGenerated = true;
-            if ('requestIdleCallback' in window) {
-                requestIdleCallback(() => this.retrieveProjects(), { timeout: 100 });
-                this.log('Projects Load Scheduled', { strategy: 'idle' });
-            } else {
-                setTimeout(() => this.retrieveProjects(), 0);
-                this.log('Projects Load Scheduled', { strategy: 'timeout' });
-            }
+            // This is user-requested navigation, so the manifest and visual modules are critical work.
+            void this.retrieveProjects();
+            this.log('Projects Load Started', { strategy: 'immediate' });
         }
         this.container.classList.add('visible');
+        this.container.setAttribute('aria-hidden', 'false');
+        this.container.removeAttribute('inert');
         this.isVisible = true;
+        this.setComponentsActive(true);
         document.body.style.overflow = 'auto';
         this.log('Projects Shown');
     }
@@ -570,7 +597,10 @@ class ProjectsGrid {
             return;
         }
         this.container.classList.remove('visible');
+        this.container.setAttribute('aria-hidden', 'true');
+        this.container.setAttribute('inert', '');
         this.isVisible = false;
+        this.setComponentsActive(false);
         document.body.style.overflow = 'hidden';
         this.log('Projects Hidden');
     }
