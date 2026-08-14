@@ -68,6 +68,7 @@ class StateManager {
     private listeners: Array<(view: string) => void>;
     private initialRevealDone: boolean;
     private initialRevealAbortController: AbortController | null;
+    private pendingNavigation: { view: string; pushHistory: boolean; skipAnimations: boolean } | null;
     private starfield: any;
     private card: any;
     private photoGallery: any;
@@ -81,6 +82,7 @@ class StateManager {
         // Loop controlling initial reveal state
         this.initialRevealDone = false;
         this.initialRevealAbortController = null;
+        this.pendingNavigation = null;
         
         // References to other modules (will be set via setters)
         this.starfield = null;
@@ -449,10 +451,19 @@ class StateManager {
      * @param {boolean} skipAnimations - Whether to skip animations (for initial load)
      */
     async navigateToView(view: string, pushHistory: boolean = true, skipAnimations: boolean = false) {
-        if (this.isTransitioning || view === this.currentView) {
+        if (this.isTransitioning) {
+            this.pendingNavigation = { view, pushHistory, skipAnimations };
+            this.log('Navigation Queued', {
+                to: this.describeView(view),
+                reason: 'transitioning-queued'
+            });
+            return;
+        }
+
+        if (view === this.currentView) {
             this.log('Navigation Ignored', {
                 to: this.describeView(view),
-                reason: this.isTransitioning ? 'transitioning' : 'already-active'
+                reason: 'already-active'
             });
             return;
         }
@@ -505,6 +516,12 @@ class StateManager {
         this.log('Navigation Completed', {
             view: this.describeView(view)
         });
+
+        const pending = this.pendingNavigation;
+        this.pendingNavigation = null;
+        if (pending && pending.view !== this.currentView) {
+            await this.navigateToView(pending.view, pending.pushHistory, pending.skipAnimations);
+        }
     }
 
     //==============================================================================================
