@@ -11,7 +11,9 @@ public static class PhotoManifestGenerator
     /// <summary>
     /// Dimension cache
     /// </summary>
-    private static readonly ConcurrentDictionary<string, (int Width, int Height)> DimensionCache = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly ConcurrentDictionary<string, DimensionCacheEntry> DimensionCache = new(StringComparer.OrdinalIgnoreCase);
+
+    private readonly record struct DimensionCacheEntry(long LastWriteTicks, long Length, int Width, int Height);
 
     /// <summary>
     /// Supported extensions
@@ -95,20 +97,32 @@ public static class PhotoManifestGenerator
     {
         try
         {
-            return DimensionCache.GetOrAdd(filePath, static path =>
-            {
-                if (ImageDimensionReader.TryGetDimensions(path, out var width, out var height))
-                {
-                    return (Math.Max(1, width), Math.Max(1, height));
-                }
+            var file = new FileInfo(filePath);
+            var lastWriteTicks = file.LastWriteTimeUtc.Ticks;
+            var length = file.Length;
+            var entry = DimensionCache.AddOrUpdate(
+                filePath,
+                _ => ReadDimensions(filePath, lastWriteTicks, length),
+                (_, cached) => cached.LastWriteTicks == lastWriteTicks && cached.Length == length
+                    ? cached
+                    : ReadDimensions(filePath, lastWriteTicks, length));
 
-                return (DefaultWidth, DefaultHeight);
-            });
+            return (entry.Width, entry.Height);
         }
         catch
         {
             return (DefaultWidth, DefaultHeight);
         }
+    }
+
+    private static DimensionCacheEntry ReadDimensions(string filePath, long lastWriteTicks, long length)
+    {
+        if (ImageDimensionReader.TryGetDimensions(filePath, out var width, out var height))
+        {
+            return new DimensionCacheEntry(lastWriteTicks, length, Math.Max(1, width), Math.Max(1, height));
+        }
+
+        return new DimensionCacheEntry(lastWriteTicks, length, DefaultWidth, DefaultHeight);
     }
 
     //==============================================================================================
